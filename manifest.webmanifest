@@ -1,0 +1,26 @@
+{
+  "id": "./",
+  "name": "Sirop & Cie",
+  "short_name": "Sirop & Cie",
+  "description": "Jeu idle de fabrique de sirop : promène ton personnage, livre les commandes, récolte et agrandis le village de Sirop-sur-Mer.",
+  "lang": "fr",
+  "dir": "ltr",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "any",
+  "background_color": "#f6efe2",
+  "theme_color": "#f5863e",
+  "categories": ["games", "kids", "entertainment"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "screenshots": [
+    { "src": "icons/screenshot-wide.png", "sizes": "1280x760", "type": "image/png", "form_factor": "wide", "label": "Le village de Sirop-sur-Mer" },
+    { "src": "icons/screenshot-narrow.png", "sizes": "390x844", "type": "image/png", "form_factor": "narrow", "label": "Le jeu sur téléphone" }
+  ]
+}

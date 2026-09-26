@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sirop &amp; Cie</title>
+<meta name="description" content="Jeu idle de fabrique de sirop : promène ton personnage, livre les commandes, récolte et agrandis le village de Sirop-sur-Mer.">
+<!-- Application installable (PWA) -->
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#f5863e">
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Sirop & Cie">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,800&family=DM+Sans:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="top">
+  <div class="top-inner">
+    <div class="brand">
+      <img src="icons/logo-64.png" width="30" height="30" alt="" class="brand-logo">
+      Sirop <em>&amp; Cie</em>
+    </div>
+    <div class="res">
+      <span class="chip carry" data-t="cargoTop" title="Bouteilles portées / capacité"></span>
+      <span class="chip event" data-t="eventTxt"></span>
+      <span class="chip"><small>Caisse</small><span data-t="money"></span></span>
+      <span class="chip hide-sm"><small>Revenus</small><span data-t="rps"></span></span>
+      <span class="chip">⭐ <span data-t="rep"></span></span>
+      <span class="chip hide-sm"><small>Stock</small><span data-t="stockTop"></span></span>
+      <span class="chip" data-t="clock"></span>
+      <span class="chip" data-t="stars"></span>
+      <button type="button" class="chip install" id="install-btn" hidden>📲 Installer</button>
+      <button type="button" class="chip icon-btn" id="mute-btn" data-act="mute" aria-label="Couper le son">🔊</button>
+    </div>
+  </div>
+</header>
+
+<div class="world-wrap">
+  <canvas id="world" aria-label="Le village de Sirop-sur-Mer"></canvas>
+
+  <button type="button" class="quest" id="quest" data-act="questToggle" data-c="ready|questReady" aria-label="Quête du maire">
+    <span class="q-kicker">Quête du maire</span>
+    <span class="q-title" data-t="questTitle"></span>
+    <span class="bar"><i data-w="questPct"></i></span>
+    <span class="q-prog" data-t="questProg"></span>
+  </button>
+
+  <div class="help" id="help">
+    <b>Flèches / ZQSD</b> : marcher · <b>E</b> : agir · <b>Clic</b> : y aller
+    <button type="button" data-act="hideHelp" aria-label="Masquer l’aide">✕</button>
+  </div>
+  <button type="button" class="btn" id="act-btn" data-act="interact" hidden></button>
+
+  <div class="sheet" id="sheet" hidden>
+    <div class="sheet-card">
+      <div class="sheet-head">
+        <h2 id="sheet-title"></h2>
+        <span class="sub hide-sm">Échap pour sortir</span>
+        <button type="button" class="btn ghost" data-act="closePanel">Sortir</button>
+      </div>
+      <div id="panel"></div>
+    </div>
+  </div>
+</div>
+
+<div class="toasts" id="toasts" aria-live="polite"></div>
+<div class="modal" id="modal" hidden>
+  <div class="modal-card" role="dialog" aria-modal="true">
+    <div id="modal-body"></div>
+    <div class="modal-btns" id="modal-btns"></div>
+  </div>
+</div>
+
+<script type="module" src="js/main.js"></script>
+</body>
+</html>

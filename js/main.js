@@ -16,6 +16,8 @@ import { Debug } from './debug.js';
 import { PWA } from './pwa.js';
 import { Tuto } from './tutorial/tutorial.js';
 import { Editor } from './editor/editor.js';
+import { QuestEditor } from './editor/quest-editor.js';
+import { Quests } from './sim/quests.js';
 
 /* ------------------------------------------------------------------
  * Dessins personnalisés : décommenter après avoir exporté depuis Piskel.
@@ -64,6 +66,8 @@ function start(data = {}) {
   const saved = data.save ? Store.migrate(data.save) : Store.load();
   Game.s = saved || Store.fresh();
   UI.init((name, arg) => Actions.run(name, arg));
+  QuestEditor.init();
+  Quests.loadFile('assets/quests.json');   // quêtes publiées (sinon celles par défaut)
   Sfx.init();
   Debug.init();
   PWA.init();

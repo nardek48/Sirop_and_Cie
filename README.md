@@ -104,27 +104,31 @@ js/
   pwa.js                installation, mises à jour, stockage persistant
   config.js             ⭐ TOUT l’équilibrage : prix, vitesses, quêtes de quartiers, clients…
   debug.js              outils de test (F2)
-  core/                 état (game), bus d’événements, format des nombres, sauvegarde
+  core/                 état (game), bus d’événements, format des nombres, sauvegarde, fichiers
   sim/                  règles du jeu, sans DOM ni canvas
     factory.js          chaîne de production
     market.js           comptoir
     contracts.js        contrats et livraisons
     couriers.js         livreurs
     world-systems.js    récoltes, quartiers, maisons, véhicules, recettes secrètes
-    quests.js           ⭐ la liste des quêtes du maire (facile à modifier)
+    quests.js           ⭐ quêtes du maire : types d’objectifs (GOALS) et quêtes par défaut
     openings.js         bâtiments fermés au début (garage, agence, labo)
     events.js           pluie, canicule, fête
     clock.js            jour / nuit
     sim.js              ordre des systèmes, prestige, hors-ligne
   editor/editor.js      Mode architecte : décorer le village en jeu, export Tiled
+  editor/quest-editor.js  éditeur de quêtes du maire, export quests.json
   tutorial/             ⭐ le tutoriel de Mémé Grenadine
     steps.js            les 9 étapes (texte, cible, condition de réussite) : facile à modifier
     tutorial.js         le moteur : pause du village, repères, « Je suis perdu », reprise
     overlay.js          la carte de Mémé, l'anneau et la main 👆
     tips.js             les conseils « première fois » et ceux du banc du parc
   ui/                   HUD, panneaux (un fichier par bâtiment), actions, liaisons
+    savefile.js         exporter / importer une partie, reprendre la partie d’avant
+    panels/machine.js   fiche d’une machine (dans l’usine visitable)
   world/                le village en canvas
     map.js              ⭐ positions des bâtiments, arbres, terrains, décor
+    interior.js         ⭐ l’intérieur de l’usine : salle, machines animées, sorties
     render.js           dessin de la scène, nuit, météo
     characters.js       personnages 4 directions, véhicules, compagnons
     villagers.js        habitants (et leurs phrases)
@@ -138,6 +142,7 @@ assets/
   modele-perso.png        modèle de feuille de sprites à repeindre
   modele-perso-guide.png  le même, agrandi avec les libellés
   decor.tiled.json        décor du village, modifiable dans Tiled
+  quests.json             quêtes du maire (produit par l’éditeur de quêtes)
 ```
 
 Règle d’or : les fichiers de `sim/` ne touchent jamais au DOM. Ils émettent des événements (`Bus.toast`, `Bus.float`, `Bus.sfx`) que l’interface et le monde écoutent.
@@ -171,9 +176,21 @@ Le village décoré est gardé dans la partie de l’appareil. **Exporter le fic
 
 Les bâtiments, arbres et terrains se déplacent dans `js/world/map.js`. Les portes des bâtiments sont dans `CONFIG.places` (`config.js`).
 
+## Inventer les quêtes du maire
+
+Mairie → **✏️ Inventer les quêtes du maire**. Chaque quête : un objectif choisi dans une liste (livrer, récolter, débloquer un parfum, gagner de l’argent…), combien, la récompense et ce que dit le maire (écrit tout seul, ou à la main). ▲ ▼ changent l’ordre, 🗑️ supprime, « 📍 Jouer » en fait la quête en cours pour l’essayer.
+
+Les quêtes modifiées sont gardées dans la partie. **Exporter le fichier** télécharge `quests.json` : le mettre dans `assets/`, lancer `node tools/build-sw.mjs patch` et publier, et tous les joueurs auront ces quêtes (sauf ceux qui ont déjà inventé les leurs). Le simulateur utilise aussi ce fichier.
+
+Un nouveau type d’objectif : une entrée dans `GOALS` (`sim/quests.js`), avec son texte et sa valeur `val(s, arg)`.
+
+## L’usine visitable
+
+La porte de l’usine fait entrer dans la salle de fabrication (pendant le tutoriel, elle ouvre toujours le tableau de l’usine). Tout y bouge avec les vraies valeurs du jeu : sacs et cagettes, marmite, cuve, tapis de bouteilles, entrepôt, clients au comptoir. La machine la plus lente est marquée 🐢, un blocage ⚠️. Toucher une machine ouvre sa fiche pour l’améliorer ; le tableau noir ouvre toute la gestion. Sortie en bas (devant l’usine) ou à droite (au quai). La salle se dessine dans `js/world/interior.js` (positions en haut du fichier).
+
 ## Idées faciles à ajouter
 
-- Une quête : ajouter une ligne dans `QUESTS` (`sim/quests.js`).
+- Une quête : dans le jeu (éditeur de quêtes), ou une ligne dans `DEFAULT_QUESTS` (`sim/quests.js`).
 - Un client : ajouter une entrée dans `CONFIG.contracts.clients`, un bâtiment dans `MAP.buildings` et sa porte dans `CONFIG.places`.
 - Une étape de tutoriel : un objet dans `STEPS` (`tutorial/steps.js`) ; un conseil : une ligne dans `TIPS` ou `ADVICE` (`tutorial/tips.js`).
 - Quand un bâtiment ouvre : `CONFIG.openings` (`config.js`).
@@ -183,3 +200,5 @@ Les bâtiments, arbres et terrains se déplacent dans `js/world/map.js`. Les por
 ## Sauvegarde
 
 Automatique toutes les 30 s dans le navigateur (`localStorage`, clé `siropcie_save_v3`). Le temps passé hors du jeu est rattrapé, jusqu’à 8 h.
+
+Mairie → **💾 Sauvegarde** : « Exporter la partie » télécharge un fichier `.json`, « Importer un fichier » le recharge (sur un autre appareil par exemple). Avant un import ou « Tout effacer », la partie en cours est gardée de côté (clé `siropcie_save_backup`) : « Reprendre la partie d’avant » la ramène.

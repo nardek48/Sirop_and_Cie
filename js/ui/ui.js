@@ -57,6 +57,7 @@ export const UI = {
   open(name) {
     this.active = name; this.key = null;
     this.el['sheet-title'].textContent = Panels[name].title;
+    this.el.sheet.dataset.panel = name;          // pour le style (fiche machine plus petite)
     this.el.sheet.hidden = false;
     this.el.sheet.scrollTop = 0;
     this.render(Game.s);

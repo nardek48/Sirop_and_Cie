@@ -19,8 +19,11 @@ import { World } from '../world/world.js';
 import { Tuto } from '../tutorial/tutorial.js';
 import { Tips } from '../tutorial/tips.js';
 import { Editor } from '../editor/editor.js';
+import { QuestEditor } from '../editor/quest-editor.js';
 import { UI } from './ui.js';
 import { Form } from './form.js';
+import { SaveFile } from './savefile.js';
+import { MachineSel } from './panels/machine.js';
 
 const map = {
   // usine
@@ -30,6 +33,7 @@ const map = {
   up: (s, a) => Factory.upgrade(s, a),
   counter: s => { s.counterOn = !s.counterOn; },
   restock: s => Factory.buyRestock(s),
+  machine: (s, a) => { MachineSel.k = a; UI.open('machine'); },
   // contrats
   accept: (s, a) => Contracts.accept(s, a),
   decline: (s, a) => Contracts.decline(s, a),
@@ -69,10 +73,13 @@ const map = {
     }, 'Revendre');
   },
   save: s => { const ok = Store.save(s); UI.toast(ok ? 'Partie sauvegardée' : 'Sauvegarde indisponible ici', ok ? 'ok' : 'bad'); },
-  reset: () => UI.confirm('Effacer définitivement la partie ?', () => {
-    Store.wipe(); Game.s = Store.fresh(); Sim.seed(Game.s); UI.close(); World.resetPlayer();
+  reset: () => UI.confirm('Effacer la partie et tout recommencer ?<br><small>Elle est gardée de côté : « Reprendre la partie d’avant » la ramène.</small>', () => {
+    Store.backup(Game.s); Store.wipe(); Game.s = Store.fresh(); Sim.seed(Game.s); UI.close(); World.resetPlayer();
     Tuto.propose();
   }, 'Effacer'),
+  saveExport: s => SaveFile.export(s),
+  saveImport: () => SaveFile.import(),
+  saveRestore: () => SaveFile.restore(),
   // Mémé Grenadine : tutoriel et conseils
   tutoNext: () => Tuto.button(),
   tutoSkip: () => Tuto.skip(),
@@ -81,6 +88,17 @@ const map = {
   tipClose: () => Tips.close(),
   tipsToggle: s => { s.tipsOn = !s.tipsOn; },
   architect: () => Editor.start(),
+  // éditeur de quêtes
+  questEditor: () => QuestEditor.open(),
+  qeAdd: () => QuestEditor.add(),
+  qeDel: (s, a) => QuestEditor.remove(Number(a)),
+  qeUp: (s, a) => QuestEditor.move(Number(a), -1),
+  qeDown: (s, a) => QuestEditor.move(Number(a), 1),
+  qeGo: (s, a) => QuestEditor.go(Number(a)),
+  qeExport: () => QuestEditor.exportFile(),
+  qeImport: () => QuestEditor.importFile(),
+  qeReset: () => QuestEditor.reset(),
+  openPanel: (s, a) => UI.open(a),
   // général
   interact: () => World.interact(),
   closePanel: () => UI.close(),

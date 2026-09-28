@@ -17,7 +17,7 @@
  *   node tools/simulate.mjs --csv                    écrit la courbe dans tools/sim-courbe.csv
  *   node tools/simulate.mjs --strategie=usine        tout miser sur l'usine (comptoir juste sous l'embouteillage)
  */
-import { writeFileSync } from 'node:fs';
+import { writeFileSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 /* ---------- Arguments ---------- */
@@ -46,7 +46,12 @@ const { Factory } = await import('../js/sim/factory.js');
 const { Contracts } = await import('../js/sim/contracts.js');
 const { Couriers } = await import('../js/sim/couriers.js');
 const { Fields, Districts, RealEstate, Garage, Recipes } = await import('../js/sim/world-systems.js');
-const { Quests, QUESTS } = await import('../js/sim/quests.js');
+const { Quests, questsFromFile } = await import('../js/sim/quests.js');
+// Les quêtes publiées (assets/quests.json) si le fichier existe, comme dans le jeu
+try {
+  const list = questsFromFile(readFileSync(fileURLToPath(new URL('../assets/quests.json', import.meta.url)), 'utf8'));
+  if (list) Quests.base = list;
+} catch (e) { /* pas de fichier : quêtes par défaut */ }
 const { Sim, Prestige } = await import('../js/sim/sim.js');
 
 // Réglages temporaires : --set=chemin.vers.valeur=nombre
@@ -236,9 +241,9 @@ const STEPS = [
   ['4 livreurs', s => s.couriers >= 4],
   ['4 recettes', s => s.recipes.length >= 4],
   ['1er domaine', s => s.houses.some(h => h.type === 'domaine')],
-  ['15 quêtes', s => s.quest.i >= QUESTS.length],
+  ['Toutes les quêtes', s => s.quest.i >= Quests.count(s)],
   ['Prestige possible', s => Prestige.can(s)],
-  ['TOUT FINI', s => s.quest.i >= QUESTS.length && s.houses.some(h => h.type === 'domaine') && s.unlocked.length >= 5 + CONFIG.recipes.max
+  ['TOUT FINI', s => s.quest.i >= Quests.count(s) && s.houses.some(h => h.type === 'domaine') && s.unlocked.length >= 5 + CONFIG.recipes.max
       && s.vehicle >= 3 && s.couriers >= 4 && s.districts.colline && s.districts.champs],
 ];
 

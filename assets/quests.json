@@ -1,0 +1,103 @@
+{
+ "game": "sirop-et-cie",
+ "type": "quests",
+ "format": 1,
+ "quests": [
+  {
+   "goal": "accept",
+   "n": 1,
+   "reward": 30,
+   "text": "Accepte un contrat au bureau des contrats"
+  },
+  {
+   "goal": "deliver",
+   "n": 1,
+   "reward": 50,
+   "text": "Livre ta première commande"
+  },
+  {
+   "goal": "pick",
+   "n": 3,
+   "reward": 40,
+   "text": "Récolte 3 fois au verger"
+  },
+  {
+   "goal": "level",
+   "arg": "cook",
+   "n": 2,
+   "reward": 60,
+   "text": "Améliore la cuisson de l’usine"
+  },
+  {
+   "goal": "flavor",
+   "arg": "grenadine",
+   "n": 1,
+   "reward": 120,
+   "text": "Débloque la Grenadine"
+  },
+  {
+   "goal": "vehicle",
+   "arg": "1",
+   "n": 1,
+   "reward": 200,
+   "text": "Achète un vélo au garage"
+  },
+  {
+   "goal": "houses",
+   "n": 1,
+   "reward": 300,
+   "text": "Construis ta première maison"
+  },
+  {
+   "goal": "rep",
+   "n": 10,
+   "reward": 400,
+   "text": "Atteins 10 étoiles de réputation"
+  },
+  {
+   "goal": "district",
+   "arg": "champs",
+   "n": 1,
+   "reward": 600,
+   "text": "Ouvre les Champs"
+  },
+  {
+   "goal": "recipes",
+   "n": 1,
+   "reward": 1000,
+   "text": "Invente une recette secrète au labo"
+  },
+  {
+   "goal": "couriers",
+   "n": 1,
+   "reward": 1500,
+   "text": "Embauche un livreur"
+  },
+  {
+   "goal": "deliver",
+   "n": 25,
+   "reward": 3000,
+   "text": "Livre 25 commandes"
+  },
+  {
+   "goal": "district",
+   "arg": "colline",
+   "n": 1,
+   "reward": 8000,
+   "text": "Ouvre la Colline"
+  },
+  {
+   "goal": "deliverTo",
+   "arg": "gare",
+   "n": 3,
+   "reward": 20000,
+   "text": "Livre 3 commandes au Train Express"
+  },
+  {
+   "goal": "earn",
+   "n": 100000000,
+   "reward": 1000000,
+   "text": "Gagne 100 M $ avec ton entreprise"
+  }
+ ]
+}

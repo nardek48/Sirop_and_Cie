@@ -18,6 +18,7 @@ import { World } from '../world/world.js';
 import { Render } from '../world/render.js';
 import { DECOR, decorBox } from '../world/decor.js';
 import { toTiled } from '../world/tiled.js';
+import { Files } from '../core/files.js';
 
 const MAX = 300;       // objets au maximum
 const SNAP = 5;        // grille d'aimantation (px)
@@ -168,12 +169,7 @@ export const Editor = {
 
   /** Télécharge assets/decor.tiled.json pour le mettre dans le dépôt */
   exportFile() {
-    const json = JSON.stringify(toTiled(this.list(), MAP), null, 1);
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(new Blob([json], { type: 'application/json' }));
-    a.download = 'decor.tiled.json';
-    document.body.append(a); a.click(); a.remove();
-    setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+    Files.download('decor.tiled.json', JSON.stringify(toTiled(this.list(), MAP), null, 1));
     UI.modal(`
       <h2>Fichier du village exporté 💾</h2>
       <p>Pour que <b>tout le monde</b> ait ce village :</p>

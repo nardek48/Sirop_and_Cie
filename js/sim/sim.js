@@ -57,7 +57,7 @@ export const Prestige = {
     const n = Store.fresh();
     n.stars = s.stars + Eco.prestigeGain(s);
     n.stats = s.stats; n.look = s.look; n.quest = s.quest;
-    n.tuto = s.tuto; n.opened = s.opened; n.seen = s.seen; n.tipsOn = s.tipsOn; n.decor = s.decor;
+    n.tuto = s.tuto; n.opened = s.opened; n.seen = s.seen; n.tipsOn = s.tipsOn; n.decor = s.decor; n.quests = s.quests;
     Game.s = n;
     Sim.seed(n);
   },

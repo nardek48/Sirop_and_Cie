@@ -200,6 +200,7 @@ select,.field input{font:inherit;width:100%;padding:7px 8px;border-radius:9px;bo
 .modal-card{background:var(--surface);border-radius:16px;padding:20px;max-width:440px;width:100%;box-shadow:var(--shadow)}
 .modal-card ul{padding-left:18px;margin:10px 0 16px}
 .modal-card .confirm{font-size:16px;margin:0 0 16px}
+.modal-card ul.save-sum{list-style:none;padding:10px 12px;background:var(--surface2);border-radius:10px;display:grid;gap:4px}
 .modal-btns{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
 
 /* --- Debug --- */
@@ -276,3 +277,32 @@ body.arch-on #world{cursor:crosshair}
 .arch-count{margin-left:auto;color:var(--muted);font-size:12px;font-variant-numeric:tabular-nums}
 @media (max-width:560px){ .arch-hint{display:none} .arch{padding:8px} .arch-tool{min-width:54px} }
 body.arch-on .toasts{bottom:200px}
+
+/* ---------- Éditeur de quêtes (v0.3.0) ---------- */
+.qe-list{display:grid;gap:10px}
+.qe-item{display:grid;grid-template-columns:34px 1fr;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px;box-shadow:var(--shadow)}
+.qe-item.is-cur{border-color:var(--amber);box-shadow:0 0 0 2px var(--amber-l),var(--shadow)}
+.qe-item.is-done{opacity:.72}
+.qe-num{width:30px;height:30px;border-radius:50%;background:var(--surface2);display:grid;place-items:center;font-weight:800}
+.qe-item.is-cur .qe-num{background:var(--amber);color:#fff}
+.qe-body{min-width:0}
+.qe-body .field{margin-bottom:8px}
+.qe-row{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-start}
+.qe-goal{flex:2 1 200px}.qe-arg{flex:1 1 150px}.qe-n,.qe-reward{flex:0 1 150px}
+.qe-n small,.qe-reward small{color:var(--ink);font-weight:600}
+.qe-foot{align-items:flex-end;justify-content:space-between}
+.qe-tools{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:8px}
+.qe-state{font-size:12px;font-weight:700;padding:4px 9px;border-radius:99px;background:var(--surface2)}
+.qe-state.cur{background:var(--amber);color:#fff}
+.qe-state.done{color:var(--ok)}
+@media (max-width:560px){ .qe-item{grid-template-columns:1fr} .qe-num{display:none} }
+
+/* ---------- Usine visitable : fiche d'une machine (v0.3.0) ---------- */
+.sheet[data-panel="machine"]{align-items:center}
+.sheet[data-panel="machine"] .sheet-card{max-width:440px}
+.machine-card{display:grid;gap:8px;border:2px solid var(--line)}
+.machine-card.hot{border-color:var(--hot);box-shadow:0 0 0 3px color-mix(in srgb,var(--hot) 22%,transparent)}
+.machine-lv{margin:0;font-size:13px;font-weight:700;color:var(--muted)}
+.machine-info{margin:0;font-size:15px}
+.machine-card .auto-row{border-bottom:0;padding-bottom:0}
+.machine-nav{justify-content:space-between}

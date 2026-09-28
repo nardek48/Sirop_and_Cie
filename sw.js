@@ -20,8 +20,8 @@
  */
 
 // <build>
-const VERSION = 'v0.2.0';
-const BUILD = '40ee0342bb';
+const VERSION = 'v0.3.0';
+const BUILD = '8c75f94a78';
 const PRECACHE = [
   './index.html',
   './manifest.webmanifest',
@@ -30,11 +30,13 @@ const PRECACHE = [
   './js/audio/sfx.js',
   './js/config.js',
   './js/core/bus.js',
+  './js/core/files.js',
   './js/core/format.js',
   './js/core/game.js',
   './js/core/store.js',
   './js/debug.js',
   './js/editor/editor.js',
+  './js/editor/quest-editor.js',
   './js/main.js',
   './js/pwa.js',
   './js/sim/clock.js',
@@ -62,14 +64,17 @@ const PRECACHE = [
   './js/ui/panels/garage.js',
   './js/ui/panels/index.js',
   './js/ui/panels/labo.js',
+  './js/ui/panels/machine.js',
   './js/ui/panels/mairie.js',
   './js/ui/panels/usine.js',
+  './js/ui/savefile.js',
   './js/ui/ui.js',
   './js/version.js',
   './js/world/art.js',
   './js/world/characters.js',
   './js/world/decor.js',
   './js/world/gfx.js',
+  './js/world/interior.js',
   './js/world/map.js',
   './js/world/meme.js',
   './js/world/pet.js',
@@ -79,6 +84,7 @@ const PRECACHE = [
   './js/world/world.js',
   './assets/decor.tiled.json',
   './assets/modele-perso.png',
+  './assets/quests.json',
   './icons/apple-touch-icon.png',
   './icons/favicon-16.png',
   './icons/favicon-32.png',

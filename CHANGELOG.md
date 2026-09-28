@@ -2,6 +2,22 @@
 
 Numérotation : `vMAJEUR.MINEUR.CORRECTIF`. Pour préparer une nouvelle version : `node tools/build-sw.mjs patch` (ou `minor`, `major`), puis décrire les changements ici.
 
+## v0.3.0 · 2026-09-28
+
+- 
+
+## v0.3.0 · 2026-09-28
+
+- **L’usine se visite** : la porte de l’usine fait entrer dans la salle de fabrication, où l’on marche. Tout bouge avec la vraie production : sacs de sucre et cagettes de fruits, marmite qui bout (feu, bulles, vapeur), cuve avec son niveau de sirop, bouteilles sur le tapis roulant, caisses dans l’entrepôt, clients et pièces au comptoir. Les fenêtres suivent l’heure du jeu.
+- La machine la plus lente est marquée 🐢 ; un blocage (plus de matières, entrepôt plein, changement de parfum) est marqué ⚠️.
+- Toucher une machine ouvre sa fiche : ce qu’elle fait, son niveau, son débit, « Améliorer ». ◀ ▶ passent d’une machine à l’autre. Le tableau noir (parfum du jour) ouvre toute la gestion de l’usine, comme avant. Sortie par la porte du bas (devant l’usine) ou par la porte de droite (au quai).
+- Pendant le tutoriel, la porte ouvre toujours le tableau de l’usine, comme en v0.2.0.
+- **Éditeur de quêtes** (mairie → « ✏️ Inventer les quêtes du maire ») : changer, ajouter, déplacer ou supprimer les quêtes du maire. 17 types d’objectifs (livrer, livrer un client, récolter, monter une machine à un niveau, débloquer un parfum, acheter un véhicule, construire, réputation, ouvrir un quartier, recettes, livreurs, bouteilles, ventes, argent en caisse, argent gagné, étoiles…), le nombre, la récompense et ce que dit le maire. « 📍 Jouer » en fait la quête en cours. Déplacer ou supprimer une quête déjà faite ne fait pas sauter de quête.
+- Les quêtes modifiées sont gardées dans la partie (même après un prestige). « Exporter le fichier » télécharge `quests.json` : mis dans `assets/` et publié, il devient les quêtes de tout le monde. « Ouvrir un fichier » recharge un `quests.json`. Les 15 quêtes d’origine sont maintenant dans `assets/quests.json`, et le simulateur les lit aussi.
+- **Sauvegarde dans un fichier** (mairie → 💾 Sauvegarde) : « Exporter la partie » télécharge la partie, « Importer un fichier » la recharge, par exemple sur un autre appareil. Un résumé (nom, argent, commandes, temps de jeu) est montré avant de charger. Un fichier qui n’est pas une sauvegarde est refusé avec un message.
+- Avant un import ou « Tout effacer », la partie en cours est gardée de côté : « ↩️ Reprendre la partie d’avant » la ramène.
+- Mairie : le compteur de quêtes suit le nombre de quêtes (au lieu de « / 15 »). Les boutons de version et de mise à jour sont dans une nouvelle carte « 🎮 Le jeu ».
+
 ## v0.2.0 · 2026-09-28
 
 - **Mode architecte** (mairie → « Décorer le village ») : on pose, déplace et enlève le décor du village, au doigt ou à la souris. 10 objets, dont 5 nouveaux : fleurs, sapin, clôture, tonneau, parasol. Le texte des panneaux se modifie. Boutons Annuler (aussi Ctrl+Z), Tout remettre, et 300 objets au maximum. Les bâtiments, routes et récoltes ne bougent pas : le jeu ne peut pas être cassé.

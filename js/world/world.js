@@ -1,6 +1,10 @@
 /**
  * world.js — le village jouable : entrées, interactions, déplacement, caméra
  * et assemblage du rendu (tri par profondeur, repères, nuit, météo).
+ *
+ * Deux scènes : le village, et l'intérieur de l'usine (interior.js), où l'on entre
+ * par la porte de l'usine. Dans l'usine, le joueur a sa propre position (Interior.p) :
+ * s.player reste devant la porte, la sauvegarde ne voit donc jamais l'intérieur.
  */
 import { CONFIG, clientByPlace, typeById } from '../config.js';
 import { Game, rt } from '../core/game.js';
@@ -23,6 +27,8 @@ import { Pet } from './pet.js';
 import { Villagers } from './villagers.js';
 import { Meme } from './meme.js';
 import { loadTiledDecor } from './tiled.js';
+import { Interior } from './interior.js';
+import { MachineSel } from '../ui/panels/machine.js';
 
 const DIRS = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'KeyW', 'KeyA', 'KeyS', 'KeyD'];
 const inRect = (p, r) => r && p.x >= r.x && p.x <= r.x + r.w && p.y >= r.y && p.y <= r.y + r.h;
@@ -37,6 +43,7 @@ export const World = {
   stuckT: 0, counterT: 0, stepT: 0,
   debug: { solids: false },
   mode: 'play',          // 'play' ou 'edit' (Mode architecte, voir js/editor/)
+  scene: 'village',      // 'village' ou 'usine' (intérieur de l'usine, voir interior.js)
   baseDecor: MAP.decor,  // décor du fichier (Tiled) ou par défaut ; s.decor le remplace s'il existe
   /**
    * Branchements du tutoriel (js/tutorial/), pour que le monde n'en dépende pas :
@@ -81,6 +88,7 @@ export const World = {
   },
 
   resetPlayer() {
+    this.scene = 'village'; this.fitZoom();
     Object.assign(Game.s.player, Store.fresh().player);
     this.target = null; this.pending = null;
     Pet.reset(Game.s.player);
@@ -92,7 +100,14 @@ export const World = {
     this.vw = r.width; this.vh = r.height;
     this.cv.width = Math.max(1, Math.round(r.width * this.dpr));
     this.cv.height = Math.max(1, Math.round(r.height * this.dpr));
-    this.zoom = Math.max(0.6, Math.min(1.15, Math.min(r.width / 1000, r.height / 620)));
+    this.fitZoom();
+  },
+  /** Village : ~1000×620 visibles ; usine : toute la salle si l'écran le permet */
+  fitZoom() {
+    const w = this.vw, h = this.vh;
+    this.zoom = this.inside
+      ? Math.max(0.6, Math.min(1.3, Math.min(w / Interior.W, h / Interior.H)))
+      : Math.max(0.6, Math.min(1.15, Math.min(w / 1000, h / 620)));
   },
 
   toWorld(cx, cy) { return { x: this.cam.x + cx / this.zoom, y: this.cam.y + cy / this.zoom }; },
@@ -103,6 +118,7 @@ export const World = {
   },
   /** Transporte le joueur (bouton « Je suis perdu ») */
   teleport(x, y) {
+    this.scene = 'village'; this.fitZoom();
     const p = Game.s.player;
     if (this.blocked(x, y)) y = CONFIG.roadY;
     p.x = x; p.y = y;
@@ -111,6 +127,45 @@ export const World = {
     this.snapCamera(true);
   },
   maxX(s) { return s.districts.colline ? MAP.w - 30 : MAP.districts.colline.barrier.x - 20; },
+
+  /* ---------------- Scènes ---------------- */
+  get inside() { return this.scene === 'usine'; },
+  /** Position du joueur dans la scène courante */
+  me(s) { return this.inside ? Interior.p : s.player; },
+  /** Taille de la scène courante */
+  dims() { return this.inside ? { w: Interior.W, h: Interior.H } : { w: MAP.w, h: MAP.h }; },
+
+  /** Entrer dans l'usine, par la porte ('usine') ou par le quai ('quai') */
+  enterFactory(from = 'usine') {
+    UI.close();
+    this.scene = 'usine';
+    Interior.spawn(from);
+    this.fitZoom();
+    this.target = null; this.pending = null; this.keys.clear();
+    this.anim.dir = from === 'quai' ? 'gauche' : 'haut'; this.anim.flip = from === 'quai' ? -1 : 1;
+    Pet.reset(Interior.p);
+    this.snapCamera(true);
+    Bus.sfx('door');
+  },
+  /** Ressortir devant la porte de l'usine ou au quai */
+  exitFactory(to = 'usine') {
+    UI.close();
+    this.scene = 'village';
+    this.fitZoom();
+    const p = Game.s.player, d = CONFIG.places[to];
+    p.x = d.x; p.y = d.y + 30;
+    this.target = null; this.pending = null; this.keys.clear();
+    this.anim.dir = 'bas';
+    Pet.reset(p);
+    this.snapCamera(true);
+    Bus.sfx('door');
+  },
+  /** Ce que font les interactions de l'usine */
+  factoryActs: {
+    machine: k => { MachineSel.k = k; UI.open('machine'); },
+    board: () => UI.open('usine'),
+    exit: to => World.exitFactory(to),
+  },
 
   /* ---------------- Entrées ---------------- */
   onKey(e, down) {
@@ -142,13 +197,15 @@ export const World = {
     if (UI.active || UI.modalOpen()) return;
     const p = this.pointerPos(e);
     const hit = this.list.find(i => inRect(p, i.hit));
-    if (hit) { this.target = this.route(Game.s.player, hit); this.pending = hit.id; }
+    if (hit) { this.target = this.route(this.me(Game.s), hit); this.pending = hit.id; }
     else { this.target = [p]; this.pending = null; }
   },
 
   /** Trajet simple : rejoindre la route, la longer, puis monter/descendre vers la cible */
   route(from, to) {
     if (Math.hypot(to.x - from.x, to.y - from.y) < 160) return [{ x: to.x, y: to.y }];
+    // Dans l'usine : passer par l'allée libre entre les machines et le comptoir
+    if (this.inside) { const Y = 420; return [{ x: from.x, y: Y }, { x: to.x, y: Y }, { x: to.x, y: to.y }]; }
     const Y = CONFIG.roadY, pts = [];
     // Depuis les Champs, remonter d'abord par le chemin
     if (from.y > 1110 && to.y < 1110) pts.push({ x: from.x, y: 1172 }, { x: 545, y: 1172 });
@@ -187,7 +244,9 @@ export const World = {
         });
       } else if (b.panel) {
         const hit = b.id === 'usine' ? { x: b.x, y: b.y, w: b.w * 0.6, h: b.h } : b;
-        L.push({ id: b.id, ...at, hit, label: `Entrer · ${b.name}`, run: () => UI.open(b.panel) });
+        // L'usine se visite (sauf pendant le tutoriel, qui montre le tableau de l'usine)
+        const run = b.id === 'usine' ? () => (s.tuto.active ? UI.open('usine') : this.enterFactory('usine')) : () => UI.open(b.panel);
+        L.push({ id: b.id, ...at, hit, label: `Entrer · ${b.name}`, run });
       } else {
         const c = clientByPlace(b.id), open = Eco.clientOpen(s, c);
         const carried = Eco.carried(s).filter(k => k.place === b.id).length;
@@ -264,6 +323,7 @@ export const World = {
 
   /* ---------------- Déplacement ---------------- */
   solids(s) {
+    if (this.inside) return Interior.solids();
     const list = [
       ...MAP.buildings.map(b => ({ x: b.x, y: b.y + 20, w: b.w, h: b.h - 20 })),
       MAP.water,
@@ -275,8 +335,8 @@ export const World = {
   },
 
   blocked(x, y, solids = this.solids(Game.s)) {
-    const hw = 10, hh = 6;
-    if (x - hw < 0 || x + hw > MAP.w || y - hh < 0 || y + hh > MAP.h) return true;
+    const hw = 10, hh = 6, D = this.dims();
+    if (x - hw < 0 || x + hw > D.w || y - hh < 0 || y + hh > D.h) return true;
     return solids.some(r => x + hw > r.x && x - hw < r.x + r.w && y + hh > r.y && y - hh < r.y + r.h);
   },
 
@@ -288,13 +348,13 @@ export const World = {
     this.clampCamera();
   },
   clampCamera() {
-    const vw = this.vw / this.zoom, vh = this.vh / this.zoom;
-    this.cam.x = vw >= MAP.w ? (MAP.w - vw) / 2 : Math.max(0, Math.min(MAP.w - vw, this.cam.x));
-    this.cam.y = vh >= MAP.h ? (MAP.h - vh) / 2 : Math.max(0, Math.min(MAP.h - vh, this.cam.y));
+    const vw = this.vw / this.zoom, vh = this.vh / this.zoom, D = this.dims();
+    this.cam.x = vw >= D.w ? (D.w - vw) / 2 : Math.max(0, Math.min(D.w - vw, this.cam.x));
+    this.cam.y = vh >= D.h ? (D.h - vh) / 2 : Math.max(0, Math.min(D.h - vh, this.cam.y));
   },
 
   move(dt, s) {
-    const p = s.player, k = this.keys;
+    const p = this.me(s), k = this.keys;
     let vx = 0, vy = 0;
     if (this.mode === 'edit') { this.anim.moving = false; this.panCamera(dt); return; }
     if (!UI.active && !UI.modalOpen()) {
@@ -315,7 +375,7 @@ export const World = {
     if (!len) { this.stuckT = 0; return; }
     vx /= len; vy /= len;
     const solids = this.solids(s);
-    const sp = Eco.speed(s) * dt, ox = p.x, oy = p.y;
+    const sp = (this.inside ? CONFIG.vehicles[0].speed : Eco.speed(s)) * dt, ox = p.x, oy = p.y;
     if (!this.blocked(p.x + vx * sp, p.y, solids)) p.x += vx * sp;
     if (!this.blocked(p.x, p.y + vy * sp, solids)) p.y += vy * sp;
     this.anim.phase += dt * 13;
@@ -324,7 +384,7 @@ export const World = {
 
     // Petit bruit de pas (à pied uniquement)
     this.stepT += dt;
-    if (s.vehicle === 0 && this.stepT > 0.3) { this.stepT = 0; Bus.sfx('step'); }
+    if ((s.vehicle === 0 || this.inside) && this.stepT > 0.3) { this.stepT = 0; Bus.sfx('step'); }
 
     // Bloqué pendant un trajet automatique → on abandonne
     if (this.target && Math.hypot(p.x - ox, p.y - oy) < sp * 0.3) {
@@ -335,20 +395,22 @@ export const World = {
 
   arrive(s) {
     if (!this.pending) return;
-    const it = this.list.find(i => i.id === this.pending), p = s.player;
+    const it = this.list.find(i => i.id === this.pending), p = this.me(s);
     this.pending = null;
     if (it && Math.hypot(p.x - it.x, p.y - it.y) <= CONFIG.player.reach) this.run(it);
   },
 
   float(text, where, color = '#fff') {
     const pos = typeof where === 'string' ? CONFIG.places[where] : where;
-    if (pos) this.floats.push({ text, x: pos.x, y: pos.y - 70, t: 0, color });
+    // Un lieu nommé est dans le village ; une position {x,y} est dans la scène courante
+    const scene = typeof where === 'string' ? 'village' : this.scene;
+    if (pos) this.floats.push({ text, x: pos.x, y: pos.y - 70, t: 0, color, scene });
   },
 
   snapCamera(instant = false) {
-    const p = Game.s.player, vw = this.vw / this.zoom, vh = this.vh / this.zoom;
-    const tx = vw >= MAP.w ? (MAP.w - vw) / 2 : Math.max(0, Math.min(MAP.w - vw, p.x - vw / 2));
-    const ty = vh >= MAP.h ? (MAP.h - vh) / 2 : Math.max(0, Math.min(MAP.h - vh, p.y - 30 - vh / 2));
+    const p = this.me(Game.s), vw = this.vw / this.zoom, vh = this.vh / this.zoom, D = this.dims();
+    const tx = vw >= D.w ? (D.w - vw) / 2 : Math.max(0, Math.min(D.w - vw, p.x - vw / 2));
+    const ty = vh >= D.h ? (D.h - vh) / 2 : Math.max(0, Math.min(D.h - vh, p.y - 30 - vh / 2));
     const k = instant ? 1 : 0.14;
     this.cam.x += (tx - this.cam.x) * k;
     this.cam.y += (ty - this.cam.y) * k;
@@ -362,13 +424,15 @@ export const World = {
     const s = Game.s;
 
     MAP.decor = s.decor || this.baseDecor;          // décor du joueur (Mode architecte) ou du fichier
-    this.list = this.mode === 'edit' ? [] : this.build(s);
+    if (this.inside && (s.tuto.active || this.mode === 'edit')) this.exitFactory('usine');   // tutoriel relancé, Mode architecte
+    this.list = this.mode === 'edit' ? [] : this.inside ? Interior.build(s, this.factoryActs) : this.build(s);
     this.move(dt, s);
-    Pet.update(dt, s, s.player, this);
+    if (this.inside) Pet.fetchT = 0;                // pas de cueillette depuis l'usine
+    Pet.update(dt, s, this.me(s), this);
     Villagers.update(dt, s, s.player, this.maxX(s));
     Meme.update(dt, s, this);
 
-    const p = s.player;
+    const p = this.me(s);
     let best = null, bd = CONFIG.player.reach;
     for (const i of this.list) { const d = Math.hypot(p.x - i.x, p.y - i.y); if (d <= bd) { bd = d; best = i; } }
     this.near = best;
@@ -379,13 +443,13 @@ export const World = {
     // Ventes au comptoir → texte flottant périodique au-dessus de l'usine
     this.counterT += dt;
     if (this.counterT > 2.5) {
-      if (rt.counterAcc >= 0.5) this.float(`+${Fmt.money(rt.counterAcc)}`, { x: 230, y: 360 }, '#c8f7c5');
+      if (rt.counterAcc >= 0.5) this.float(`+${Fmt.money(rt.counterAcc)}`, this.inside ? Interior.counterFloat() : { x: 230, y: 360 }, '#c8f7c5');
       rt.counterAcc = 0; this.counterT = 0;
     }
     for (const f of this.floats) f.t += dt;
     this.floats = this.floats.filter(f => f.t < 1.6);
 
-    this.draw(s);
+    if (this.inside) this.drawFactory(s, dt); else this.draw(s);
     if (this.hooks.after) this.hooks.after(dt, s);
     requestAnimationFrame(t => this.frame(t));
   },
@@ -424,11 +488,7 @@ export const World = {
     if (this.mode === 'play') this.drawGuides(c, s);
     if (this.debug.solids) this.drawDebug(c, s);
 
-    for (const f of this.floats) {
-      c.globalAlpha = Math.max(0, 1 - f.t / 1.6);
-      Gfx.label(c, f.text, f.x, f.y - f.t * 40, 18, f.color);
-    }
-    c.globalAlpha = 1;
+    this.drawFloats(c);
     if (this.mode === 'edit' && this.hooks.drawEdit) this.hooks.drawEdit(c, s);
     if (this.near && !UI.active) Gfx.bubble(c, `E · ${this.near.label}`, s.player.x, s.player.y - 96);
 
@@ -438,8 +498,35 @@ export const World = {
     if (dark > 0.01) Render.lights(c, dark, this.lightPoints(s));
   },
 
+  drawFloats(c) {
+    for (const f of this.floats) {
+      if (f.scene !== this.scene) continue;
+      c.globalAlpha = Math.max(0, 1 - f.t / 1.6);
+      Gfx.label(c, f.text, f.x, f.y - f.t * 40, 18, f.color);
+    }
+    c.globalAlpha = 1;
+  },
+
+  /** Rendu de l'intérieur de l'usine */
+  drawFactory(s, dt) {
+    const c = this.ctx, z = this.zoom * this.dpr, t = this.time;
+    c.setTransform(1, 0, 0, 1, 0, 0);
+    c.fillStyle = '#3b2a1a';
+    c.fillRect(0, 0, this.cv.width, this.cv.height);
+    c.setTransform(z, 0, 0, z, -this.cam.x * z, -this.cam.y * z);
+    const items = [];
+    const add = (y, f) => items.push({ y, f });
+    Interior.draw(c, s, t, dt, add);
+    const p = Interior.p;
+    if (s.look.pet !== 'aucun') add(Pet.y, () => drawPet(c, Pet.x, Pet.y, s.look.pet, Pet.flip, Pet.moving, Pet.phase, s.look.petName));
+    add(p.y, () => this.drawPlayer(c, s));
+    items.sort((a, b) => a.y - b.y).forEach(i => i.f());
+    this.drawFloats(c);
+    if (this.near && !UI.active) Gfx.bubble(c, `E · ${this.near.label}`, p.x, p.y - 96);
+  },
+
   drawPlayer(c, s) {
-    const p = s.player, a = this.anim, v = Eco.vehicle(s).id;
+    const p = this.me(s), a = this.anim, v = this.inside ? 'pied' : Eco.vehicle(s).id;
     const crates = Math.min(4, Math.ceil(Eco.carriedQty(s) / 25));
     const mode = drawVehicle(c, p.x, p.y, v, a.flip, a.moving, a.phase, crates, s.look.shirt);
     if (mode === 'replace') { Gfx.label(c, s.look.name, p.x, p.y - 74, 13); return; }

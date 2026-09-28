@@ -13,6 +13,8 @@ npx serve .            # ou : python3 -m http.server 8000
 
 Puis ouvrir l’adresse affichée (par exemple http://localhost:3000).
 
+Sous Windows, `lancer-sirop.bat` fait tout d’un double-clic (Node ou Python) et ouvre le navigateur sur http://localhost:8000. Il peut être placé dans le dossier du jeu ou dans le dossier qui le contient.
+
 ## Mettre en ligne sur GitHub Pages
 
 Le jeu est une **PWA** : on peut l’installer comme une application (icône sur l’écran d’accueil) et il marche sans internet.
@@ -49,6 +51,9 @@ Le script met à jour `sw.js`, recopie le numéro dans `js/version.js` (ne pas m
 
 - `sw.js` met en cache tous les fichiers du jeu. Sa liste (`PRECACHE`) et `BUILD` sont régénérés par `node tools/build-sw.mjs`. Le workflow le lance tout seul avant chaque publication, sans jamais changer le numéro de version.
 - Quand une nouvelle version est publiée, le jeu la télécharge en arrière-plan, puis propose **« Mettre à jour »**. La partie est sauvegardée avant le rechargement.
+- Le bouton **🔄 Mise à jour** de la barre du haut reste visible tant qu’une version attend. À la mairie, **Vérifier les mises à jour** force la recherche.
+- En local, c’est pareil : après avoir copié les nouveaux fichiers, relancer le jeu (ou « Vérifier » à la mairie) fait apparaître la fenêtre. Il faut que **tous** les fichiers listés dans `sw.js` soient présents, sinon la mise à jour ne peut pas s’installer (le jeu l’affiche).
+- Le jeu installé depuis GitHub Pages et le jeu lancé en local (`localhost`) sont deux applications séparées : chacune a sa sauvegarde et ses mises à jour.
 - Pendant le développement, pour ne pas être gêné par le cache : dans Chrome, onglet **Application → Service workers**, cocher **Update on reload**.
 
 ### Installer le jeu
@@ -107,9 +112,16 @@ js/
     couriers.js         livreurs
     world-systems.js    récoltes, quartiers, maisons, véhicules, recettes secrètes
     quests.js           ⭐ la liste des quêtes du maire (facile à modifier)
+    openings.js         bâtiments fermés au début (garage, agence, labo)
     events.js           pluie, canicule, fête
     clock.js            jour / nuit
     sim.js              ordre des systèmes, prestige, hors-ligne
+  editor/editor.js      Mode architecte : décorer le village en jeu, export Tiled
+  tutorial/             ⭐ le tutoriel de Mémé Grenadine
+    steps.js            les 9 étapes (texte, cible, condition de réussite) : facile à modifier
+    tutorial.js         le moteur : pause du village, repères, « Je suis perdu », reprise
+    overlay.js          la carte de Mémé, l'anneau et la main 👆
+    tips.js             les conseils « première fois » et ceux du banc du parc
   ui/                   HUD, panneaux (un fichier par bâtiment), actions, liaisons
   world/                le village en canvas
     map.js              ⭐ positions des bâtiments, arbres, terrains, décor
@@ -117,6 +129,8 @@ js/
     characters.js       personnages 4 directions, véhicules, compagnons
     villagers.js        habitants (et leurs phrases)
     pet.js              le compagnon
+    meme.js             Mémé Grenadine, la guide
+    decor.js            ⭐ catalogue des objets de décor (ajouter un objet : une ligne + son dessin)
     art.js              branchement des dessins (Piskel…)
     tiled.js            import du décor depuis Tiled
   audio/sfx.js          sons synthétisés
@@ -141,10 +155,18 @@ Règle d’or : les fichiers de `sim/` ne touchent jamais au DOM. Ils émettent 
 Même principe pour `livreur`, `villageois`, `chien` et `chat` (feuilles de sprites), et pour les images fixes `arbre`, `sureau`, `canne` et `maison_studio`… via `Art.load({ arbre: 'assets/arbre.png' })`.
 Pour essayer sans rien modifier, taper dans la console du navigateur : `Art.sheet('player', 'assets/modele-perso.png', { fw: 48, fh: 64 })`.
 
-## Modifier le village (Tiled)
+## Modifier le village
+
+### Dans le jeu : le Mode architecte
+
+Mairie → **Décorer le village**. On choisit un objet et on touche le village pour le poser. « ✋ Déplacer » fait glisser un objet (ou le sol pour voir plus loin), « 🧽 Gomme » l'enlève. Au clavier : flèches pour voir plus loin, Suppr pour enlever, Ctrl+Z pour annuler, Échap pour sortir.
+
+Le village décoré est gardé dans la partie de l’appareil. **Exporter le fichier** télécharge `decor.tiled.json` : le mettre dans `assets/`, lancer `node tools/build-sw.mjs patch` et publier, et tous les joueurs auront ce village (sauf ceux qui ont déjà décoré le leur).
+
+### Avec Tiled
 
 1. Installer Tiled (https://www.mapeditor.org) et ouvrir `assets/decor.tiled.json`.
-2. Dans le calque d’objets **decor**, ajouter, déplacer ou supprimer des objets. Leur *Class* (ou *Type*) doit être : `lampadaire`, `banc`, `buisson`, `rocher` ou `panneau` (propriété texte `text`).
+2. Dans le calque d’objets **decor**, ajouter, déplacer ou supprimer des objets. Leur *Class* (ou *Type*) doit être : `lampadaire`, `banc`, `buisson`, `rocher`, `panneau` (propriété texte `text`), `fleurs`, `sapin`, `cloture`, `tonneau` ou `parasol`.
 3. Enregistrer au format JSON : le jeu recharge le décor au démarrage. Les lampadaires éclairent la nuit.
 
 Les bâtiments, arbres et terrains se déplacent dans `js/world/map.js`. Les portes des bâtiments sont dans `CONFIG.places` (`config.js`).
@@ -153,6 +175,8 @@ Les bâtiments, arbres et terrains se déplacent dans `js/world/map.js`. Les por
 
 - Une quête : ajouter une ligne dans `QUESTS` (`sim/quests.js`).
 - Un client : ajouter une entrée dans `CONFIG.contracts.clients`, un bâtiment dans `MAP.buildings` et sa porte dans `CONFIG.places`.
+- Une étape de tutoriel : un objet dans `STEPS` (`tutorial/steps.js`) ; un conseil : une ligne dans `TIPS` ou `ADVICE` (`tutorial/tips.js`).
+- Quand un bâtiment ouvre : `CONFIG.openings` (`config.js`).
 - Une phrase d’habitant : les listes `HELLO`, `NIGHT`, `HEAT`, `RAIN` dans `world/villagers.js`.
 - Un son : une recette de notes dans `SOUNDS` (`audio/sfx.js`).
 

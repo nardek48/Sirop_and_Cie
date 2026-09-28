@@ -20,10 +20,9 @@
  */
 
 // <build>
-const VERSION = 'v0.0.3';
-const BUILD = '9d00dedee2';
+const VERSION = 'v0.2.0';
+const BUILD = '40ee0342bb';
 const PRECACHE = [
-  './',
   './index.html',
   './manifest.webmanifest',
   './favicon.ico',
@@ -35,6 +34,7 @@ const PRECACHE = [
   './js/core/game.js',
   './js/core/store.js',
   './js/debug.js',
+  './js/editor/editor.js',
   './js/main.js',
   './js/pwa.js',
   './js/sim/clock.js',
@@ -45,10 +45,15 @@ const PRECACHE = [
   './js/sim/factory.js',
   './js/sim/flavors.js',
   './js/sim/market.js',
+  './js/sim/openings.js',
   './js/sim/quests.js',
   './js/sim/sim.js',
   './js/sim/wallet.js',
   './js/sim/world-systems.js',
+  './js/tutorial/overlay.js',
+  './js/tutorial/steps.js',
+  './js/tutorial/tips.js',
+  './js/tutorial/tutorial.js',
   './js/ui/actions.js',
   './js/ui/bindings.js',
   './js/ui/form.js',
@@ -63,8 +68,10 @@ const PRECACHE = [
   './js/version.js',
   './js/world/art.js',
   './js/world/characters.js',
+  './js/world/decor.js',
   './js/world/gfx.js',
   './js/world/map.js',
+  './js/world/meme.js',
   './js/world/pet.js',
   './js/world/render.js',
   './js/world/tiled.js',
@@ -87,8 +94,25 @@ const PRECACHE = [
 const CACHE = `sirop-${VERSION}-${BUILD}`;
 const FONTS = 'sirop-fonts';
 
+/**
+ * Copie « propre » d'une réponse. Certains serveurs (ex. `npx serve`) redirigent
+ * /index.html vers / : une réponse marquée « redirigée » ne peut pas servir à afficher
+ * une page (le navigateur répond ERR_FAILED). On la recopie donc sans cette marque.
+ */
+async function clean(res) {
+  if (!res.redirected) return res;
+  return new Response(await res.blob(), { status: res.status, statusText: res.statusText, headers: res.headers });
+}
+
 self.addEventListener('install', event => {
-  event.waitUntil(caches.open(CACHE).then(c => c.addAll(PRECACHE)));
+  event.waitUntil((async () => {
+    const cache = await caches.open(CACHE);
+    await Promise.all(PRECACHE.map(async url => {
+      const res = await fetch(url, { cache: 'reload' });
+      if (!res.ok) throw new Error(`Précache impossible : ${url} (${res.status})`);
+      await cache.put(url, await clean(res));
+    }));
+  })());
   // Pas de skipWaiting automatique : on attend que le joueur accepte la mise à jour,
   // pour ne jamais mélanger deux versions des modules pendant une partie.
 });
@@ -122,9 +146,10 @@ self.addEventListener('fetch', event => {
   // Navigation : la page du jeu, même hors ligne
   if (req.mode === 'navigate') {
     event.respondWith((async () => {
-      const cached = await caches.match('./index.html', { cacheName: CACHE }) || await caches.match('./', { cacheName: CACHE });
-      if (cached) return cached;
-      return fetch(req);
+      // Toujours index.html, jamais « / » : selon le serveur, « / » peut être une liste de fichiers
+      const cached = await caches.match('./index.html', { cacheName: CACHE });
+      if (cached) return clean(cached);
+      return clean(await fetch(req));
     })());
     return;
   }
@@ -139,8 +164,9 @@ async function cacheFirst(req, cacheName) {
   if (hit) return hit;
   try {
     const res = await fetch(req);
-    if (res.ok || res.type === 'opaque') cache.put(req, res.clone());
-    return res;
+    const ok = await clean(res);
+    if (ok.ok || ok.type === 'opaque') cache.put(req, ok.clone());
+    return ok;
   } catch (e) {
     return new Response('', { status: 504, statusText: 'Hors ligne' });
   }

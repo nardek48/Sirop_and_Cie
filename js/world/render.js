@@ -195,6 +195,16 @@ export const Render = {
 
     Gfx.sign(c, `${icon} ${name}`, x + w / 2, top - 2, 15);
 
+    // Bâtiment pas encore ouvert : planches en croix sur la porte et panneau « Bientôt ! »
+    if (b.panel && s.opened[b.id] === false) {
+      c.fillStyle = 'rgba(60,50,40,.28)'; c.fillRect(x, top, w, y + h - top);
+      c.save(); c.translate(door.x, y + h - 26);
+      c.fillStyle = '#a0703f'; c.strokeStyle = '#6b4226'; c.lineWidth = 2;
+      for (const a of [-0.5, 0.5]) { c.save(); c.rotate(a); c.fillRect(-30, -5, 60, 10); c.strokeRect(-30, -5, 60, 10); c.restore(); }
+      c.restore();
+      Gfx.sign(c, '🔒 Bientôt !', door.x, y + h - 52, 13);
+    }
+
     if (client && !Eco.clientOpen(s, client) && (!client.district || s.districts[client.district])) {
       c.fillStyle = 'rgba(60,50,40,.45)'; c.fillRect(x - 10, y, w + 20, h);
       Gfx.label(c, `🔒 ⭐ ${client.rep}`, x + w / 2, y + h / 2 + 10, 18);
@@ -329,6 +339,37 @@ export const Render = {
     } else if (d.kind === 'panneau') {
       c.fillStyle = '#7a5230'; c.fillRect(d.x - 3, d.y - 40, 6, 40);
       Gfx.sign(c, d.text || '', d.x, d.y - 36, 13);
+    } else if (d.kind === 'fleurs') {
+      c.fillStyle = '#4f8f45'; c.fillRect(d.x - 20, d.y - 6, 40, 6);
+      const cols = ['#f07fb0', '#ffd23f', '#e0562b', '#b98ae0', '#fff'];
+      for (let i = 0; i < 7; i++) {
+        const fx = d.x - 18 + i * 6, fy = d.y - 10 - (i % 3) * 5;
+        c.fillStyle = '#3f7a38'; c.fillRect(fx - 1, fy, 2, d.y - fy);
+        c.fillStyle = cols[i % cols.length]; c.beginPath(); c.arc(fx, fy, 4, 0, TAU); c.fill();
+      }
+    } else if (d.kind === 'sapin') {
+      c.fillStyle = '#6b4226'; c.fillRect(d.x - 5, d.y - 14, 10, 14);
+      c.fillStyle = '#2f6b3f';
+      for (const [w, top, bot] of [[26, 88, 50], [22, 70, 34], [17, 52, 14]]) {
+        c.beginPath(); c.moveTo(d.x, d.y - top); c.lineTo(d.x + w, d.y - bot); c.lineTo(d.x - w, d.y - bot); c.closePath(); c.fill();
+      }
+    } else if (d.kind === 'cloture') {
+      c.fillStyle = '#c9a36b'; c.strokeStyle = '#8a6a3c'; c.lineWidth = 1.5;
+      c.fillRect(d.x - 32, d.y - 20, 64, 5); c.fillRect(d.x - 32, d.y - 10, 64, 5);
+      for (const px of [-28, -9, 10, 28]) { c.beginPath(); c.roundRect(d.x + px - 3, d.y - 28, 6, 28, [3, 3, 0, 0]); c.fill(); c.stroke(); }
+    } else if (d.kind === 'tonneau') {
+      c.fillStyle = '#9a6234'; c.beginPath(); c.roundRect(d.x - 14, d.y - 36, 28, 36, 8); c.fill();
+      c.fillStyle = '#5c5c5c'; c.fillRect(d.x - 15, d.y - 30, 30, 3); c.fillRect(d.x - 15, d.y - 8, 30, 3);
+      c.fillStyle = '#b07a48'; c.beginPath(); c.ellipse(d.x, d.y - 35, 12, 3, 0, 0, TAU); c.fill();
+    } else if (d.kind === 'parasol') {
+      c.fillStyle = '#8a5a34'; c.fillRect(d.x - 2, d.y - 62, 4, 62);
+      c.fillStyle = '#e8dcc2'; c.beginPath(); c.ellipse(d.x, d.y - 20, 18, 6, 0, 0, TAU); c.fill();
+      c.fillRect(d.x - 2, d.y - 20, 4, 20);
+      for (let i = 0; i < 6; i++) {
+        c.fillStyle = i % 2 ? '#fff6e6' : '#e0562b';
+        c.beginPath(); c.moveTo(d.x, d.y - 70);
+        c.lineTo(d.x - 32 + i * 64 / 6, d.y - 50); c.lineTo(d.x - 32 + (i + 1) * 64 / 6, d.y - 50); c.closePath(); c.fill();
+      }
     }
   },
 

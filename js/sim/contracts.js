@@ -29,9 +29,10 @@ export const Contracts = {
   },
 
   accept(s, id) {
-    if (s.active.length >= s.slots) return Bus.toast('Plus de place : termine un contrat ou achète un emplacement', 'bad');
     const i = s.offers.findIndex(o => o.id === Number(id));
     if (i < 0) return;
+    // La commande du tutoriel passe toujours, même si les emplacements sont pleins
+    if (s.active.length >= s.slots && !s.offers[i].tuto) return Bus.toast('Plus de place : termine un contrat ou achète un emplacement', 'bad');
     const o = s.offers.splice(i, 1)[0];
     s.active.push({ ...o, left: o.time, loaded: null });
     Bus.sfx('click');
@@ -77,15 +78,36 @@ export const Contracts = {
     return list.length;
   },
 
-  fail(s, c) {
-    if (c.loaded) s.stock[c.flavor] += c.qty;      // les caisses reviennent au stock
+  /** Pénalité d'un contrat non livré : argent perdu et réputation perdue */
+  penalty: (c, abandon = false) => ({
+    money: Math.round(c.reward * C.penaltyRatio),
+    rep: c.repGain * (abandon ? C.abandonRepLoss : 2),
+  }),
+
+  /** Retire un contrat non livré (retard ou abandon) : les caisses reviennent au stock */
+  drop(s, c, pen) {
+    if (c.loaded) s.stock[c.flavor] += c.qty;
     if (c.loaded === 'npc') Couriers.abort(s, c.id);
-    const pen = Math.round(c.reward * C.penaltyRatio);
-    s.money = Math.max(0, s.money - pen);
-    s.rep = Math.max(0, s.rep - c.repGain * 2);
-    s.stats.cFail++;
+    s.money = Math.max(0, s.money - pen.money);
+    s.rep = Math.max(0, s.rep - pen.rep);
     s.active = s.active.filter(x => x !== c);
-    Bus.toast(`Trop tard pour ${c.client} : −${Fmt.money(pen)}`, 'bad');
+  },
+
+  fail(s, c) {
+    const pen = this.penalty(c);
+    this.drop(s, c, pen);
+    s.stats.cFail++;
+    Bus.toast(`Trop tard pour ${c.client} : −${Fmt.money(pen.money)}`, 'bad');
+  },
+
+  /** Le joueur renonce à un contrat : moins grave qu'un retard pour la réputation */
+  abandon(s, id) {
+    const c = this.find(s, id);
+    if (!c || c.tuto) return;
+    const pen = this.penalty(c, true);
+    this.drop(s, c, pen);
+    s.stats.cQuit++;
+    Bus.toast(`Commande de ${c.client} abandonnée : −${Fmt.money(pen.money)}, ⭐ −${pen.rep}`, 'bad');
   },
 
   buySlot(s) {

@@ -14,6 +14,8 @@ import { Art } from './world/art.js';
 import { Sfx } from './audio/sfx.js';
 import { Debug } from './debug.js';
 import { PWA } from './pwa.js';
+import { Tuto } from './tutorial/tutorial.js';
+import { Editor } from './editor/editor.js';
 
 /* ------------------------------------------------------------------
  * Dessins personnalisés : décommenter après avoir exporté depuis Piskel.
@@ -66,17 +68,12 @@ function start(data = {}) {
   Debug.init();
   PWA.init();
   if (saved && !data.save) showOffline(Offline.catchUp(Game.s, (Date.now() - saved.lastSeen) / 1000));
+  Editor.init();
+  Tuto.init();                          // avant World.init : branche Mémé et les repères
   if (!saved) {
     Sim.seed(Game.s);
-    UI.modal(`
-      <h2>Bienvenue à Sirop-sur-Mer !</h2>
-      <p>Tu viens d’ouvrir ta fabrique de sirop. Le maire t’a laissé une liste de quêtes, en haut à gauche.</p>
-      <ul>
-        <li><b>Flèches</b> ou <b>ZQSD</b> pour marcher, <b>E</b> pour agir</li>
-        <li>Ou clique sur un bâtiment : ton personnage y va tout seul</li>
-        <li>Commence par le bureau des <b>Contrats</b> 📜, juste à côté</li>
-      </ul>`, [{ label: 'C’est parti !', primary: true }]);
-  }
+    Tuto.propose();                     // proposé, jamais imposé
+  } else if (Game.s.tuto.active) Tuto.enter(Game.s);   // reprise à l'étape sauvegardée
   World.init();
   UI.render(Game.s);
   Loop.start();

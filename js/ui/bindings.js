@@ -82,7 +82,7 @@ export const B = {
   capTxt: s => { const v = Eco.vehicle(s); return `${v.icon} ${v.name} : ${Fmt.int(Eco.capacity(s))} bouteilles par voyage`; },
   nextOffer: s => (s.offers.filter(o => !o.special).length >= CONFIG.contracts.maxOffers ? 'tableau plein' : Fmt.time(s.nextOfferIn)),
   offerTtl: (s, id) => { const o = s.offers.find(x => x.id === Number(id)); return o ? Fmt.time(o.ttl) : ''; },
-  cantAccept: s => s.active.length >= s.slots,
+  cantAccept: (s, id) => s.active.length >= s.slots && !s.offers.find(o => o.id === Number(id))?.tuto,
   cLeft: (s, id) => { const c = Contracts.find(s, id); return c ? Fmt.time(c.left) : ''; },
   cTimePct: (s, id) => { const c = Contracts.find(s, id); return c ? c.left / c.time : 0; },
   cStock: (s, id) => {

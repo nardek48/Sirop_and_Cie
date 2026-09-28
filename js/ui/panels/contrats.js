@@ -22,9 +22,9 @@ export const contrats = {
         <header><span>${o.icon}</span>${o.client}${fl(o.flavor)}</header>
         <div class="meta"><span>📦 ${Fmt.int(o.qty)} bt</span><span>💰 ${Fmt.money(o.reward)}</span>
           <span>⏱ ${Fmt.time(o.time)}</span><span>⭐ +${o.repGain}</span></div>
-        <div class="foot"><small>Expire dans <span data-t="offerTtl:${o.id}"></span></small>
+        <div class="foot"><small>${o.tuto ? 'Commande de Mémé 👵 : pas de limite' : `Expire dans <span data-t="offerTtl:${o.id}"></span>`}</small>
           <button class="btn ghost sm" data-act="decline" data-arg="${o.id}">Refuser</button>
-          <button class="btn sm" data-act="accept" data-arg="${o.id}" data-d="cantAccept">Accepter</button></div>
+          <button class="btn sm" data-act="accept" data-arg="${o.id}" data-d="cantAccept:${o.id}">Accepter</button></div>
       </article>`).join('') || '<p class="empty">Aucune offre pour le moment. Reviens dans un instant.</p>';
 
     const active = s.active.map(c => `
@@ -32,11 +32,12 @@ export const contrats = {
         <header><span>${c.icon}</span>${c.client}${fl(c.flavor)}</header>
         <div class="status" data-t="cStatus:${c.id}"></div>
         <div class="meta"><span>💰 ${Fmt.money(c.reward)}</span><span>⭐ +${c.repGain}</span>
-          <span>Échec : −${Fmt.money(c.reward * CONFIG.contracts.penaltyRatio)}</span></div>
+          <span>${c.tuto ? 'Pas de pénalité' : `Échec : −${Fmt.money(c.reward * CONFIG.contracts.penaltyRatio)}`}</span></div>
         <div class="sub">Bouteilles : <span data-t="cStock:${c.id}"></span></div>
         <div class="bar"><i data-w="cStockPct:${c.id}"></i></div>
         <div class="sub">Temps restant : <span data-t="cLeft:${c.id}"></span></div>
         <div class="bar time"><i data-w="cTimePct:${c.id}"></i></div>
+        ${c.tuto ? '' : `<div class="foot end"><button class="btn ghost sm danger-t" data-act="abandon" data-arg="${c.id}">Abandonner</button></div>`}
       </article>`).join('') || '<p class="empty">Aucun contrat en cours.</p>';
 
     return `

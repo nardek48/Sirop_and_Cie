@@ -208,3 +208,71 @@ select,.field input{font:inherit;width:100%;padding:7px 8px;border-radius:9px;bo
 .dbg-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:8px 0}
 .dbg-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:8px 0}
 .dbg-info{font:12px/1.5 ui-monospace,monospace;background:var(--surface2);border-radius:8px;padding:8px;margin:8px 0 0;white-space:pre-wrap}
+
+/* --- Mise en page : cartes empilées dans une colonne --- */
+.stack{display:grid;gap:14px;align-content:start}
+.stack>.card{margin-bottom:0}
+
+/* --- Tutoriel et conseils de Mémé Grenadine --- */
+.tuto-card{position:absolute;top:12px;left:50%;transform:translateX(-50%);z-index:25;width:min(520px,calc(100% - 24px));
+  display:flex;gap:12px;align-items:flex-start;background:var(--surface);border:2px solid #d23c4f;border-radius:16px;
+  padding:12px 14px;box-shadow:0 10px 30px rgba(59,42,26,.28);color:var(--ink)}
+.tuto-card.low{top:auto;bottom:max(12px,env(safe-area-inset-bottom,0px))}
+.tuto-card.tip{top:auto;bottom:max(12px,env(safe-area-inset-bottom,0px));left:12px;transform:none;width:min(420px,calc(100% - 24px))}
+@media (max-width:700px){ .tuto-card.tip:not(.low){top:12px;bottom:auto} }
+.tuto-card.pop{animation:tuto-pop .35s ease-out}
+.tuto-face{flex:none;width:46px;height:46px;border-radius:50%;display:grid;place-items:center;font-size:28px;
+  background:#fbd9de;border:2px solid #d23c4f}
+.tuto-body{min-width:0;flex:1}
+.tuto-who{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#d23c4f}
+.tuto-text{margin:2px 0 8px;font-size:15px;line-height:1.4;text-wrap:pretty}
+.tuto-foot{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.tuto-dots{display:flex;gap:4px;margin-right:auto}
+.tuto-dots i{width:8px;height:8px;border-radius:99px;background:var(--line);transition:width .2s}
+.tuto-dots i.ok{background:var(--ok)}
+.tuto-dots i.on{background:#d23c4f;width:18px}
+.tuto-card.tip .tuto-foot{justify-content:flex-end}
+.tuto-ring{position:fixed;z-index:24;pointer-events:none;border:3px dashed #f3c93a;
+  box-shadow:0 0 0 3px rgba(243,201,58,.35);animation:tuto-ring 1.2s ease-in-out infinite}
+.tuto-ring.spot{box-shadow:0 0 0 200vmax rgba(20,12,4,.38),0 0 0 3px rgba(243,201,58,.5)}
+.tuto-hand{position:fixed;z-index:26;pointer-events:none;font-size:34px;line-height:1;filter:drop-shadow(0 2px 3px rgba(0,0,0,.35));
+  animation:tuto-hand .9s ease-in-out infinite}
+.tuto-hand.down{animation-direction:reverse}
+.tuto-intro{font-size:54px;text-align:center;line-height:1;margin-bottom:8px}
+body.tuto-on .quest{display:none}
+body.tuto-on.tuto-quest .quest{display:grid}
+body.tuto-low .toasts{bottom:190px}
+body.tuto-low .sheet{padding-bottom:220px}
+@keyframes tuto-pop{from{opacity:.4;scale:.96}to{opacity:1;scale:1}}
+@keyframes tuto-ring{50%{border-color:#fff3c4;scale:1.04}}
+@keyframes tuto-hand{50%{translate:0 -10px}}
+@media (max-width:560px){ .tuto-text{font-size:14px} .tuto-face{width:38px;height:38px;font-size:22px} .tuto-card{padding:10px 12px;gap:10px} }
+@media (prefers-reduced-motion:reduce){ .tuto-ring,.tuto-hand,.tuto-card.pop{animation:none} }
+
+/* --- Abandon d'une commande --- */
+.foot.end{justify-content:flex-end;margin-top:8px}
+.btn.danger-t{color:var(--bad)}
+
+/* --- Mode architecte (éditeur de décor) --- */
+body.arch-on .quest,body.arch-on #act-btn,body.arch-on .help,body.arch-on .tuto-card{display:none!important}
+body.arch-on #world{cursor:crosshair}
+.arch{position:absolute;left:50%;bottom:max(10px,env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:12;
+  width:min(900px,calc(100% - 20px));background:var(--surface);border:2px solid var(--amber);border-radius:16px;padding:10px 12px;
+  box-shadow:0 10px 30px rgba(59,42,26,.28);display:grid;gap:8px}
+.arch-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.arch-head b{font-family:Fraunces,Georgia,serif;font-size:17px}
+.arch-hint{color:var(--muted);font-size:13px;margin-right:auto}
+.arch-tools{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;scrollbar-width:thin}
+.arch-tool{flex:none;display:grid;justify-items:center;gap:1px;min-width:62px;padding:6px 6px 4px;border-radius:12px;cursor:pointer;
+  background:var(--surface2);border:2px solid transparent;color:var(--ink);font:inherit;touch-action:manipulation}
+.arch-tool span{font-size:22px;line-height:1.1}
+.arch-tool small{font-size:11px;font-weight:600;white-space:nowrap}
+.arch-tool.on{border-color:var(--amber);background:var(--amber-l)}
+.arch-sep{flex:none;width:1px;background:var(--line);margin:4px 2px}
+.arch-sel{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-weight:600}
+.arch-text{display:flex;align-items:center;gap:6px;font-weight:500;font-size:13px}
+.arch-text input{font:inherit;padding:4px 8px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);width:170px}
+.arch-foot{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.arch-count{margin-left:auto;color:var(--muted);font-size:12px;font-variant-numeric:tabular-nums}
+@media (max-width:560px){ .arch-hint{display:none} .arch{padding:8px} .arch-tool{min-width:54px} }
+body.arch-on .toasts{bottom:200px}

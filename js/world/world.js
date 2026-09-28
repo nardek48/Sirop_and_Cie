@@ -13,6 +13,7 @@ import { Events } from '../sim/events.js';
 import { Contracts } from '../sim/contracts.js';
 import { Fields, Districts } from '../sim/world-systems.js';
 import { Quests } from '../sim/quests.js';
+import { Openings } from '../sim/openings.js';
 import { UI } from '../ui/ui.js';
 import { MAP } from './map.js';
 import { Render } from './render.js';
@@ -20,6 +21,7 @@ import { Gfx } from './gfx.js';
 import { drawCharacter, drawCarry, drawVehicle, drawPet } from './characters.js';
 import { Pet } from './pet.js';
 import { Villagers } from './villagers.js';
+import { Meme } from './meme.js';
 import { loadTiledDecor } from './tiled.js';
 
 const DIRS = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'KeyW', 'KeyA', 'KeyS', 'KeyD'];
@@ -34,6 +36,18 @@ export const World = {
   anim: { phase: 0, moving: false, dir: 'bas', flip: 1 },
   stuckT: 0, counterT: 0, stepT: 0,
   debug: { solids: false },
+  mode: 'play',          // 'play' ou 'edit' (Mode architecte, voir js/editor/)
+  baseDecor: MAP.decor,  // décor du fichier (Tiled) ou par défaut ; s.decor le remplace s'il existe
+  /**
+   * Branchements du tutoriel (js/tutorial/), pour que le monde n'en dépende pas :
+   *  filter(list)  → interactions autorisées     guide(s) → {x,y,icon} | null | undefined
+   *  memeSpot(s)   → où se tient Mémé            talk()   → le joueur parle à Mémé
+   *  after(dt, s)  → appelé à chaque image, après le dessin
+   * Mode architecte :
+   *  pointer(type, p, e) → 'down' | 'move' | 'up' sur le village (p en coordonnées monde)
+   *  drawEdit(c, s)      → dessin par-dessus la scène (sélection, fantôme)
+   */
+  hooks: { filter: null, guide: null, memeSpot: null, talk: null, after: null, pointer: null, drawEdit: null },
 
   init() {
     this.cv = document.getElementById('world');
@@ -44,6 +58,7 @@ export const World = {
     const p = Game.s.player;
     if (this.blocked(p.x, p.y)) this.resetPlayer();
     Pet.reset(p);
+    Meme.place(this.hooks.memeSpot ? this.hooks.memeSpot(Game.s) : CONFIG.tuto.spots.banc);
 
     new ResizeObserver(() => this.resize()).observe(this.cv);
     this.resize();
@@ -53,10 +68,13 @@ export const World = {
     window.addEventListener('keyup', e => this.onKey(e, false));
     window.addEventListener('blur', () => this.keys.clear());
     this.cv.addEventListener('pointerdown', e => this.onPointer(e));
+    // Glisser (Mode architecte) : on suit le pointeur même hors du canvas
+    this.cv.addEventListener('pointermove', e => this.editPointer('move', e));
+    window.addEventListener('pointerup', e => this.editPointer('up', e));
     Bus.on('float', (text, where, color) => this.float(text, where, color));
 
     // Décor Tiled optionnel (remplace le décor par défaut s'il est présent)
-    loadTiledDecor('assets/decor.tiled.json').then(d => { if (d && d.length) MAP.decor = d; });
+    loadTiledDecor('assets/decor.tiled.json').then(d => { if (d && d.length) this.baseDecor = d; });
 
     this.last = performance.now();
     requestAnimationFrame(t => this.frame(t));
@@ -78,6 +96,20 @@ export const World = {
   },
 
   toWorld(cx, cy) { return { x: this.cam.x + cx / this.zoom, y: this.cam.y + cy / this.zoom }; },
+  /** Coordonnées monde → pixels de la fenêtre (pour placer l'interface du tutoriel) */
+  toScreen(x, y) {
+    const r = this.cv.getBoundingClientRect();
+    return { x: r.left + (x - this.cam.x) * this.zoom, y: r.top + (y - this.cam.y) * this.zoom, rect: r };
+  },
+  /** Transporte le joueur (bouton « Je suis perdu ») */
+  teleport(x, y) {
+    const p = Game.s.player;
+    if (this.blocked(x, y)) y = CONFIG.roadY;
+    p.x = x; p.y = y;
+    this.target = null; this.pending = null; this.keys.clear();
+    Pet.reset(p);
+    this.snapCamera(true);
+  },
   maxX(s) { return s.districts.colline ? MAP.w - 30 : MAP.districts.colline.barrier.x - 20; },
 
   /* ---------------- Entrées ---------------- */
@@ -96,10 +128,19 @@ export const World = {
     if (down) this.keys.add(code); else this.keys.delete(code);
   },
 
-  onPointer(e) {
-    if (UI.active || UI.modalOpen()) return;
+  /** Position monde d'un événement pointeur */
+  pointerPos(e) {
     const r = this.cv.getBoundingClientRect();
-    const p = this.toWorld(e.clientX - r.left, e.clientY - r.top);
+    return this.toWorld(e.clientX - r.left, e.clientY - r.top);
+  },
+  editPointer(type, e) {
+    if (this.mode === 'edit' && this.hooks.pointer) this.hooks.pointer(type, this.pointerPos(e), e);
+  },
+
+  onPointer(e) {
+    if (this.mode === 'edit') { this.cv.setPointerCapture?.(e.pointerId); this.editPointer('down', e); return; }
+    if (UI.active || UI.modalOpen()) return;
+    const p = this.pointerPos(e);
     const hit = this.list.find(i => inRect(p, i.hit));
     if (hit) { this.target = this.route(Game.s.player, hit); this.pending = hit.id; }
     else { this.target = [p]; this.pending = null; }
@@ -137,6 +178,12 @@ export const World = {
           id: b.id, ...at, hit: b,
           label: fete ? 'Livrer la Fête 🎉' : s.quest.ready ? 'Récompense du maire 🎁' : 'Entrer · Mairie',
           run: () => { if (Contracts.deliverAt(s, 'mairie')) return; if (Quests.claim(s)) return; UI.open('mairie'); },
+        });
+      } else if (b.panel && !Openings.isOpen(s, b.id)) {
+        const O = CONFIG.openings[b.id];
+        L.push({
+          id: b.id, ...at, hit: b, label: `🔒 ${b.name} · Bientôt !`,
+          run: () => Bus.toast(`${O.icon} ${O.name} ouvrira ${Openings.hint(s, b.id)}`),
         });
       } else if (b.panel) {
         const hit = b.id === 'usine' ? { x: b.x, y: b.y, w: b.w * 0.6, h: b.h } : b;
@@ -186,13 +233,21 @@ export const World = {
         run: () => UI.confirm(`Ouvrir ${D.icon} ${D.name} pour ${Fmt.money(D.cost)} ?<br><small>${D.desc}</small>`, () => Districts.unlock(Game.s, id), 'Ouvrir'),
       });
     }
-    return L;
+    // Mémé en premier : prioritaire au clic
+    L.unshift({
+      id: 'meme', x: Meme.x, y: Meme.y, hit: { x: Meme.x - 24, y: Meme.y - 72, w: 48, h: 80 },
+      label: 'Parler à Mémé 👵', run: () => this.hooks.talk && this.hooks.talk(),
+    });
+    return this.hooks.filter ? this.hooks.filter(L, s) : L;
   },
 
   loadQuai(s) {
     const r = Contracts.loadAll(s);
     if (r.n) Bus.toast(`📦 ${r.n} commande${r.n > 1 ? 's' : ''} chargée${r.n > 1 ? 's' : ''} (${Fmt.int(r.b)} bouteilles). En route !`, 'ok');
-    else if (r.tooBig) Bus.toast(`Trop lourd ! Ton ${Eco.vehicle(s).name.toLowerCase()} porte ${Eco.capacity(s)} bouteilles. Passe au garage 🚲`, 'bad');
+    else if (r.tooBig) {
+      Bus.toast(`Trop lourd ! Ton ${Eco.vehicle(s).name.toLowerCase()} porte ${Eco.capacity(s)} bouteilles. Passe au garage 🚲`, 'bad');
+      Bus.emit('tip', 'tooBig');       // conseil de Mémé, la première fois
+    }
     else if (!s.active.length) Bus.toast('Aucun contrat en cours : va au bureau des contrats 📜');
     else if (Eco.carried(s).length) Bus.toast('Tu portes déjà les commandes prêtes. Va les livrer !');
     else Bus.toast('Pas encore assez de bouteilles pour tes commandes ⏳');
@@ -225,9 +280,23 @@ export const World = {
     return solids.some(r => x + hw > r.x && x - hw < r.x + r.w && y + hh > r.y && y - hh < r.y + r.h);
   },
 
+  /** Mode architecte : les flèches déplacent la caméra, pas le personnage */
+  panCamera(dt) {
+    const k = this.keys, sp = 700 * dt / this.zoom;
+    this.cam.x += ((k.has('ArrowRight') || k.has('KeyD') ? 1 : 0) - (k.has('ArrowLeft') || k.has('KeyA') ? 1 : 0)) * sp;
+    this.cam.y += ((k.has('ArrowDown') || k.has('KeyS') ? 1 : 0) - (k.has('ArrowUp') || k.has('KeyW') ? 1 : 0)) * sp;
+    this.clampCamera();
+  },
+  clampCamera() {
+    const vw = this.vw / this.zoom, vh = this.vh / this.zoom;
+    this.cam.x = vw >= MAP.w ? (MAP.w - vw) / 2 : Math.max(0, Math.min(MAP.w - vw, this.cam.x));
+    this.cam.y = vh >= MAP.h ? (MAP.h - vh) / 2 : Math.max(0, Math.min(MAP.h - vh, this.cam.y));
+  },
+
   move(dt, s) {
     const p = s.player, k = this.keys;
     let vx = 0, vy = 0;
+    if (this.mode === 'edit') { this.anim.moving = false; this.panCamera(dt); return; }
     if (!UI.active && !UI.modalOpen()) {
       vx = (k.has('ArrowRight') || k.has('KeyD') ? 1 : 0) - (k.has('ArrowLeft') || k.has('KeyA') ? 1 : 0);
       vy = (k.has('ArrowDown') || k.has('KeyS') ? 1 : 0) - (k.has('ArrowUp') || k.has('KeyW') ? 1 : 0);
@@ -292,10 +361,12 @@ export const World = {
     this.fps += ((dt ? 1 / dt : 60) - this.fps) * 0.05;
     const s = Game.s;
 
-    this.list = this.build(s);
+    MAP.decor = s.decor || this.baseDecor;          // décor du joueur (Mode architecte) ou du fichier
+    this.list = this.mode === 'edit' ? [] : this.build(s);
     this.move(dt, s);
     Pet.update(dt, s, s.player, this);
     Villagers.update(dt, s, s.player, this.maxX(s));
+    Meme.update(dt, s, this);
 
     const p = s.player;
     let best = null, bd = CONFIG.player.reach;
@@ -303,7 +374,7 @@ export const World = {
     this.near = best;
     UI.setAction(best && best.label);
 
-    this.snapCamera();
+    if (this.mode === 'play') this.snapCamera();
 
     // Ventes au comptoir → texte flottant périodique au-dessus de l'usine
     this.counterT += dt;
@@ -315,6 +386,7 @@ export const World = {
     this.floats = this.floats.filter(f => f.t < 1.6);
 
     this.draw(s);
+    if (this.hooks.after) this.hooks.after(dt, s);
     requestAnimationFrame(t => this.frame(t));
   },
 
@@ -343,12 +415,13 @@ export const World = {
     this.addCouriers(s, add);
     this.addVillagers(s, add);
     if (s.look.pet !== 'aucun') add(Pet.y, () => drawPet(c, Pet.x, Pet.y, s.look.pet, Pet.flip, Pet.moving, Pet.phase, s.look.petName));
+    add(Meme.y, () => Meme.draw(c));
     add(s.player.y, () => this.drawPlayer(c, s));
     items.sort((a, b) => a.y - b.y).forEach(i => i.f());
 
     for (const id of Object.keys(MAP.districts)) if (!s.districts[id]) Render.lockedDistrict(c, id, t);
     if (Events.is(s, 'fete')) this.drawFete(c, t);
-    this.drawGuides(c, s);
+    if (this.mode === 'play') this.drawGuides(c, s);
     if (this.debug.solids) this.drawDebug(c, s);
 
     for (const f of this.floats) {
@@ -356,6 +429,7 @@ export const World = {
       Gfx.label(c, f.text, f.x, f.y - f.t * 40, 18, f.color);
     }
     c.globalAlpha = 1;
+    if (this.mode === 'edit' && this.hooks.drawEdit) this.hooks.drawEdit(c, s);
     if (this.near && !UI.active) Gfx.bubble(c, `E · ${this.near.label}`, s.player.x, s.player.y - 96);
 
     // Passes écran : météo, puis nuit
@@ -431,10 +505,16 @@ export const World = {
 
   /** Repères : épingles sur la destination, flèche autour du joueur */
   drawGuides(c, s) {
-    const p = s.player, t = this.time, pins = [];
-    for (const pl of new Set(Eco.carried(s).map(k => k.place))) pins.push({ ...CONFIG.places[pl], icon: '📦' });
-    if (!pins.length && s.active.some(k => Contracts.canLoad(s, k))) pins.push({ ...CONFIG.places.quai, icon: '📦' });
-    if (s.quest.ready) pins.push({ ...CONFIG.places.mairie, icon: '🎁' });
+    const p = s.player, t = this.time;
+    let pins = [];
+    // Le tutoriel impose son propre repère (ou aucun quand la cible est dans un menu)
+    const g = this.hooks.guide ? this.hooks.guide(s) : undefined;
+    if (g !== undefined) pins = g ? [g] : [];
+    else {
+      for (const pl of new Set(Eco.carried(s).map(k => k.place))) pins.push({ ...CONFIG.places[pl], icon: '📦' });
+      if (!pins.length && s.active.some(k => Contracts.canLoad(s, k))) pins.push({ ...CONFIG.places.quai, icon: '📦' });
+      if (s.quest.ready) pins.push({ ...CONFIG.places.mairie, icon: '🎁' });
+    }
     for (const d of pins) Gfx.pin(c, d.x, d.y - 200 + Math.sin(t * 5) * 6, d.icon);
     if (!pins.length) return;
     const d = pins.reduce((a, b) => (Math.hypot(b.x - p.x, b.y - p.y) < Math.hypot(a.x - p.x, a.y - p.y) ? b : a));

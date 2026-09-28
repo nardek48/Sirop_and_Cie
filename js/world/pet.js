@@ -33,7 +33,8 @@ export const Pet = {
     if (s.look.pet === 'aucun') return;
     this.fetchT += dt;
 
-    if (this.state === 'follow' && this.fetchT > FETCH_EVERY) {
+    // Pas de cueillette pendant le tutoriel : l'arbre à cueillir est pour le joueur
+    if (this.state === 'follow' && this.fetchT > FETCH_EVERY && !s.tuto.active) {
       const t = this.findRipe(s, player);
       if (t) { this.state = 'fetch'; this.target = t; this.path = world.route(this, t); this.fetchT = 0; }
       else this.fetchT = FETCH_EVERY - 5;   // réessaie dans 5 s

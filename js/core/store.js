@@ -33,8 +33,14 @@ export const Store = {
       clock: CONFIG.clock.startSec,
       player: { x: 800, y: CONFIG.roadY },
       look: { name: 'Sirotin', shirt: SHIRTS[0], pet: 'chien', petName: 'Caramel' },
-      stats: { earned: 0, bottles: 0, sold: 0, cDone: 0, cFail: 0, picked: 0, playSec: 0, byClient: {} },
+      stats: { earned: 0, bottles: 0, sold: 0, cDone: 0, cFail: 0, cQuit: 0, picked: 0, playSec: 0, byClient: {} },
       run: { earned: 0 },
+      // Tutoriel : active = en cours, step = étape, done = terminé ou passé
+      tuto: { active: false, step: 0, done: false, skipped: false },
+      opened: { garage: false, agence: false, labo: false },   // bâtiments ouverts
+      seen: {},                                                // conseils de Mémé déjà montrés
+      tipsOn: true,
+      decor: null,          // décor modifié au Mode architecte (null = celui du fichier Tiled)
       lastSeen: Date.now(),
     };
   },
@@ -50,8 +56,13 @@ export const Store = {
   migrate(data) {
     const base = this.fresh();
     const out = { ...base, ...data };
-    for (const k of ['mat', 'stock', 'lv', 'auto', 'stats', 'run', 'player', 'look', 'districts', 'quest', 'event'])
+    for (const k of ['mat', 'stock', 'lv', 'auto', 'stats', 'run', 'player', 'look', 'districts', 'quest', 'event', 'tuto', 'opened', 'seen'])
       out[k] = { ...base[k], ...(data[k] || {}) };
+    // Partie commencée avant le tutoriel (v0.1.0) : tout est déjà ouvert, pas de tutoriel imposé
+    if (!data.tuto) {
+      out.tuto.done = true;
+      for (const b of Object.keys(out.opened)) { out.opened[b] = true; out.seen['open_' + b] = true; }
+    }
     out.stats.byClient = { ...(data.stats && data.stats.byClient) };
     out.fields = { ...base.fields };
     for (const [k, arr] of Object.entries(data.fields || {}))

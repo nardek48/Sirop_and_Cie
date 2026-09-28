@@ -18,7 +18,7 @@ function installBlock() {
 
 export const mairie = {
   title: '🏛️ Mairie',
-  key: s => [s.stars, s.look.shirt, s.look.pet, s.quest.i, s.quest.ready, s.districts.champs, s.districts.colline].join('|'),
+  key: s => [s.stars, s.look.shirt, s.look.pet, s.quest.i, s.quest.ready, s.districts.champs, s.districts.colline, s.tipsOn].join('|'),
   html(s) {
     const q = Quests.current(s);
     const row = (label, k) => `<tr><td>${label}</td><td data-t="stat:${k}"></td></tr>`;
@@ -55,7 +55,22 @@ export const mairie = {
           <input id="pet-name" data-field="look.petName" maxlength="14" value="${esc(s.look.petName)}"></label>
           <p class="hint">Ton compagnon te suit partout et va cueillir tout seul un arbre mûr de temps en temps.</p>` : ''}
       </section>
-      <section class="card"><h3>Urbanisme</h3>${districts}</section>
+      <div class="stack">
+        <section class="card"><h3>Urbanisme</h3>${districts}</section>
+        <section class="card">
+          <h3>🏗️ Mode architecte</h3>
+          <p class="sub">Décore le village : bancs, fleurs, sapins, panneaux, parasols… Pose, déplace ou enlève ce que tu veux.</p>
+          <button class="btn sm" data-act="architect">Décorer le village</button>
+        </section>
+        <section class="card">
+          <h3>👵 Mémé Grenadine</h3>
+          <p class="sub">Elle se repose sur le banc du parc. Va lui parler pour un conseil !</p>
+          <div class="row-btns">
+            <button class="btn sm" data-act="tutoReplay">Revoir le tutoriel</button>
+            <button class="btn ghost sm" data-act="tipsToggle">Conseils : ${s.tipsOn ? 'oui ✓' : 'non'}</button>
+          </div>
+        </section>
+      </div>
     </div>
     <div class="cols">
       <section class="card">
@@ -79,7 +94,10 @@ export const mairie = {
           <button class="btn danger sm" data-act="reset">Tout effacer</button>
         </div>
         <p class="hint">Sauvegarde auto toutes les ${CONFIG.saveEverySec} s. Hors ligne : jusqu’à ${CONFIG.offline.capHours} h rattrapées.</p>
-        <p class="hint">Sirop & Cie ${VERSION}</p>
+        <div class="row-btns" style="margin-top:10px;align-items:center">
+          <span class="hint" style="margin:0">Sirop & Cie ${VERSION}</span>
+          <button class="btn ghost sm" data-act="checkUpdate">🔄 Vérifier les mises à jour</button>
+        </div>
         ${installBlock()}
       </section>
     </div>`;

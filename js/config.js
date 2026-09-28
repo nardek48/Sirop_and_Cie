@@ -55,6 +55,7 @@ export const CONFIG = {
     maxOffers: 4, offerEverySec: 20, offerTtlSec: 90,
     slotBase: 1, slotMax: 6, slotCost: 600, slotCostGrowth: 5,
     penaltyRatio: 0.25, repScale: 150,
+    abandonRepLoss: 1,     // abandonner : même pénalité en argent, mais ⭐ −repGain×1 (au lieu de ×2 pour un retard)
     // prodSec : la commande contient en plus « prodSec secondes de production » de l'usine,
     // pour que les contrats restent intéressants quand l'usine grandit.
     nightCafeBonus: 1.25,
@@ -122,6 +123,24 @@ export const CONFIG = {
   },
 
   player: { reach: 62 },
+
+  // Tutoriel de Mémé Grenadine (voir js/tutorial/)
+  tuto: {
+    qty: 5, reward: 50,          // la commande d'entraînement pour l'épicerie
+    handAfter: 15,               // la main 👆 revient après 15 s sans rien faire
+    callAfter: 20,               // Mémé appelle le joueur après 20 s
+    // Où se tient Mémé (coordonnées monde)
+    spots: {
+      usine: { x: 300, y: 592 }, verger: { x: 505, y: 690 }, contrats: { x: 870, y: 592 },
+      quai: { x: 470, y: 592 }, epicerie: { x: 1790, y: 592 }, banc: { x: 1880, y: 816 },
+    },
+  },
+  // Bâtiments fermés au début, et ce qu'il faut pour les ouvrir
+  openings: {
+    garage: { name: 'Garage', icon: '🚲', need: 'quand tu auras gagné 1 000 $', stat: 'earned', goal: 1000 },
+    agence: { name: 'Agence', icon: '🏡', need: 'après 3 commandes livrées',     stat: 'cDone',  goal: 3 },
+    labo:   { name: 'Labo', icon: '🧪', need: 'quand tu auras débloqué un 2e parfum (Grenadine)', stat: 'flavors', goal: 2 },
+  },
   offline: { capHours: 8, minSec: 30 },
   // Étoiles = base + perDecade × log10(gains / minRunEarned) : 3 au seuil (20 M $), +4 à chaque ×10
   prestige: { minRunEarned: 2e7, base: 3, perDecade: 4, bonusPerStar: 0.1 },

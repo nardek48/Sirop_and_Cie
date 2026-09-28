@@ -12,6 +12,7 @@ import { Sim } from './sim/sim.js';
 import { UI } from './ui/ui.js';
 import { World } from './world/world.js';
 import { VERSION } from './version.js';
+import { Tuto } from './tutorial/tutorial.js';
 
 const TOOLS = {
   money1k:   ['+1 K $',          s => { s.money += 1e3; }],
@@ -28,6 +29,10 @@ const TOOLS = {
   districts: ['Tout ouvrir',     s => { s.districts.champs = s.districts.colline = true; }],
   home:      ['Retour usine',    () => World.resetPlayer()],
   hour:      ['Avancer 1 h',     s => Sim.advance(s, 3600)],
+  tuto:      ['Tuto : recommencer', () => Tuto.start()],
+  tutoNext:  ['Tuto : étape suivante', () => Tuto.next()],
+  opened:    ['Ouvrir bâtiments', s => { for (const k of Object.keys(s.opened)) s.opened[k] = true; }],
+  tips:      ['Revoir conseils', s => { s.seen = {}; }],
 };
 
 export const Debug = {
@@ -61,7 +66,7 @@ export const Debug = {
       if (b.dataset.speed) { rt.timeScale = Number(b.dataset.speed); this.refreshSpeed(); return; }
       const k = b.dataset.dbg;
       if (k === 'close') { el.hidden = true; return; }
-      if (k === 'wipe') { Store.wipe(); Game.s = Store.fresh(); Sim.seed(Game.s); World.resetPlayer(); return; }
+      if (k === 'wipe') { Store.wipe(); Game.s = Store.fresh(); Sim.seed(Game.s); World.resetPlayer(); Tuto.propose(); return; }
       TOOLS[k][1](Game.s);
       UI.key = null; UI.render(Game.s);
     });
@@ -82,6 +87,7 @@ export const Debug = {
     this.el.querySelector('#dbg-info').textContent =
       `${VERSION} · fps ${World.fps.toFixed(0)} · x ${p.x | 0} y ${p.y | 0}\n` +
       `quête ${s.quest.i + 1} ${s.quest.ready ? '(prête)' : ''} · événement ${s.event.id || '—'} (${s.event.id ? s.event.left | 0 : s.event.next | 0} s)\n` +
-      `livreurs ${s.npcs.map(n => n.state).join(', ') || '—'}`;
+      `livreurs ${s.npcs.map(n => n.state).join(', ') || '—'}\n` +
+      `tuto ${s.tuto.active ? `étape ${s.tuto.step + 1}` : s.tuto.done ? 'fini' : 'pas commencé'} · ouverts ${Object.keys(s.opened).filter(k => s.opened[k]).join(', ') || '—'}`;
   },
 };

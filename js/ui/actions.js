@@ -16,6 +16,9 @@ import { Eco } from '../sim/eco.js';
 import { Sfx } from '../audio/sfx.js';
 import { PWA } from '../pwa.js';
 import { World } from '../world/world.js';
+import { Tuto } from '../tutorial/tutorial.js';
+import { Tips } from '../tutorial/tips.js';
+import { Editor } from '../editor/editor.js';
 import { UI } from './ui.js';
 import { Form } from './form.js';
 
@@ -31,6 +34,13 @@ const map = {
   accept: (s, a) => Contracts.accept(s, a),
   decline: (s, a) => Contracts.decline(s, a),
   slot: s => Contracts.buySlot(s),
+  abandon: (s, a) => {
+    const c = Contracts.find(s, a);
+    if (!c) return;
+    const pen = Contracts.penalty(c, true);
+    UI.confirm(`Abandonner la commande de ${c.icon} ${c.client} ?<br><small>Tu perds ${Fmt.money(pen.money)} et ⭐ ${pen.rep}.${c.loaded ? ' Les bouteilles reviennent au stock.' : ''}</small>`,
+      () => Contracts.abandon(Game.s, a), 'Abandonner');
+  },
   // agence
   house: (s, a) => RealEstate.buy(s, a, Form.houseUse[a] || 'rent'),
   reno: (s, a) => RealEstate.renovate(s, a),
@@ -61,12 +71,22 @@ const map = {
   save: s => { const ok = Store.save(s); UI.toast(ok ? 'Partie sauvegardée' : 'Sauvegarde indisponible ici', ok ? 'ok' : 'bad'); },
   reset: () => UI.confirm('Effacer définitivement la partie ?', () => {
     Store.wipe(); Game.s = Store.fresh(); Sim.seed(Game.s); UI.close(); World.resetPlayer();
+    Tuto.propose();
   }, 'Effacer'),
+  // Mémé Grenadine : tutoriel et conseils
+  tutoNext: () => Tuto.button(),
+  tutoSkip: () => Tuto.skip(),
+  tutoLost: () => Tuto.lost(),
+  tutoReplay: () => Tuto.start(),
+  tipClose: () => Tips.close(),
+  tipsToggle: s => { s.tipsOn = !s.tipsOn; },
+  architect: () => Editor.start(),
   // général
   interact: () => World.interact(),
   closePanel: () => UI.close(),
   mute: () => Sfx.toggle(),
   install: () => PWA.install(),
+  checkUpdate: () => PWA.check(),
   hideHelp: () => { UI.el.help.hidden = true; try { localStorage.setItem('siropcie_help', '0'); } catch (e) { /* */ } },
   questToggle: () => UI.el.quest.classList.toggle('min'),
 };

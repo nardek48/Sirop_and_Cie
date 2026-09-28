@@ -2,6 +2,36 @@
 
 Numérotation : `vMAJEUR.MINEUR.CORRECTIF`. Pour préparer une nouvelle version : `node tools/build-sw.mjs patch` (ou `minor`, `major`), puis décrire les changements ici.
 
+## v0.2.0 · 2026-09-28
+
+- **Mode architecte** (mairie → « Décorer le village ») : on pose, déplace et enlève le décor du village, au doigt ou à la souris. 10 objets, dont 5 nouveaux : fleurs, sapin, clôture, tonneau, parasol. Le texte des panneaux se modifie. Boutons Annuler (aussi Ctrl+Z), Tout remettre, et 300 objets au maximum. Les bâtiments, routes et récoltes ne bougent pas : le jeu ne peut pas être cassé.
+- Le village décoré est gardé dans la partie (même après un prestige). « Exporter le fichier » télécharge `decor.tiled.json` : mis dans `assets/` et publié, il devient le village de tout le monde (il s'ouvre aussi dans Tiled).
+- **Abandonner une commande** en cours (bouton sous la commande, avec confirmation) : même perte d'argent qu'un retard, mais seulement la moitié de la réputation. Les bouteilles chargées reviennent au stock, et un livreur en route est rappelé.
+- Mises à jour plus faciles à voir : un bouton « 🔄 Mise à jour » reste dans la barre du haut tant qu'une nouvelle version attend. La fenêtre ne remplace plus une autre fenêtre ouverte. Mairie : « 🔄 Vérifier les mises à jour ». Si la mise à jour ne peut pas se télécharger (fichier manquant dans le dossier), le jeu le dit.
+- Correction : une mise à jour acceptée pendant la toute première visite ne rechargeait pas la page.
+
+## v0.1.0 · 2026-09-28
+
+- **Tutoriel de Mémé Grenadine**, proposé au début d’une nouvelle partie (jamais imposé) : 9 étapes pour apprendre en jouant. On marche jusqu’à Mémé, on entre dans l’usine, on cueille le verger, on accepte sa commande, on charge au quai, on livre l’épicerie et on améliore la cuisson.
+- Pendant le tutoriel, le temps du village est en pause (horloge, événements, comptoir, commandes). Seul le bon bâtiment réagit. Un repère, une flèche, un anneau jaune et une main 👆 montrent quoi faire. Mémé appelle si on ne bouge plus.
+- Boutons « Je suis perdu » (emmène devant la bonne porte) et « Passer ». L’étape est sauvegardée : on reprend où on en était.
+- Après le tutoriel, Mémé se repose sur le banc du parc : parle-lui pour un conseil. À la mairie : « Revoir le tutoriel » et « Conseils : oui / non ».
+- Conseils de Mémé au bon moment, une seule fois : mission réussie, matières épuisées, entrepôt plein, première nuit, premier événement, commande trop lourde, première commande ratée, nouveau bâtiment.
+- Bâtiments fermés au début (planches et panneau « Bientôt ! ») : le Garage ouvre à 1 000 $ gagnés, l’Agence après 3 commandes livrées, le Labo avec un 2e parfum. Les parties déjà commencées gardent tout ouvert et ne voient pas le tutoriel.
+- Correction : à la toute première visite, la page se rechargeait toute seule au bout d’une seconde (installation du service worker) et la fenêtre de bienvenue disparaissait.
+- Debug (F2) : recommencer le tutoriel, étape suivante, ouvrir les bâtiments, revoir les conseils.
+
+## v0.0.5 · 2026-09-28
+
+- Correction de la v0.0.4 : avec `serve.json` (`cleanUrls: false`), `npx serve` affichait la liste des fichiers à l'adresse `/`, et le service worker la gardait comme page d'accueil. `serve.json` est supprimé (à supprimer aussi du dépôt).
+- Le service worker ne met plus en cache « / » : il garde `index.html` et le sert pour toutes les pages. Vérifié avec `serve` (avec ou sans redirection), Python et un serveur type GitHub Pages, en ligne et hors ligne.
+
+## v0.0.4 · 2026-09-28
+
+- Correction : avec `npx serve` en local, le jeu ne s'affichait plus au 2e chargement (ERR_FAILED). Le service worker gardait la redirection /index.html → / et la ressortait telle quelle ; il en garde maintenant une copie propre. GitHub Pages n'était pas touché.
+- `lancer-sirop.bat` : lance le jeu en local d'un double-clic sous Windows (Node ou Python).
+- Ouvert par double-clic (`file://`), le jeu explique comment le lancer au lieu d'afficher un écran vert.
+
 ## v0.0.3 · 2026-09-26
 
 - **Rééquilibrage complet**, mesuré avec le simulateur (`tools/simulate.mjs`). Avant, tout était fini en 1 heure ; maintenant, avec un joueur assidu : Colline vers 2 h 30 – 3 h 30, prestige vers 6 h, Violette vers 8 – 18 h, quêtes du maire vers 12 – 14 h.

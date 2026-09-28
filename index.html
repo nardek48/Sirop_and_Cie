@@ -39,6 +39,7 @@
       <span class="chip" data-t="clock"></span>
       <span class="chip" data-t="stars"></span>
       <button type="button" class="chip install" id="install-btn" hidden>📲 Installer</button>
+      <button type="button" class="chip install" id="update-btn" hidden>🔄 Mise à jour</button>
       <button type="button" class="chip icon-btn" id="mute-btn" data-act="mute" aria-label="Couper le son">🔊</button>
     </div>
   </div>
@@ -80,6 +81,17 @@
   </div>
 </div>
 
+<!-- Ouvert par double-clic (file://) : les modules JS sont bloqués, on explique quoi faire -->
+<script>
+  if (location.protocol === 'file:') document.addEventListener('DOMContentLoaded', () => {
+    const m = document.getElementById('modal');
+    document.getElementById('modal-body').innerHTML =
+      '<h2>Lance-moi avec un serveur</h2><p>Ouvert par double-clic, le navigateur bloque le jeu. ' +
+      'Utilise <b>lancer-sirop.bat</b>, <code>npx serve .</code> ou <code>python -m http.server</code>, ' +
+      'puis ouvre <b>http://localhost</b> (voir le README).</p>';
+    m.hidden = false;
+  });
+</script>
 <script type="module" src="js/main.js"></script>
 </body>
 </html>

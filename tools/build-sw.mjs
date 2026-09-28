@@ -75,7 +75,6 @@ const block = `// <build>
 const VERSION = '${version}';
 const BUILD = '${build}';
 const PRECACHE = [
-  './',
 ${files.map(f => `  './${f}',`).join('\n')}
 ];
 // </build>`;

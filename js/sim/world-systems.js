@@ -87,7 +87,7 @@ export const Garage = {
     const v = this.next(s);
     if (!v || !Wallet.spend(s, v.cost)) return;
     s.vehicle++;
-    Bus.toast(`${v.icon} ${v.name} : ${v.cap} bouteilles, et ça roule !`, 'ok');
+    Bus.toast(`${v.icon} ${v.name} : ${Eco.capacity(s)} bouteilles, et ça roule !`, 'ok');
     Bus.sfx('unlock');
   },
 };

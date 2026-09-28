@@ -11,6 +11,7 @@ import { Quests } from './sim/quests.js';
 import { Sim } from './sim/sim.js';
 import { UI } from './ui/ui.js';
 import { World } from './world/world.js';
+import { VERSION } from './version.js';
 
 const TOOLS = {
   money1k:   ['+1 K $',          s => { s.money += 1e3; }],
@@ -79,7 +80,7 @@ export const Debug = {
     if (!this.el || this.el.hidden) return;
     const s = Game.s, p = s.player;
     this.el.querySelector('#dbg-info').textContent =
-      `fps ${World.fps.toFixed(0)} · x ${p.x | 0} y ${p.y | 0}\n` +
+      `${VERSION} · fps ${World.fps.toFixed(0)} · x ${p.x | 0} y ${p.y | 0}\n` +
       `quête ${s.quest.i + 1} ${s.quest.ready ? '(prête)' : ''} · événement ${s.event.id || '—'} (${s.event.id ? s.event.left | 0 : s.event.next | 0} s)\n` +
       `livreurs ${s.npcs.map(n => n.state).join(', ') || '—'}`;
   },

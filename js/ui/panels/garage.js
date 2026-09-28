@@ -3,6 +3,7 @@
  */
 import { CONFIG } from '../../config.js';
 import { Fmt } from '../../core/format.js';
+import { Eco } from '../../sim/eco.js';
 
 export const garage = {
   title: '🚲 Garage',
@@ -17,7 +18,7 @@ export const garage = {
       <div class="veh ${i === s.vehicle ? 'mine' : ''}">
         <span class="house-ico">${v.icon}</span>
         <div class="grow"><b>${v.name}</b>
-          <div class="sub">Vitesse ${Math.round(v.speed / 2.5)} · porte ${Fmt.int(v.cap)} bouteilles</div></div>
+          <div class="sub">Vitesse ${Math.round(v.speed / 2.5)} · porte ${Fmt.int(Eco.capacityOf(s, v))} bouteilles</div></div>
         ${state}
       </div>`;
     }).join('');
@@ -32,7 +33,7 @@ export const garage = {
       <section class="card">
         <h3>Tes véhicules</h3>
         ${rows}
-        <p class="hint">Un véhicule plus grand permet de livrer les grosses commandes (Supermarché, Train, Port) en un seul voyage.</p>
+        <p class="hint">Un véhicule plus grand permet de livrer les grosses commandes (Supermarché, Train, Port) en un seul voyage. Sa capacité grandit avec la production de ton usine.</p>
       </section>
       <section class="card">
         <h3>Livreurs · <span data-t="courierTxt"></span></h3>

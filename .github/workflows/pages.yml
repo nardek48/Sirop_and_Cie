@@ -27,7 +27,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      # Nouvelle version du service worker = liste des fichiers + empreinte du contenu
+      # Liste de cache + empreinte du contenu (ne change jamais le numéro de version)
       - run: node tools/build-sw.mjs
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3

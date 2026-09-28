@@ -29,9 +29,25 @@ Le jeu est une **PWA** : on peut l’installer comme une application (icône sur
 
 Tous les chemins sont relatifs : le jeu marche quel que soit le nom du dépôt.
 
+### Numéro de version
+
+La version du jeu (`v0.0.1`, `v0.0.2`…) est définie dans `sw.js` (`VERSION`) et affichée à la mairie et dans la fenêtre de mise à jour. Pour publier une nouvelle version :
+
+```bash
+node tools/build-sw.mjs patch     # v0.0.1 → v0.0.2 : corrections, petits ajouts
+node tools/build-sw.mjs minor     # v0.0.2 → v0.1.0 : nouvelle fonctionnalité
+node tools/build-sw.mjs major     # v0.1.0 → v1.0.0 : grande étape
+# décrire les changements dans CHANGELOG.md, puis :
+git add . && git commit -m "v0.0.2" && git push
+```
+
+Le script met à jour `sw.js`, recopie le numéro dans `js/version.js` (ne pas modifier ce fichier à la main) et ajoute une section dans `CHANGELOG.md`.
+
+À côté de `VERSION`, `BUILD` est une empreinte du contenu calculée automatiquement : si tu publies un changement en oubliant d’incrémenter la version, les joueurs reçoivent quand même la mise à jour.
+
 ### Service worker et mises à jour
 
-- `sw.js` met en cache tous les fichiers du jeu. Sa liste et sa version sont générées par `node tools/build-sw.mjs`. Le workflow le lance tout seul avant chaque publication ; en local, ce n’est utile que pour tester le mode hors ligne.
+- `sw.js` met en cache tous les fichiers du jeu. Sa liste (`PRECACHE`) et `BUILD` sont régénérés par `node tools/build-sw.mjs`. Le workflow le lance tout seul avant chaque publication, sans jamais changer le numéro de version.
 - Quand une nouvelle version est publiée, le jeu la télécharge en arrière-plan, puis propose **« Mettre à jour »**. La partie est sauvegardée avant le rechargement.
 - Pendant le développement, pour ne pas être gêné par le cache : dans Chrome, onglet **Application → Service workers**, cocher **Update on reload**.
 
@@ -43,6 +59,21 @@ Tous les chemins sont relatifs : le jeu marche quel que soit le nom du dépôt.
 ### Icônes
 
 Toutes les icônes (`icons/`, `favicon.ico`) sont générées à partir du logo. Les versions « maskable » ont un fond orange plein, pour qu’Android puisse les découper en cercle ou en carré arrondi.
+
+## Simulateur d’équilibrage
+
+`tools/simulate.mjs` fait tourner les vraies règles du jeu (`js/sim/`) avec un joueur automatique assidu : il accepte les contrats, marche jusqu’au quai puis chez les clients, récolte, améliore l’usine, achète maisons, véhicules, livreurs, quartiers et recettes, et récupère les récompenses du maire. Il affiche l’heure de chaque étape, la provenance de l’argent et la courbe des gains. Dix heures de jeu se simulent en moins d’une seconde.
+
+```bash
+node tools/simulate.mjs                           # 10 h de jeu
+node tools/simulate.mjs --hours=20 --runs=5       # 5 parties, médiane des étapes
+node tools/simulate.mjs --set=houses.costGrowth=1.45 --set=flavors.violette.unlock=2000000
+                                                  # tester un réglage sans modifier config.js
+node tools/simulate.mjs --human=2                 # joueur plus lent
+node tools/simulate.mjs --csv                     # courbe dans tools/sim-courbe.csv (à ouvrir dans un tableur)
+```
+
+Le joueur automatique est prudent : un humain qui connaît bien le jeu va plus vite. Il sert surtout à **comparer** deux réglages entre eux.
 
 ## Commandes
 

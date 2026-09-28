@@ -2,12 +2,12 @@
  * config.js — toutes les constantes d'équilibrage et les lieux partagés.
  *
  * Formules :
- *  - valeur d'un niveau      = base * growth^(niv-1)
+ *  - valeur d'un niveau      = base × (1 + step × (niv-1)) × 2^plancher((niv-1)/20)
  *  - coût du niveau suivant  = cost * costGrowth^(niv-1)
  *  - maison n°k              = base * 1.3^k
- *  - recette n°k             = 2 500 * 4^k
+ *  - recette n°k             = 8 000 * 4^k
  *  - livreur n°k             = 6 000 * 4^k
- *  - prestige : étoiles      = floor(sqrt(gains du run / 250 000))
+ *  - prestige : étoiles      = 3 + 4 × log10(gains du run / 20 M)
  *  - trajet d'un livreur     = distance "par la route" / vitesse
  */
 export const CONFIG = {
@@ -26,19 +26,26 @@ export const CONFIG = {
   // Parfums de base. Les recettes secrètes (labo) s'y ajoutent dans l'état.
   flavors: {
     menthe:    { name: 'Menthe',    price: 3,  sugar: 1,   fruit: 0.5, time: 1,   unlock: 0,      color: '#4fb286' },
-    grenadine: { name: 'Grenadine', price: 6,  sugar: 1.2, fruit: 1,   time: 1.3, unlock: 400,    color: '#d23c4f' },
-    citron:    { name: 'Citron',    price: 13, sugar: 1.2, fruit: 2,   time: 1.6, unlock: 3000,   color: '#e8c22e' },
-    sureau:    { name: 'Sureau',    price: 32, sugar: 1.5, fruit: 3,   time: 2,   unlock: 25000,  color: '#c9b8e0' },
-    violette:  { name: 'Violette',  price: 85, sugar: 2,   fruit: 4,   time: 2.6, unlock: 200000, color: '#7b4fb0' },
+    grenadine: { name: 'Grenadine', price: 6,  sugar: 1.2, fruit: 1,   time: 1.3, unlock: 400,     color: '#d23c4f' },
+    citron:    { name: 'Citron',    price: 13, sugar: 1.2, fruit: 2,   time: 1.6, unlock: 6000,    color: '#e8c22e' },
+    sureau:    { name: 'Sureau',    price: 32, sugar: 1.5, fruit: 3,   time: 2,   unlock: 100000,  color: '#c9b8e0' },
+    violette:  { name: 'Violette',  price: 85, sugar: 2,   fruit: 4,   time: 2.6, unlock: 5000000, color: '#7b4fb0' },
   },
 
-  // Rééquilibrage v3 : comptoir plus rapide et entrepôt plus grand au départ
+  // Niveaux de l'usine. Deux modèles :
+  //  - step = 0 : valeur = base × growth^(niv−1)  (exponentiel, modèle d'origine)
+  //  - step > 0 : valeur = base × (1 + step × (niv−1)) × palier   (linéaire + paliers)
+  //    palier = milestone.mult ^ plancher((niv−1) / milestone.every)
+  // Règle d'or : la valeur doit croître MOINS vite que le coût (costGrowth), sinon la
+  // production devient de moins en moins chère et le jeu s'emballe (constaté en v0.0.2).
+  milestone: { every: 20, mult: 2 },
   levels: {
-    cook:    { name: 'Cuisson',       icon: '🔥', base: 0.5,  growth: 1.3, cost: 30, costGrowth: 1.17 },
-    tank:    { name: 'Cuve tampon',   icon: '🛢️', base: 20,   growth: 1.5, cost: 40, costGrowth: 1.22 },
-    bottle:  { name: 'Embouteillage', icon: '🍾', base: 0.45, growth: 1.3, cost: 35, costGrowth: 1.17 },
-    ware:    { name: 'Entrepôt',      icon: '📦', base: 80,   growth: 1.5, cost: 50, costGrowth: 1.22 },
-    counter: { name: 'Comptoir',      icon: '🛎️', base: 0.55, growth: 1.3, cost: 45, costGrowth: 1.2  },
+    // v0.0.3 : modèle linéaire + paliers (l'ancien exponentiel faisait s'emballer le jeu)
+    cook:    { name: 'Cuisson',       icon: '🔥', base: 0.5,  growth: 1.3, step: 0.5, cost: 30, costGrowth: 1.16 },
+    tank:    { name: 'Cuve tampon',   icon: '🛢️', base: 20,   growth: 1.5, step: 0.8, cost: 40, costGrowth: 1.16 },
+    bottle:  { name: 'Embouteillage', icon: '🍾', base: 0.45, growth: 1.3, step: 0.5, cost: 35, costGrowth: 1.16 },
+    ware:    { name: 'Entrepôt',      icon: '📦', base: 80,   growth: 1.5, step: 0.8, cost: 50, costGrowth: 1.16 },
+    counter: { name: 'Comptoir',      icon: '🛎️', base: 0.55, growth: 1.3, step: 0.5, cost: 45, costGrowth: 1.16 },
   },
 
   counter: { priceFactor: 0.7, nightFactor: 0.6 },
@@ -48,31 +55,34 @@ export const CONFIG = {
     maxOffers: 4, offerEverySec: 20, offerTtlSec: 90,
     slotBase: 1, slotMax: 6, slotCost: 600, slotCostGrowth: 5,
     penaltyRatio: 0.25, repScale: 150,
+    // prodSec : la commande contient en plus « prodSec secondes de production » de l'usine,
+    // pour que les contrats restent intéressants quand l'usine grandit.
     nightCafeBonus: 1.25,
     clients: [
-      { place: 'epicerie',    name: 'Épicerie du coin',   icon: '🏪', rep: 0,   qty: 12,  mult: 1.5, repGain: 1, time: [100, 180] },
-      { place: 'cafe',        name: 'Café des Arts',      icon: '☕', rep: 8,   qty: 30,  mult: 1.8, repGain: 2, time: [140, 260] },
-      { place: 'supermarche', name: 'Supermarché Frais+', icon: '🛒', rep: 35,  qty: 90,  mult: 2.2, repGain: 4, time: [200, 380] },
-      { place: 'gare',        name: 'Train Express',      icon: '🚂', rep: 60,  qty: 160, mult: 2.5, repGain: 6, time: [240, 440], district: 'colline' },
-      { place: 'port',        name: 'Export Riviera',     icon: '🚢', rep: 100, qty: 260, mult: 2.8, repGain: 8, time: [280, 520] },
+      { place: 'epicerie',    name: 'Épicerie du coin',   icon: '🏪', rep: 0,   qty: 12,  mult: 1.2, repGain: 1, time: [100, 180], prodSec: 15 },
+      { place: 'cafe',        name: 'Café des Arts',      icon: '☕', rep: 8,   qty: 30,  mult: 1.35, repGain: 2, time: [140, 260], prodSec: 30 },
+      { place: 'supermarche', name: 'Supermarché Frais+', icon: '🛒', rep: 35,  qty: 90,  mult: 1.5, repGain: 4, time: [200, 380], prodSec: 60 },
+      { place: 'gare',        name: 'Train Express',      icon: '🚂', rep: 60,  qty: 160, mult: 1.7, repGain: 6, time: [240, 440], district: 'colline', prodSec: 100 },
+      { place: 'port',        name: 'Export Riviera',     icon: '🚢', rep: 100, qty: 260, mult: 1.9, repGain: 8, time: [280, 520], prodSec: 160 },
     ],
   },
 
-  // Véhicules du joueur : vitesse (px/s) et capacité (bouteilles portées)
+  // Véhicules du joueur : vitesse (px/s) et capacité = le plus grand de cap et capSec secondes de production
   vehicles: [
-    { id: 'pied',        name: 'À pied',      icon: '👟', speed: 250, cap: 40,   cost: 0 },
-    { id: 'velo',        name: 'Vélo',        icon: '🚲', speed: 340, cap: 80,   cost: 1200 },
-    { id: 'charrette',   name: 'Charrette',   icon: '🛞', speed: 300, cap: 300,  cost: 15000 },
-    { id: 'camionnette', name: 'Camionnette', icon: '🚐', speed: 460, cap: 1500, cost: 150000 },
+    { id: 'pied',        name: 'À pied',      icon: '👟', speed: 250, cap: 40,   capSec: 30,  cost: 0 },
+    { id: 'velo',        name: 'Vélo',        icon: '🚲', speed: 340, cap: 80,   capSec: 60,  cost: 1200 },
+    { id: 'charrette',   name: 'Charrette',   icon: '🛞', speed: 300, cap: 300,  capSec: 130, cost: 40000 },
+    { id: 'camionnette', name: 'Camionnette', icon: '🚐', speed: 460, cap: 1500, capSec: 400, cost: 1500000 },
   ],
 
   couriers: { max: 4, cost: 6000, costGrowth: 4, rep: 20, speed: 150 },
 
-  recipes: { max: 4, cost: 2500, costGrowth: 4, priceBonus: 1.3 },
+  // Prix d'une recette = (prix A + prix B) × priceBonus, soit 1,5 × le prix moyen des deux parfums
+  recipes: { max: 4, cost: 8000, costGrowth: 4, priceBonus: 0.75 },
 
   districts: {
     champs:  { name: 'Les Champs', icon: '🌾', cost: 2500,  rep: 0,  desc: '8 parcelles de canne à sucre : du sucre gratuit à récolter.' },
-    colline: { name: 'La Colline', icon: '⛰️', cost: 40000, rep: 25, desc: 'La gare du Train Express, 4 terrains et un bois de sureau.' },
+    colline: { name: 'La Colline', icon: '⛰️', cost: 300000, rep: 25, desc: 'La gare du Train Express, 4 terrains et un bois de sureau.' },
   },
 
   // Récoltes à la main (joueur ou compagnon)
@@ -86,8 +96,8 @@ export const CONFIG = {
     types: [
       { id: 'studio',  name: 'Studio',            icon: '🏠', cost: 1500,   mult: 1,   scale: .55 },
       { id: 'village', name: 'Maison de village', icon: '🏡', cost: 12000,  mult: 7,   scale: .7 },
-      { id: 'villa',   name: 'Villa',             icon: '🏘️', cost: 100000, mult: 50,  scale: .85 },
-      { id: 'domaine', name: 'Domaine',           icon: '🏰', cost: 900000, mult: 380, scale: 1 },
+      { id: 'villa',   name: 'Villa',             icon: '🏘️', cost: 2000000,  mult: 50,  scale: .85 },
+      { id: 'domaine', name: 'Domaine',           icon: '🏰', cost: 25000000, mult: 380, scale: 1 },
     ],
     uses: {
       rent:    { name: 'Location', icon: '💶', base: 1.2,  unit: '$/s',      desc: 'Revenu passif',       roof: '#4a78b5' },
@@ -113,7 +123,8 @@ export const CONFIG = {
 
   player: { reach: 62 },
   offline: { capHours: 8, minSec: 30 },
-  prestige: { minRunEarned: 1e6, divisor: 2.5e5, bonusPerStar: 0.1 },
+  // Étoiles = base + perDecade × log10(gains / minRunEarned) : 3 au seuil (20 M $), +4 à chaque ×10
+  prestige: { minRunEarned: 2e7, base: 3, perDecade: 4, bonusPerStar: 0.1 },
 
   // Portes des bâtiments (coordonnées monde), partagées par la simulation
   // (temps de trajet des livreurs) et par le rendu.

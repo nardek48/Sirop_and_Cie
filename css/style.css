@@ -39,9 +39,12 @@ header.top{background:var(--bg);border-bottom:1px solid var(--line);flex:none;z-
 .top-inner{display:flex;align-items:center;gap:6px 12px;flex-wrap:wrap;padding:7px max(16px,env(safe-area-inset-right,0px)) 7px max(16px,env(safe-area-inset-left,0px))}
 .brand-logo{border-radius:8px;display:block}
 .chip.install{background:var(--ok);border-color:var(--ok);color:#fff;cursor:pointer;font:inherit;font-weight:700;font-size:14px}
-/* Application installée : pas de rebond ni de sélection accidentelle */
-html,body{overscroll-behavior:none}
-#world{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+/* Jeu sur écran tactile : pas de rebond, pas de sélection de texte, pas de menu d'appui long,
+   pas de zoom au double appui. Les champs de saisie restent sélectionnables. */
+html,body{overscroll-behavior:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
+input,textarea,select,[contenteditable="true"]{-webkit-user-select:text;user-select:text;-webkit-touch-callout:default}
+button,a,select,.chip,.quest,.flavor,.sw{touch-action:manipulation}
+img{-webkit-user-drag:none;user-drag:none}
 .brand{font-family:Fraunces,Georgia,serif;font-weight:800;font-size:20px;display:flex;align-items:center;gap:8px;margin-right:auto}
 .brand em{font-style:normal;color:var(--amber)}
 .res{display:flex;gap:6px;flex-wrap:wrap;align-items:center}

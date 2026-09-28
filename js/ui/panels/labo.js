@@ -45,7 +45,7 @@ export const labo = {
         <button class="btn block" data-act="laboCreate" data-d="cantLabo">Inventer · <span data-t="laboCost"></span></button>
       </section>
       <section class="card"><h3>Tes recettes (${s.recipes.length} / ${CONFIG.recipes.max})</h3>${list}
-        <p class="hint">Une recette se vend ${Math.round((CONFIG.recipes.priceBonus - 1) * 100)} % plus cher que ses deux parfums réunis, et les clients peuvent la commander.</p>
+        <p class="hint">Une recette se vend ${Fmt.num(CONFIG.recipes.priceBonus * 2)} fois le prix moyen de ses deux parfums, et les clients peuvent la commander.</p>
       </section>
     </div>`;
   },

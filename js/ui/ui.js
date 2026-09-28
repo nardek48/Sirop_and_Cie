@@ -43,6 +43,14 @@ export const UI = {
     this.el.panel.addEventListener('change', onInput);
 
     Bus.on('toast', (m, t) => this.toast(m, t));
+
+    // Tactile (Android, iPhone) : ni sélection de texte, ni menu d'appui long, ni pincement pour zoomer.
+    // Les champs de saisie gardent leur comportement normal.
+    const editable = t => t instanceof Element && !!t.closest('input,textarea,select,[contenteditable="true"]');
+    document.addEventListener('selectstart', e => { if (!editable(e.target)) e.preventDefault(); });
+    document.addEventListener('contextmenu', e => { if (!editable(e.target)) e.preventDefault(); });
+    document.addEventListener('dragstart', e => { if (!editable(e.target)) e.preventDefault(); });
+    for (const ev of ['gesturestart', 'gesturechange']) document.addEventListener(ev, e => e.preventDefault(), { passive: false });   // iOS
     try { if (localStorage.getItem('siropcie_help') === '0') this.el.help.hidden = true; } catch (e) { /* stockage indisponible */ }
   },
 

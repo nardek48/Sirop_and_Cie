@@ -10,7 +10,11 @@ const H = CONFIG.houses;
 
 export const Eco = {
   mult: s => 1 + s.stars * CONFIG.prestige.bonusPerStar,
-  lvValue: (s, k) => CONFIG.levels[k].base * CONFIG.levels[k].growth ** (s.lv[k] - 1),
+  lvValue: (s, k) => {
+    const L = CONFIG.levels[k], n = s.lv[k] - 1;
+    if (!L.step) return L.base * L.growth ** n;
+    return L.base * (1 + L.step * n) * CONFIG.milestone.mult ** Math.floor(n / CONFIG.milestone.every);
+  },
   lvCost: (s, k) => Math.ceil(CONFIG.levels[k].cost * CONFIG.levels[k].costGrowth ** (s.lv[k] - 1)),
 
   houseEffect: h => H.uses[h.use].base * typeById(h.type).mult * (1 + H.renoBonus * (h.lvl - 1)),
@@ -32,7 +36,11 @@ export const Eco = {
   carriedQty: s => Eco.carried(s).reduce((a, c) => a + c.qty, 0),
 
   vehicle: s => CONFIG.vehicles[s.vehicle],
-  capacity: s => CONFIG.vehicles[s.vehicle].cap,
+  /** Production réelle possible (bouteilles/s) : le plus lent de la cuisson et de l'embouteillage */
+  prodRate: s => Math.min(Eco.cookRate(s), Eco.bottleRate(s)),
+  /** Capacité d'un véhicule : au moins `cap`, sinon `capSec` secondes de production */
+  capacityOf: (s, v) => Math.max(v.cap, Math.round(Eco.prodRate(s) * v.capSec)),
+  capacity: s => Eco.capacityOf(s, CONFIG.vehicles[s.vehicle]),
   speed: s => CONFIG.vehicles[s.vehicle].speed,
 
   clientOpen: (s, c) => s.rep >= c.rep && (!c.district || s.districts[c.district]),
@@ -46,5 +54,9 @@ export const Eco = {
   slotCost: s => Math.ceil(CONFIG.contracts.slotCost * CONFIG.contracts.slotCostGrowth ** (s.slots - CONFIG.contracts.slotBase)),
   courierCost: s => Math.ceil(CONFIG.couriers.cost * CONFIG.couriers.costGrowth ** s.couriers),
   recipeCost: s => Math.ceil(CONFIG.recipes.cost * CONFIG.recipes.costGrowth ** s.recipes.length),
-  prestigeGain: s => Math.floor(Math.sqrt(s.run.earned / CONFIG.prestige.divisor)),
+  prestigeGain: s => {
+    const P = CONFIG.prestige;
+    if (s.run.earned < P.minRunEarned) return 0;
+    return Math.floor(P.base + P.perDecade * Math.log10(s.run.earned / P.minRunEarned));
+  },
 };

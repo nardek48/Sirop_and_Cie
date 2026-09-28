@@ -11,6 +11,7 @@
 import { Game } from './core/game.js';
 import { Store } from './core/store.js';
 import { UI } from './ui/ui.js';
+import { VERSION } from './version.js';
 
 const standalone = () =>
   window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
@@ -110,11 +111,25 @@ export const PWA = {
     }
   },
 
-  offerUpdate(sw) {
+  /** Demande son numéro de version au service worker en attente (ou null) */
+  askVersion(sw) {
+    return new Promise(resolve => {
+      const ch = new MessageChannel();
+      const t = setTimeout(() => resolve(null), 1500);
+      ch.port1.onmessage = e => { clearTimeout(t); resolve(e.data); };
+      sw.postMessage('GET_VERSION', [ch.port2]);
+    });
+  },
+
+  async offerUpdate(sw) {
     this.waiting = sw;
+    const next = await this.askVersion(sw);
+    const what = next && next !== VERSION
+      ? `La version <b>${next}</b> est prête (tu as la ${VERSION}).`
+      : 'Une mise à jour de Sirop & Cie est prête.';
     UI.modal(`
       <h2>Nouvelle version !</h2>
-      <p>Une mise à jour de Sirop & Cie est prête. Ta partie est sauvegardée avant de recharger.</p>`, [
+      <p>${what} Ta partie est sauvegardée avant de recharger.</p>`, [
       { label: 'Plus tard' },
       { label: 'Mettre à jour', primary: true, run: () => { Store.save(Game.s); sw.postMessage('SKIP_WAITING'); } },
     ]);

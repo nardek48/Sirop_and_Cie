@@ -22,7 +22,7 @@ export const QUESTS = [
   { text: 'Livre 25 commandes', goal: 25, reward: 3000, val: s => s.stats.cDone },
   { text: 'Ouvre la Colline', goal: 1, reward: 8000, val: s => (s.districts.colline ? 1 : 0) },
   { text: 'Livre 3 commandes au Train Express', goal: 3, reward: 20000, val: s => s.stats.byClient.gare || 0 },
-  { text: 'Gagne 1 M $ avec ton entreprise', goal: 1e6, reward: 50000, val: s => s.run.earned },
+  { text: 'Gagne 100 M $ avec ton entreprise', goal: 1e8, reward: 1000000, val: s => s.run.earned },
 ];
 
 export const Quests = {

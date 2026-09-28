@@ -5,6 +5,7 @@ import { CONFIG, SHIRTS, PETS } from '../../config.js';
 import { Fmt, esc } from '../../core/format.js';
 import { Quests } from '../../sim/quests.js';
 import { PWA } from '../../pwa.js';
+import { VERSION } from '../../version.js';
 
 /** Encart « installer le jeu » selon ce que permet l'appareil */
 function installBlock() {
@@ -78,6 +79,7 @@ export const mairie = {
           <button class="btn danger sm" data-act="reset">Tout effacer</button>
         </div>
         <p class="hint">Sauvegarde auto toutes les ${CONFIG.saveEverySec} s. Hors ligne : jusqu’à ${CONFIG.offline.capHours} h rattrapées.</p>
+        <p class="hint">Sirop & Cie ${VERSION}</p>
         ${installBlock()}
       </section>
     </div>`;

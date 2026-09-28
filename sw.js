@@ -1,6 +1,12 @@
 /**
  * sw.js — service worker de Sirop & Cie.
  *
+ * Versions :
+ *  - VERSION : numéro de version du jeu (v0.0.1, v0.0.2…), affiché aux joueurs.
+ *    On l'incrémente avant une publication : `node tools/build-sw.mjs patch` (ou minor, major).
+ *  - BUILD : empreinte du contenu, automatique. Filet de sécurité : si un fichier
+ *    change sans que VERSION ait bougé, les joueurs reçoivent quand même la mise à jour.
+ *
  * Stratégie :
  *  - À l'installation, tous les fichiers du jeu sont mis en cache (PRECACHE) :
  *    le jeu démarre ensuite sans internet.
@@ -9,12 +15,13 @@
  *  - Une nouvelle version (VERSION différente) s'installe en arrière-plan ;
  *    le jeu propose alors « Mettre à jour » (voir js/pwa.js).
  *
- * VERSION et PRECACHE sont régénérés par `node tools/build-sw.mjs`
- * (lancé automatiquement par le workflow GitHub Pages).
+ * BUILD et PRECACHE sont régénérés par `node tools/build-sw.mjs`
+ * (lancé automatiquement par le workflow GitHub Pages, sans changer VERSION).
  */
 
 // <build>
-const VERSION = 'v0.0.1';
+const VERSION = 'v0.0.3';
+const BUILD = '9d00dedee2';
 const PRECACHE = [
   './',
   './index.html',
@@ -53,6 +60,7 @@ const PRECACHE = [
   './js/ui/panels/mairie.js',
   './js/ui/panels/usine.js',
   './js/ui/ui.js',
+  './js/version.js',
   './js/world/art.js',
   './js/world/characters.js',
   './js/world/gfx.js',
@@ -76,7 +84,7 @@ const PRECACHE = [
 ];
 // </build>
 
-const CACHE = `sirop-${VERSION}`;
+const CACHE = `sirop-${VERSION}-${BUILD}`;
 const FONTS = 'sirop-fonts';
 
 self.addEventListener('install', event => {
@@ -95,6 +103,8 @@ self.addEventListener('activate', event => {
 
 self.addEventListener('message', event => {
   if (event.data === 'SKIP_WAITING') self.skipWaiting();
+  // Le jeu demande le numéro de la version qui attend, pour l'afficher
+  if (event.data === 'GET_VERSION' && event.ports[0]) event.ports[0].postMessage(VERSION);
 });
 
 self.addEventListener('fetch', event => {

@@ -12,5 +12,8 @@ import { labo } from './labo.js';
 import { garage } from './garage.js';
 import { quetes } from '../../editor/quest-editor.js';
 import { machine } from './machine.js';
+import { parfum } from './parfum.js';
+import { deco } from './deco.js';
+import { champ } from './champ.js';
 
-export const Panels = { usine, contrats, agence, mairie, labo, garage, quetes, machine };
+export const Panels = { usine, contrats, agence, mairie, labo, garage, quetes, machine, parfum, deco, champ };

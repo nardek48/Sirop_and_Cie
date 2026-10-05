@@ -3,7 +3,7 @@
  * récolter tout seul une récolte mûre proche.
  */
 import { Bus } from '../core/bus.js';
-import { Fields } from '../sim/world-systems.js';
+import { Fields, Farm } from '../sim/world-systems.js';
 import { MAP } from './map.js';
 
 const FETCH_EVERY = 40;   // secondes entre deux cueillettes
@@ -26,6 +26,12 @@ export const Pet = {
         if (d < bd) { bd = d; best = { g, i, x: pos.x + 26, y: pos.y + 30, pos: { x: pos.x, y: pos.y - 30 } }; }
       });
     }
+    // Champs à cultiver mûrs (il récolte à la main : double, comme le joueur)
+    MAP.farm.forEach((pos, i) => {
+      if (!Farm.ripe(s, i)) return;
+      const d = Math.hypot(pos.x - p.x, pos.y - p.y);
+      if (d < bd) { bd = d; best = { farm: true, i, x: pos.x + 40, y: pos.y + 26, pos: { x: pos.x, y: pos.y - 40 } }; }
+    });
     return best;
   },
 
@@ -63,7 +69,7 @@ export const Pet = {
       if (this.path.length) return;
       if (this.state === 'fetch') {
         const t = this.target;
-        if (Fields.pick(s, t.g, t.i, t.pos, 'pet')) {
+        if (t.farm ? Farm.harvest(s, t.i, t.pos, 'pet') : Fields.pick(s, t.g, t.i, t.pos, 'pet')) {
           Bus.float(`${s.look.petName} a récolté !`, { x: t.pos.x, y: t.pos.y - 26 }, '#fff');
           Bus.sfx(s.look.pet === 'chat' ? 'meow' : 'woof');
         }

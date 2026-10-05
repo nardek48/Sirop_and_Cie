@@ -7,6 +7,9 @@ import { Bus } from '../core/bus.js';
 import { Eco } from './eco.js';
 import { Wallet } from './wallet.js';
 import { Events } from './events.js';
+import { Clock } from './clock.js';
+import { Flavors } from './flavors.js';
+import { Fmt } from '../core/format.js';
 
 /* ---------- Récoltes à la main (verger, bois de sureau, canne à sucre) ---------- */
 export const Fields = {
@@ -23,10 +26,11 @@ export const Fields = {
       if (who === 'player') Bus.toast(`Pas encore mûr… encore ${Math.ceil(arr[i])} s`);
       return false;
     }
-    s.mat[F.mat] += F.yield;
+    const mat = F.mat === 'auto' ? Flavors.mainFruit(s, s.flavor) : F.mat;
+    s.mat[mat] = (s.mat[mat] || 0) + F.yield;
     arr[i] = F.regrow;
     s.stats.picked++;
-    Bus.float(`+${F.yield} kg ${F.mat === 'sugar' ? '🧂' : F.icon}`, pos, F.mat === 'sugar' ? '#fff3c4' : '#ffd0d6');
+    Bus.float(`+${F.yield} kg ${CONFIG.materials[mat].icon}`, pos, mat === 'sugar' ? '#fff3c4' : '#ffd0d6');
     Bus.sfx('pick');
     return true;
   },
@@ -35,6 +39,72 @@ export const Fields = {
     const k = Events.regrowFactor(s) * dt;
     for (const arr of Object.values(s.fields))
       for (let i = 0; i < arr.length; i++) if (arr[i] > 0) arr[i] = Math.max(0, arr[i] - k);
+  },
+};
+
+/* ---------- Champs à cultiver ---------- */
+export const Farm = {
+  crop: (s, i) => CONFIG.farm.crops[s.farm.crop[i]],
+  owns: (s, i) => i < s.farm.owned,
+  ripe: (s, i) => i < s.farm.owned && s.farm.t[i] <= 0,
+  /** Prix du prochain champ (null s'ils sont tous à toi) */
+  nextCost: s => (s.farm.owned < CONFIG.farm.count ? CONFIG.farm.costs[s.farm.owned] : null),
+
+  /** Récolte normale : au moins `yield` kg, sinon quelques secondes de consommation de l'usine */
+  yieldOf(s, i) {
+    const C = this.crop(s, i);
+    const need = C.mat === 'sugar' ? Flavors.get(s, s.flavor).sugar : CONFIG.flavors[C.mat].fruit;
+    return Math.max(C.yield, Math.round(Eco.cookRate(s) * need * C.prodSec));
+  },
+  /** Plante disponible ? (les fruits arrivent avec leur parfum) */
+  cropOpen: (s, crop) => { const C = CONFIG.farm.crops[crop]; return !!C && (!C.flavor || s.unlocked.includes(C.flavor)); },
+
+  buy(s) {
+    const cost = this.nextCost(s);
+    if (cost == null || !Wallet.spend(s, cost)) return false;
+    const i = s.farm.owned++;
+    s.farm.t[i] = this.crop(s, i).grow; s.farm.wait[i] = 0;
+    Bus.toast(`🌱 Champ ${i + 1} à toi ! Choisis ce que tu veux y planter.`, 'ok');
+    Bus.sfx('unlock');
+    return true;
+  },
+
+  plant(s, i, crop) {
+    const C = CONFIG.farm.crops[crop];
+    if (!C || !this.cropOpen(s, crop) || !this.owns(s, i) || s.farm.crop[i] === crop) return false;
+    s.farm.crop[i] = crop; s.farm.t[i] = C.grow; s.farm.wait[i] = 0;
+    Bus.toast(`${C.icon} Champ ${i + 1} : on plante ${C.name.toLowerCase()} !`, 'ok');
+    Bus.sfx('pick');
+    return true;
+  },
+
+  /** Récolte à la main (joueur ou compagnon) : double */
+  harvest(s, i, pos, who = 'player') {
+    if (!this.owns(s, i)) return false;
+    if (s.farm.t[i] > 0) {
+      if (who === 'player') Bus.toast(`Pas encore mûr… encore ${Math.ceil(s.farm.t[i])} s`);
+      return false;
+    }
+    const C = this.crop(s, i), n = this.yieldOf(s, i) * CONFIG.farm.handMult;
+    s.mat[C.mat] += n;
+    s.farm.t[i] = C.grow; s.farm.wait[i] = 0;
+    s.stats.picked++;
+    Bus.float(`+${Fmt.int(n)} kg ${CONFIG.materials[C.mat].icon} ×${CONFIG.farm.handMult}`, pos, C.mat === 'sugar' ? '#fff3c4' : '#c8f7c5');
+    Bus.sfx('pick');
+    return true;
+  },
+
+  /** Pousse ; un champ mûr oublié est ramassé tout seul (récolte normale) et se replante */
+  step(s, dt) {
+    const k = Events.regrowFactor(s) * dt, F = s.farm;
+    for (let i = 0; i < F.owned; i++) {
+      if (F.t[i] > 0) { F.t[i] = Math.max(0, F.t[i] - k); continue; }
+      F.wait[i] += dt;
+      if (F.wait[i] < CONFIG.farm.autoSec) continue;
+      const C = this.crop(s, i);
+      s.mat[C.mat] += this.yieldOf(s, i);
+      F.t[i] = C.grow; F.wait[i] = 0;
+    }
   },
 };
 
@@ -76,7 +146,8 @@ export const RealEstate = {
   step(s, dt) {
     const r = Eco.rent(s);
     if (r > 0) Wallet.earn(s, r * dt);
-    s.mat.fruit += Eco.orchard(s) * dt;
+    const o = Eco.orchard(s);
+    if (o > 0) { const m = Flavors.mainFruit(s, s.flavor); s.mat[m] = (s.mat[m] || 0) + o * dt; }
   },
 };
 
@@ -87,8 +158,39 @@ export const Garage = {
     const v = this.next(s);
     if (!v || !Wallet.spend(s, v.cost)) return;
     s.vehicle++;
+    s.ride = null;                       // on monte tout de suite dans le nouveau
     Bus.toast(`${v.icon} ${v.name} : ${Eco.capacity(s)} bouteilles, et ça roule !`, 'ok');
     Bus.sfx('unlock');
+  },
+  /** Prendre un véhicule déjà acheté (0 = à pied) */
+  ride(s, i) {
+    if (!(i >= 0 && i <= s.vehicle)) return false;
+    s.ride = i === s.vehicle ? null : i;
+    const v = Eco.vehicle(s);
+    Bus.toast(i === 0 ? '👟 Tu pars à pied !' : `${v.icon} Tu prends : ${v.name.toLowerCase()} (${Eco.capacity(s)} bouteilles)`, 'ok');
+    Bus.sfx('click');
+    return true;
+  },
+};
+
+/* ---------- Ta maison : dormir la nuit ---------- */
+export const Home = {
+  canSleep: s => Clock.isNight(s),
+  /** Minutes de jeu avant la nuit (pour le dire au joueur) */
+  untilNight(s) {
+    const h = Clock.hour(s), wait = (20 - h + 24) % 24;
+    return Math.ceil(wait / 24 * CONFIG.clock.daySec / 60);
+  },
+  /** Dormir : on saute au matin et on se réveille « Bien reposé » */
+  sleep(s) {
+    if (!this.canSleep(s)) return false;
+    const C = CONFIG.clock, H = CONFIG.home;
+    s.clock = (((H.wakeHour - C.startHour + 24) % 24) / 24) * C.daySec;
+    s.rested = H.restSec;
+    s.stats.sleeps = (s.stats.sleeps || 0) + 1;
+    Bus.toast(`☀️ Bonjour ! Bien reposé : production +${Math.round(H.restBonus * 100)} % pendant ${Math.round(H.restSec / 60)} min`, 'ok');
+    Bus.sfx('quest');
+    return true;
   },
 };
 

@@ -45,7 +45,7 @@ const { Flavors } = await import('../js/sim/flavors.js');
 const { Factory } = await import('../js/sim/factory.js');
 const { Contracts } = await import('../js/sim/contracts.js');
 const { Couriers } = await import('../js/sim/couriers.js');
-const { Fields, Districts, RealEstate, Garage, Recipes } = await import('../js/sim/world-systems.js');
+const { Fields, Farm, Districts, RealEstate, Garage, Recipes } = await import('../js/sim/world-systems.js');
 const { Quests, questsFromFile } = await import('../js/sim/quests.js');
 // Les quêtes publiées (assets/quests.json) si le fichier existe, comme dans le jeu
 try {
@@ -65,7 +65,7 @@ for (const s of sets) {
 
 /* ---------- Géographie (secondes de marche, depuis le quai) ---------- */
 const walk = (s, a, b) => (Couriers.dist(a, b) / Eco.speed(s)) * HUMAN;
-const FIELD_TRIP = { verger: 520, canne: 1100, sureau: 2900 };   // aller-retour approximatif depuis le quai (px)
+const FIELD_TRIP = { verger: 520, sureau: 2900, farm: 1100 };   // aller-retour approximatif depuis le quai (px)
 
 /* ---------- Le joueur automatique ---------- */
 function makeBot(s) {
@@ -99,13 +99,18 @@ function makeBot(s) {
         const need = {};
         for (const c of [...s.active.filter(c => !c.loaded), o]) need[c.flavor] = (need[c.flavor] || 0) + c.qty;
         const toMake = Object.entries(need).reduce((a, [fl, q]) => a + Math.max(0, q - (s.stock[fl] || 0)), 0);
-        const needTime = toMake / Math.max(0.05, net) + 25 * Object.keys(need).length + 45;
+        // Chaque parfum se fait sur une seule ligne ; plusieurs parfums avancent en parallèle
+        const par = Math.min(Eco.lineCount(s), Object.keys(need).length);
+        const needTime = toMake / Math.max(0.05, net / Eco.lineCount(s) * par) + 25 * Object.keys(need).length + 45;
         if (canCarry && needTime < o.time * 0.85) Contracts.accept(s, o.id);
       }
-      // Produire le parfum le plus demandé par les contrats en attente, sinon le plus cher
-      const want = s.active.find(c => !c.loaded && (s.stock[c.flavor] || 0) < c.qty);
-      const best = want ? want.flavor : [...s.unlocked].sort((a, b) => Flavors.get(s, b).price - Flavors.get(s, a).price)[0];
-      if (s.flavor !== best) Factory.select(s, best);   // comme un joueur : la cuve se vide puis le nouveau parfum démarre
+      // Parfums des lignes : d'abord ceux des contrats en attente, puis les plus chers.
+      // Une ligne qui fait déjà un parfum voulu le garde (comme un joueur : on évite de vider les cuves).
+      const wants = [...new Set(s.active.filter(c => !c.loaded && (s.stock[c.flavor] || 0) < c.qty).map(c => c.flavor))];
+      const byPrice = [...s.unlocked].sort((a, b) => Flavors.get(s, b).price - Flavors.get(s, a).price);
+      const lines = Eco.lines(s), wanted = [...new Set([...wants, ...byPrice])].slice(0, lines.length);
+      const free = wanted.filter(fl => !lines.some(L => L.flavor === fl));
+      lines.forEach((L, i) => { if (!wanted.includes(L.flavor) && free.length) Factory.select(s, free.shift(), i); });
     },
 
     /** Charge au quai et part livrer (les clients visités dans l'ordre de la route) */
@@ -129,12 +134,21 @@ function makeBot(s) {
         if (!Fields.open(s, g)) continue;
         const ripe = arr.map((v, i) => (v <= 0 ? i : -1)).filter(i => i >= 0);
         if (ripe.length < Math.ceil(arr.length / 2)) continue;
-        const gain = ripe.length * CONFIG.fields[g].yield * CONFIG.materials[CONFIG.fields[g].mat].price;
+        const mat = CONFIG.fields[g].mat === 'auto' ? Flavors.mainFruit(s, s.flavor) : CONFIG.fields[g].mat;
+        const gain = ripe.length * CONFIG.fields[g].yield * CONFIG.materials[mat].price;
         const time = (FIELD_TRIP[g] / Eco.speed(s)) * HUMAN + ripe.length * 1.5;
         if (!best || gain / time > best.rate) best = { g, ripe, time, rate: gain / time };
       }
+      // Champs à cultiver : récolte à la main (×2) ; sinon ils se ramassent tout seuls
+      const fr = [];
+      for (let i = 0; i < s.farm.owned; i++) if (Farm.ripe(s, i)) fr.push(i);
+      if (fr.length >= Math.ceil(s.farm.owned / 2)) {
+        const gain = fr.reduce((a, i) => a + Farm.yieldOf(s, i) * CONFIG.materials[Farm.crop(s, i).mat].price, 0) * CONFIG.farm.handMult;
+        const time = (FIELD_TRIP.farm / Eco.speed(s)) * HUMAN + fr.length * 1.5;
+        if (!best || gain / time > best.rate) best = { farm: true, ripe: fr, time, rate: gain / time };
+      }
       if (!best) return;
-      for (const i of best.ripe) Fields.pick(s, best.g, i, { x: 0, y: 0 }, 'pet');
+      for (const i of best.ripe) best.farm ? Farm.harvest(s, i, { x: 0, y: 0 }, 'pet') : Fields.pick(s, best.g, i, { x: 0, y: 0 }, 'pet');
       this.busyUntil = t + best.time;
     },
 
@@ -145,13 +159,11 @@ function makeBot(s) {
     buyOne(s) {
       // Matières à la main tant que le réapprovisionnement automatique n'est pas acheté
       if (!s.auto.restock) {
-        const f = Flavors.get(s, s.flavor);
-        for (const mat of ['sugar', 'fruit'])
-          if (f[mat] && s.mat[mat] < f[mat] * 25 && s.money >= 100 * CONFIG.materials[mat].price) { Factory.buyMaterial(s, mat, 100); return true; }
+        for (const [mat, q] of Object.entries(Flavors.needs(s, s.flavor)))
+          if (q && s.mat[mat] < q * 25 && s.money >= 100 * CONFIG.materials[mat].price) { Factory.buyMaterial(s, mat, 100); return true; }
       }
       // Réserve : de quoi racheter une minute de matières au rythme actuel
-      const fl = Flavors.get(s, s.flavor);
-      const matPerSec = (fl.sugar * CONFIG.materials.sugar.price + fl.fruit * CONFIG.materials.fruit.price) * Eco.cookRate(s);
+      const matPerSec = Object.entries(Flavors.needs(s, s.flavor)).reduce((a, [mt, q]) => a + q * CONFIG.materials[mt].price, 0) * Eco.cookRate(s);
       const reserve = Math.max(60, matPerSec * 60);
       const m = s.money - reserve;
       const can = c => c <= m;
@@ -163,8 +175,23 @@ function makeBot(s) {
       if (s.couriers < CONFIG.couriers.max && s.rep >= CONFIG.couriers.rep && can(Eco.courierCost(s))) { Couriers.hire(s); return true; }
       for (const [id, d] of Object.entries(CONFIG.districts))
         if (!s.districts[id] && s.rep >= d.rep && can(d.cost)) { Districts.unlock(s, id); return true; }
+      // Champs : un bonus, achetés quand ils coûtent moins de la moitié de la caisse.
+      // Plantés selon la matière la plus chère à racheter pour le parfum en cours.
+      const fc = Farm.nextCost(s);
+      if (fc != null && can(fc * 2)) {
+        Farm.buy(s);
+        const i = s.farm.owned - 1, need = Flavors.needs(s, s.flavor);
+        const cost = Object.entries(need).reduce((a, [mt, q]) => a + q * CONFIG.materials[mt].price, 0);
+        const fruitShare = 1 - need.sugar * CONFIG.materials.sugar.price / cost;
+        const fruitCrop = Object.entries(CONFIG.farm.crops).find(([k, c]) => c.mat === Flavors.mainFruit(s, s.flavor) && Farm.cropOpen(s, k));
+        const fruits = s.farm.crop.slice(0, i).filter(c => c !== 'canne').length;
+        Farm.plant(s, i, fruitCrop && fruits / i < fruitShare ? fruitCrop[0] : 'canne');
+        return true;
+      }
       const nextFl = Object.entries(CONFIG.flavors).find(([k]) => !s.unlocked.includes(k));
       if (nextFl && can(nextFl[1].unlock)) { Factory.unlock(s, nextFl[0]); return true; }
+      const lineCost = Factory.nextLineCost(s);
+      if (lineCost != null && can(lineCost)) { Factory.buyLine(s); return true; }
       if (s.recipes.length < CONFIG.recipes.max && can(Eco.recipeCost(s))) {
         const base = Object.keys(CONFIG.flavors).filter(k => s.unlocked.includes(k)).sort((a, b) => CONFIG.flavors[b].price - CONFIG.flavors[a].price);
         for (let i = 0; i < base.length; i++) for (let j = i + 1; j < base.length; j++) {
@@ -175,7 +202,7 @@ function makeBot(s) {
 
       // Prochain grand objectif : on économise pour lui s'il est à portée (moins de 4× la caisse)
       const goals = [
-        v && v.cost, nextFl && nextFl[1].unlock,
+        v && v.cost, nextFl && nextFl[1].unlock, lineCost,
         s.couriers < CONFIG.couriers.max && s.rep >= CONFIG.couriers.rep && Eco.courierCost(s),
         ...Object.entries(CONFIG.districts).filter(([id]) => !s.districts[id]).map(([, d]) => d.cost),
         Eco.freePlot(s) >= 0 && Math.min(...CONFIG.houses.types.filter(ty => !s.houses.some(h => h.type === ty.id)).map(ty => Eco.nextHouseCost(s, ty))),
@@ -199,7 +226,7 @@ function makeBot(s) {
       const bestPrice = Math.max(...s.unlocked.map(fl => Eco.sellPrice(s, fl, CONFIG.counter.priceFactor)));
       const value = (use, amount) => use === 'rent' ? amount * Eco.mult(s)
         : use === 'shop' ? Math.min(amount, Math.max(0, prod - counter)) * bestPrice
-        : use === 'orchard' ? amount * CONFIG.materials.fruit.price : 0;
+        : use === 'orchard' ? amount * CONFIG.materials.menthe.price : 0;
       const bestUse = mult => ['rent', 'shop', 'orchard']
         .map(u => [u, value(u, CONFIG.houses.uses[u].base * mult)]).sort((a, b) => b[1] - a[1])[0];
 
@@ -228,7 +255,8 @@ const STEPS = [
   ['Grenadine', s => s.unlocked.includes('grenadine')],
   ['Vélo', s => s.vehicle >= 1],
   ['1re maison', s => s.houses.length >= 1],
-  ['Champs', s => s.districts.champs],
+  ['3e champ', s => s.farm.owned >= 3],
+  ['8 champs', s => s.farm.owned >= CONFIG.farm.count],
   ['Citron', s => s.unlocked.includes('citron')],
   ['1re recette', s => s.recipes.length >= 1],
   ['1er livreur', s => s.couriers >= 1],
@@ -242,9 +270,11 @@ const STEPS = [
   ['4 recettes', s => s.recipes.length >= 4],
   ['1er domaine', s => s.houses.some(h => h.type === 'domaine')],
   ['Toutes les quêtes', s => s.quest.i >= Quests.count(s)],
+  ['Ligne 2', s => Eco.lineCount(s) >= 2],
+  ['Ligne 3', s => Eco.lineCount(s) >= 3],
   ['Prestige possible', s => Prestige.can(s)],
   ['TOUT FINI', s => s.quest.i >= Quests.count(s) && s.houses.some(h => h.type === 'domaine') && s.unlocked.length >= 5 + CONFIG.recipes.max
-      && s.vehicle >= 3 && s.couriers >= 4 && s.districts.colline && s.districts.champs],
+      && s.vehicle >= 3 && s.couriers >= 4 && s.districts.colline && s.farm.owned >= CONFIG.farm.count],
 ];
 
 const fmtT = sec => sec == null ? '—' : sec < 3600 ? `${Math.floor(sec / 60)} min` : `${Math.floor(sec / 3600)} h ${String(Math.floor((sec % 3600) / 60)).padStart(2, '0')}`;

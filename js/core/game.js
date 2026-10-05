@@ -10,7 +10,9 @@ export const rt = {
   earnedTick: 0,
   counterAcc: 0,          // ventes comptoir cumulées pour le texte flottant
   flow: { cook: 0, bottle: 0, sell: 0 },
-  bneck: '',              // étape limitante de la chaîne
+  bneck: '',              // étape limitante de la chaîne (ligne 1)
+  bnecks: [],             // étape limitante de chaque ligne
+  lineFlow: [],           // débits réels de chaque ligne : { cook, bottle }
   silent: false,          // coupe toasts/sons pendant le rattrapage hors ligne
   timeScale: 1,           // accéléré par le mode debug
 };

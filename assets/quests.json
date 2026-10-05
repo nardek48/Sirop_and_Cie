@@ -55,11 +55,10 @@
    "text": "Atteins 10 étoiles de réputation"
   },
   {
-   "goal": "district",
-   "arg": "champs",
-   "n": 1,
+   "goal": "farm",
+   "n": 3,
    "reward": 600,
-   "text": "Ouvre les Champs"
+   "text": "Achète ton 3e champ"
   },
   {
    "goal": "recipes",

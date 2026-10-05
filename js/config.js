@@ -16,11 +16,18 @@ export const CONFIG = {
   tickMs: 100,
   saveEverySec: 30,
   startMoney: 80,
-  startMaterials: { sugar: 30, fruit: 20 },
+  startMaterials: { sugar: 30, menthe: 20 },
 
+  // Matières (v0.6.0) : le sucre, et un fruit par parfum de base (même clé que le parfum).
+  // Un parfum de base demande `sugar` kg de sucre et `fruit` kg de SON fruit ;
+  // une recette secrète demande la moitié des fruits de chacun de ses deux parfums.
   materials: {
-    sugar: { name: 'Sucre',            icon: '🧂', price: 0.2 },
-    fruit: { name: 'Fruits & plantes', icon: '🍓', price: 0.3 },
+    sugar:     { name: 'Sucre',              icon: '🧂', price: 0.2 },
+    menthe:    { name: 'Feuilles de menthe', icon: '🌿', price: 0.3 },
+    grenadine: { name: 'Grenades',           icon: '🍎', price: 0.3 },
+    citron:    { name: 'Citrons',            icon: '🍋', price: 0.3 },
+    sureau:    { name: 'Baies de sureau',    icon: '🫐', price: 0.3 },
+    violette:  { name: 'Violettes',          icon: '💜', price: 0.3 },
   },
 
   // Parfums de base. Les recettes secrètes (labo) s'y ajoutent dans l'état.
@@ -47,6 +54,10 @@ export const CONFIG = {
     ware:    { name: 'Entrepôt',      icon: '📦', base: 80,   growth: 1.5, step: 0.8, cost: 50, costGrowth: 1.16 },
     counter: { name: 'Comptoir',      icon: '🛎️', base: 0.55, growth: 1.3, step: 0.5, cost: 45, costGrowth: 1.16 },
   },
+
+  // Lignes de production (v0.7.0) : chaque ligne a son parfum et sa cuve ; les machines
+  // (niveaux de cuisson, cuve, embouteillage) sont communes. Repart à 1 ligne au prestige.
+  lines: { max: 3, costs: [0, 750000, 15000000] },   // réglés au simulateur : ligne 2 vers 3 h 45, prestige vers 5 h 50
 
   counter: { priceFactor: 0.7, nightFactor: 0.6 },
   restock: { cost: 800, minBatch: 50, secondsOfStock: 60, trigger: 0.3 },
@@ -82,15 +93,14 @@ export const CONFIG = {
   recipes: { max: 4, cost: 8000, costGrowth: 4, priceBonus: 0.75 },
 
   districts: {
-    champs:  { name: 'Les Champs', icon: '🌾', cost: 2500,  rep: 0,  desc: '8 parcelles de canne à sucre : du sucre gratuit à récolter.' },
     colline: { name: 'La Colline', icon: '⛰️', cost: 300000, rep: 25, desc: 'La gare du Train Express, 4 terrains et un bois de sureau.' },
   },
 
   // Récoltes à la main (joueur ou compagnon)
   fields: {
-    verger: { name: 'Verger',        mat: 'fruit', icon: '🍓', yield: 12, regrow: 30, count: 9 },
-    sureau: { name: 'Bois de sureau', mat: 'fruit', icon: '🫐', yield: 25, regrow: 45, count: 6, district: 'colline' },
-    canne:  { name: 'Canne à sucre', mat: 'sugar', icon: '🌾', yield: 18, regrow: 35, count: 8, district: 'champs' },
+    // mat 'auto' : le verger donne le fruit du parfum en production (un peu de tout pousse au verger communal)
+    verger: { name: 'Verger',        mat: 'auto',   icon: '🌳', yield: 12, regrow: 30, count: 9 },
+    sureau: { name: 'Bois de sureau', mat: 'sureau', icon: '🫐', yield: 25, regrow: 45, count: 6, district: 'colline' },
   },
 
   houses: {
@@ -109,6 +119,28 @@ export const CONFIG = {
     plots: 6, collinePlots: 4,
     costGrowth: 1.3, sellRatio: 0.5, renoRatio: 0.6, renoGrowth: 2, renoBonus: 0.5, maxLevel: 5,
   },
+
+  // Champs à cultiver (v0.5.0) : 2 offerts, les suivants s'achètent un par un.
+  // Un champ mûr attend qu'on le récolte (×2 à la main) ; sinon il est ramassé tout seul
+  // au bout de autoSec secondes : les champs donnent un bonus, ils ne bloquent jamais rien.
+  // Récolte normale = au moins `yield`, sinon `prodSec` secondes de consommation de l'usine.
+  farm: {
+    count: 8, free: 2,
+    costs: [0, 0, 500, 2000, 8000, 30000, 120000, 500000],
+    autoSec: 60, handMult: 2,
+    // Une plante par matière ; `flavor` : se plante une fois ce parfum débloqué
+    crops: {
+      menthe:    { name: 'Menthe',        icon: '🌿', mat: 'menthe',    grow: 30, yield: 15, prodSec: 4 },
+      canne:     { name: 'Canne à sucre', icon: '🌾', mat: 'sugar',     grow: 35, yield: 18, prodSec: 4 },
+      grenadier: { name: 'Grenadier',     icon: '🍎', mat: 'grenadine', grow: 40, yield: 15, prodSec: 4, flavor: 'grenadine' },
+      citronnier:{ name: 'Citronnier',    icon: '🍋', mat: 'citron',    grow: 45, yield: 15, prodSec: 4, flavor: 'citron' },
+      sureau:    { name: 'Sureau',        icon: '🫐', mat: 'sureau',    grow: 50, yield: 15, prodSec: 4, flavor: 'sureau' },
+      violette:  { name: 'Violettes',     icon: '💜', mat: 'violette',  grow: 55, yield: 15, prodSec: 4, flavor: 'violette' },
+    },
+  },
+
+  // Ta maison : dormir la nuit donne « Bien reposé » (production +25 %) pendant 30 min de jeu
+  home: { restSec: 1800, restBonus: 0.25, wakeHour: 6.5 },
 
   // Une journée complète dure 8 minutes. La partie commence à 9 h.
   clock: { daySec: 480, startHour: 6, startSec: 60, maxDark: 0.58 },
@@ -149,14 +181,16 @@ export const CONFIG = {
   // (temps de trajet des livreurs) et par le rendu.
   roadY: 565,
   places: {
-    usine:       { x: 200,  y: 512 },
+    maison:      { x: 985,  y: 1040 },   // ta maison (sous les terrains)
+    garageMaison:{ x: 1175, y: 1040 },   // son petit garage
+    usine:       { x: 160,  y: 512 },   // calées sur assets/batiments
     quai:        { x: 400,  y: 512 },
     labo:        { x: 595,  y: 512 },
     contrats:    { x: 800,  y: 512 },
-    agence:      { x: 1025, y: 512 },
+    agence:      { x: 1008, y: 512 },
     mairie:      { x: 1255, y: 512 },
     garage:      { x: 1495, y: 512 },
-    epicerie:    { x: 1720, y: 512 },
+    epicerie:    { x: 1680, y: 512 },   // porte à gauche sur l'image
     cafe:        { x: 1935, y: 512 },
     supermarche: { x: 2175, y: 512 },
     port:        { x: 2445, y: 512 },

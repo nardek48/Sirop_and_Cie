@@ -9,7 +9,8 @@ import { Fmt } from '../core/format.js';
 import { Factory } from '../sim/factory.js';
 import { Contracts } from '../sim/contracts.js';
 import { Couriers } from '../sim/couriers.js';
-import { RealEstate, Garage, Recipes, Districts } from '../sim/world-systems.js';
+import { RealEstate, Garage, Recipes, Districts, Farm } from '../sim/world-systems.js';
+import { FieldSel } from './panels/champ.js';
 import { Quests } from '../sim/quests.js';
 import { Sim, Prestige } from '../sim/sim.js';
 import { Eco } from '../sim/eco.js';
@@ -24,16 +25,25 @@ import { UI } from './ui.js';
 import { Form } from './form.js';
 import { SaveFile } from './savefile.js';
 import { MachineSel } from './panels/machine.js';
+import { UsineSel } from './panels/usine.js';
+import { HOME_DECO } from '../world/home.js';
 
 const map = {
   // usine
-  select: (s, a) => Factory.select(s, a),
+  select: (s, a) => { const [fl, line] = a.split('|'); Factory.select(s, fl, Number(line) || 0); },
+  usineLine: (s, a) => { UsineSel.line = Number(a) || 0; },
+  buyLine: s => {
+    const cost = Factory.nextLineCost(s);
+    if (cost == null) return;
+    UI.confirm(`Acheter la ligne ${Eco.lineCount(s) + 1} pour ${Fmt.money(cost)} ?<br><small>Elle cuit son propre parfum, en même temps que les autres lignes.</small>`,
+      () => { if (Factory.buyLine(Game.s)) UsineSel.line = Eco.lineCount(Game.s) - 1; }, 'Acheter');
+  },
   unlock: (s, a) => Factory.unlock(s, a),
   buyMat: (s, a) => { const [m, q] = a.split(','); Factory.buyMaterial(s, m, Number(q)); },
   up: (s, a) => Factory.upgrade(s, a),
   counter: s => { s.counterOn = !s.counterOn; },
   restock: s => Factory.buyRestock(s),
-  machine: (s, a) => { MachineSel.k = a; UI.open('machine'); },
+  machine: (s, a) => { MachineSel.k = a; MachineSel.line = 0; UI.open('machine'); },
   // contrats
   accept: (s, a) => Contracts.accept(s, a),
   decline: (s, a) => Contracts.decline(s, a),
@@ -54,9 +64,15 @@ const map = {
   },
   // garage
   vehicle: s => Garage.buy(s),
+  ride: (s, a) => Garage.ride(s, Number(a)),
+  // champs
+  farmBuy: s => { if (Farm.buy(s)) FieldSel.i = s.farm.owned - 1; },
+  plant: (s, a) => { const [i, crop] = a.split(':'); Farm.plant(s, Number(i), crop); },
   courier: s => Couriers.hire(s),
   // labo
   laboColor: (s, a) => { Form.labo.color = a; },
+  laboA: (s, a) => { Form.labo.a = a; },
+  laboB: (s, a) => { Form.labo.b = a; },
   laboCreate: s => { if (Recipes.create(s, Form.labo)) Form.labo.name = ''; },
   // mairie
   shirt: (s, a) => { s.look.shirt = a; },
@@ -88,6 +104,13 @@ const map = {
   tipClose: () => Tips.close(),
   tipsToggle: s => { s.tipsOn = !s.tipsOn; },
   architect: () => Editor.start(),
+  // maison : décoration (choix gratuits, vérifiés dans le catalogue)
+  decoSet: (s, a) => {
+    const [slot, id] = a.split(':'), D = HOME_DECO[slot];
+    if (!D || !D.options.some(o => o.id === id)) return;
+    if (slot === 'wall' || slot === 'floor') s.home[slot] = id; else s.home.deco[slot] = id;
+    Sfx.play('click');
+  },
   // éditeur de quêtes
   questEditor: () => QuestEditor.open(),
   qeAdd: () => QuestEditor.add(),

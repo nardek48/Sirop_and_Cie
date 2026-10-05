@@ -15,7 +15,7 @@ import { Factory } from './factory.js';
 import { Market } from './market.js';
 import { Contracts } from './contracts.js';
 import { Couriers } from './couriers.js';
-import { Fields, RealEstate } from './world-systems.js';
+import { Fields, Farm, RealEstate } from './world-systems.js';
 import { Quests } from './quests.js';
 import { Openings } from './openings.js';
 
@@ -23,6 +23,7 @@ export const Sim = {
   step(s, dt) {
     rt.earnedTick = 0;
     s.stats.playSec += dt;
+    if (s.rested > 0) s.rested = Math.max(0, s.rested - dt);   // « Bien reposé » (maison)
     const tuto = s.tuto && s.tuto.active;
     if (!tuto) {
       Clock.step(s, dt);
@@ -31,6 +32,7 @@ export const Sim = {
       RealEstate.step(s, dt);
     }
     Fields.step(s, dt);
+    Farm.step(s, dt);
     Factory.step(s, dt);
     if (!tuto) {
       Market.step(s, dt);
@@ -57,7 +59,7 @@ export const Prestige = {
     const n = Store.fresh();
     n.stars = s.stars + Eco.prestigeGain(s);
     n.stats = s.stats; n.look = s.look; n.quest = s.quest;
-    n.tuto = s.tuto; n.opened = s.opened; n.seen = s.seen; n.tipsOn = s.tipsOn; n.decor = s.decor; n.quests = s.quests;
+    n.tuto = s.tuto; n.opened = s.opened; n.seen = s.seen; n.tipsOn = s.tipsOn; n.decor = s.decor; n.quests = s.quests; n.home = s.home;
     Game.s = n;
     Sim.seed(n);
   },

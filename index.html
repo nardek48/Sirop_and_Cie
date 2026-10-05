@@ -32,10 +32,11 @@
     <div class="res">
       <span class="chip carry" data-t="cargoTop" title="Bouteilles portées / capacité"></span>
       <span class="chip event" data-t="eventTxt"></span>
-      <span class="chip"><small>Caisse</small><span data-t="money"></span></span>
-      <span class="chip hide-sm"><small>Revenus</small><span data-t="rps"></span></span>
-      <span class="chip">⭐ <span data-t="rep"></span></span>
-      <span class="chip hide-sm"><small>Stock</small><span data-t="stockTop"></span></span>
+      <span class="chip rest" data-t="restTxt" title="Bien reposé : production accélérée"></span>
+      <span class="chip stat"><i aria-hidden="true">💰</i><span><small>Caisse</small><b data-t="money"></b></span></span>
+      <span class="chip stat hide-sm"><i aria-hidden="true">📈</i><span><small>Revenus</small><b data-t="rps"></b></span></span>
+      <span class="chip stat"><i aria-hidden="true">⭐</i><span><small>Réputation</small><b data-t="rep"></b></span></span>
+      <span class="chip stat hide-sm"><i aria-hidden="true">📦</i><span><small>Stock</small><b data-t="stockTop"></b></span></span>
       <span class="chip" data-t="clock"></span>
       <span class="chip" data-t="stars"></span>
       <button type="button" class="chip install" id="install-btn" hidden>📲 Installer</button>
@@ -49,10 +50,14 @@
   <canvas id="world" aria-label="Le village de Sirop-sur-Mer"></canvas>
 
   <button type="button" class="quest" id="quest" data-act="questToggle" data-c="ready|questReady" aria-label="Quête du maire">
-    <span class="q-kicker">Quête du maire</span>
-    <span class="q-title" data-t="questTitle"></span>
-    <span class="bar"><i data-w="questPct"></i></span>
-    <span class="q-prog" data-t="questProg"></span>
+    <span class="q-ico" aria-hidden="true">📜</span>
+    <span class="q-body">
+      <span class="q-kicker">Quête du maire</span>
+      <span class="q-title" data-t="questTitle"></span>
+      <span class="bar"><i data-w="questPct"></i></span>
+      <span class="q-prog" data-t="questProg"></span>
+    </span>
+    <span class="q-chev" aria-hidden="true">›</span>
   </button>
 
   <div class="help" id="help">

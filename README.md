@@ -110,7 +110,7 @@ js/
     market.js           comptoir
     contracts.js        contrats et livraisons
     couriers.js         livreurs
-    world-systems.js    récoltes, quartiers, maisons, véhicules, recettes secrètes
+    world-systems.js    récoltes, champs (Farm), quartiers, maisons, véhicules, maison (Home), recettes secrètes
     quests.js           ⭐ quêtes du maire : types d’objectifs (GOALS) et quêtes par défaut
     openings.js         bâtiments fermés au début (garage, agence, labo)
     events.js           pluie, canicule, fête
@@ -125,10 +125,13 @@ js/
     tips.js             les conseils « première fois » et ceux du banc du parc
   ui/                   HUD, panneaux (un fichier par bâtiment), actions, liaisons
     savefile.js         exporter / importer une partie, reprendre la partie d’avant
+    panels/deco.js      fiche « Décorer ma maison »
+    panels/champ.js     fiche d’un champ (planter, acheter)
     panels/machine.js   fiche d’une machine (dans l’usine visitable)
   world/                le village en canvas
     map.js              ⭐ positions des bâtiments, arbres, terrains, décor
     interior.js         ⭐ l’intérieur de l’usine : salle, machines animées, sorties
+    home.js             ⭐ ta maison : façade, intérieur, catalogue de décoration (HOME_DECO), garage
     render.js           dessin de la scène, nuit, météo
     characters.js       personnages 4 directions, véhicules, compagnons
     villagers.js        habitants (et leurs phrases)
@@ -157,7 +160,7 @@ Règle d’or : les fichiers de `sim/` ne touchent jamais au DOM. Ils émettent 
    Art.sheet('player', 'assets/perso.png', { fw: 48, fh: 64 });
    ```
 
-Même principe pour `livreur`, `villageois`, `chien` et `chat` (feuilles de sprites), et pour les images fixes `arbre`, `sureau`, `canne` et `maison_studio`… via `Art.load({ arbre: 'assets/arbre.png' })`.
+Même principe pour `livreur`, `villageois`, `chien` et `chat` (feuilles de sprites), et pour les images fixes `arbre`, `sureau`, `canne`, `menthe` et `maison_studio`… via `Art.load({ arbre: 'assets/arbre.png' })`.
 Pour essayer sans rien modifier, taper dans la console du navigateur : `Art.sheet('player', 'assets/modele-perso.png', { fw: 48, fh: 64 })`.
 
 ## Modifier le village
@@ -186,7 +189,21 @@ Un nouveau type d’objectif : une entrée dans `GOALS` (`sim/quests.js`), avec 
 
 ## L’usine visitable
 
-La porte de l’usine fait entrer dans la salle de fabrication (pendant le tutoriel, elle ouvre toujours le tableau de l’usine). Tout y bouge avec les vraies valeurs du jeu : sacs et cagettes, marmite, cuve, tapis de bouteilles, entrepôt, clients au comptoir. La machine la plus lente est marquée 🐢, un blocage ⚠️. Toucher une machine ouvre sa fiche pour l’améliorer ; le tableau noir ouvre toute la gestion. Sortie en bas (devant l’usine) ou à droite (au quai). La salle se dessine dans `js/world/interior.js` (positions en haut du fichier).
+La porte de l’usine fait entrer dans la salle de fabrication (pendant le tutoriel, elle ouvre toujours le tableau de l’usine). Tout y bouge avec les vraies valeurs du jeu : sacs et cagettes, marmite, cuve, tapis de bouteilles, entrepôt, clients au comptoir. La machine la plus lente est marquée 🐢, un blocage ⚠️. Toucher une machine ouvre sa fiche pour l’améliorer ; le tableau noir sert à changer de parfum (et mène au tableau de toute l’usine). Sortie en bas (devant l’usine) ou à droite (au quai). La salle se dessine dans `js/world/interior.js` (positions en haut du fichier).
+
+## Les lignes de production
+
+Jusqu’à 3 lignes (`CONFIG.lines`). La ligne 1 est l’état lui-même (`s.flavor`, `s.bulk`, `s.bulkFlavor`) ; les lignes 2 et 3 sont dans `s.lines`. `Eco.lines(s)` les donne toutes. Chaque ligne a son parfum et sa cuve ; les niveaux des machines sont communs. `Factory.step` fait avancer chaque ligne (`stepLine`), la ligne 1 se servant en premier dans les matières et l’entrepôt.
+
+## Les champs
+
+En bas du village. 2 champs offerts, les suivants s’achètent un par un (`CONFIG.farm.costs`). Dans chaque champ : canne (sucre) ou le fruit d’un parfum débloqué (menthe, grenadier, citronnier, sureau, violettes). Chaque parfum demande son fruit (`CONFIG.materials`, même clé que le parfum) ; une recette secrète, la moitié des fruits de ses deux parfums (`Flavors.needs`). Récolté à la main : double ; oublié : ramassé tout seul au bout d’une minute (`autoSec`). Ajouter une plante : une entrée dans `CONFIG.farm.crops` (la matière qu’elle donne, sa durée de pousse) ; son dessin va dans `Render.farmField` (`world/render.js`).
+
+## Ta maison
+
+Sous les terrains à vendre. Dedans : le lit (la nuit, on dort jusqu’au matin et on se réveille « Bien reposé » : production +25 % pendant 30 min, réglable dans `CONFIG.home`), la décoration (pot de peinture 🎨, cadre, coin, salon, tapis) et, derrière la cloison, le garage où l’on choisit son véhicule parmi ceux achetés.
+
+Ajouter un choix de décoration : une ligne dans `HOME_DECO` (`world/home.js`), avec une couleur ou un emoji.
 
 ## Idées faciles à ajouter
 

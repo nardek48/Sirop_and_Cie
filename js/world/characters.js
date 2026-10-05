@@ -6,15 +6,21 @@ import { Art } from './art.js';
 import { Gfx } from './gfx.js';
 
 const SKIN = '#f2c9a0', PANTS = '#3b2a1a';
+/** Planches dont le vêtement est magenta, repeint avec o.shirt */
+const TINT = new Set(['player', 'villageois']);
 
 /**
  * Personnage vu en 3/4, ancré aux pieds.
- * @param {object} o { key, dir:'bas'|'haut'|'gauche'|'droite', moving, phase, shirt, hair, cap, name, crates }
+ * @param {object} o { key, alt, dir:'bas'|'haut'|'gauche'|'droite', moving, phase, shirt, hair, cap, name, crates }
+ *   alt : suffixe d'une variante (ex. 'e' → planche « villageoise ») si elle est chargée
  * @returns {number} y du haut de la tête (pour placer étiquettes et caisses)
  */
 export function drawCharacter(c, x, y, o) {
   const frame = o.moving ? 1 + (Math.floor(o.phase / Math.PI) % 2) : 0;
-  if (Art.drawFrame(c, o.key, x, y, o.dir, frame)) return y - 64;
+  // Variante (villageoise), puis vêtement magenta repeint de sa couleur (joueur, villageois)
+  const key = o.alt && Art.sheets[o.key + o.alt] ? o.key + o.alt : o.key;
+  const sheet = TINT.has(o.key) ? Art.sheetTint(key, o.shirt) : key;
+  if (Art.drawFrame(c, sheet, x, y, o.dir, frame)) return y - 64;
 
   const sw = o.moving ? Math.sin(o.phase) * 3.5 : 0;
   const bob = o.moving ? Math.abs(Math.sin(o.phase)) * 1.5 : 0;
@@ -112,7 +118,12 @@ export function drawVehicle(c, x, y, vehicle, flip, moving, phase, crates, shirt
 
 /** Compagnon (chien ou chat), ancré aux pattes. */
 export function drawPet(c, x, y, type, flip, moving, phase, name) {
-  if (Art.drawFrame(c, type, x, y, flip < 0 ? 'gauche' : 'droite', moving ? 1 + (Math.floor(phase / Math.PI) % 2) : 0)) return;
+  if (Art.sheets[type]) {                                    // planche dessinée : ombre, image, nom
+    Gfx.shadow(c, x, y, 16, 4);
+    Art.drawFrame(c, type, x, y, flip < 0 ? 'gauche' : 'droite', moving ? 1 + (Math.floor(phase / Math.PI) % 2) : 0);
+    if (name) Gfx.label(c, name, x, y - 44, 11);
+    return;
+  }
   const f = flip < 0 ? -1 : 1, dog = type === 'chien';
   const body = dog ? '#b07a45' : '#8d8d99', dark = dog ? '#6b4226' : '#5d5d68';
   const step = moving ? Math.sin(phase * 1.3) * 3 : 0;

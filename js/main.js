@@ -26,6 +26,23 @@ import { Quests } from './sim/quests.js';
 // Art.sheet('player', 'assets/perso.png', { fw: 48, fh: 64 });
 // Art.sheet('livreur', 'assets/livreur.png', { fw: 48, fh: 64 });
 // Art.load({ arbre: 'assets/arbre.png' });
+
+// Maisons du village : toit magenta, repeint selon l'usage (Art.tinted)
+Art.load(Object.fromEntries(['studio', 'village', 'villa', 'domaine'].map(k => ['maison_' + k, `assets/maisons/${k}.png`])));
+// Bâtiments de la rue principale (repères de cheminée, mât, panneau : BAT_ART dans world/render.js)
+Art.load(Object.fromEntries(['usine', 'labo', 'contrats', 'agence', 'mairie', 'garage', 'epicerie', 'cafe', 'supermarche', 'port', 'gare']
+  .map(k => ['bat_' + k, `assets/batiments/${k}.png`])));
+// Ta maison et son garage : murs magenta, repeints dans la couleur du papier peint (Art.tinted)
+// Personnages : planches 3 images × 4 directions en 64×96, affichées en ~44×65
+// (player, villageois, villageoise : vêtement magenta repeint selon la couleur choisie)
+for (const k of ['ouvrier', 'player', 'meme', 'livreur', 'villageois', 'villageoise'])
+  Art.sheet(k, `assets/persos/${k}.png`, { fw: 64, fh: 96, scale: 0.68 });
+// Compagnons : 3 images (immobile, deux pas) ; ligne 2 = vers la gauche, ligne 3 = vers la droite
+for (const k of ['chien', 'chat']) Art.sheet(k, `assets/persos/${k}.png`, { fw: 96, fh: 80, scale: 0.55 });
+// Intérieur de l'usine (repères : IMG dans world/interior.js)
+Art.load(Object.fromEntries(['sol', 'mur', 'sucre', 'marmite', 'cuve', 'embouteilleuse', 'etagere', 'comptoir', 'tableau']
+  .map(k => ['usine_' + k, `assets/usine/${k}.png`])));
+Art.load({ home_maison: 'assets/batiments/maison-sirotin.png', home_garage: 'assets/batiments/garage-maison.png' });
 window.Art = Art;   // pratique pour essayer depuis la console du navigateur
 
 function showOffline(r) {

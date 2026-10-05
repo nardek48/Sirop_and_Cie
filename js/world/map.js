@@ -29,8 +29,10 @@ export const MAP = {
   fields: {
     verger: [150, 290, 430].flatMap(x => [730, 860, 990].map(y => ({ x, y }))),
     sureau: [2800, 3000, 3200].flatMap(x => [940, 1070].map(y => ({ x, y }))),
-    canne:  Array.from({ length: 8 }, (_, i) => ({ x: 200 + i * 280, y: 1300 })),
   },
+
+  // Champs à cultiver (s.farm), sous le village, de gauche à droite
+  farm: Array.from({ length: 8 }, (_, i) => ({ x: 200 + i * 280, y: 1300 })),
 
   plots: [
     ...[580, 760, 940, 1120, 1300, 1480].map(x => ({ x, y: 660, w: 160, h: 170 })),
@@ -38,7 +40,6 @@ export const MAP = {
   ],
 
   districts: {
-    champs:  { area: { x: 0, y: 1110, w: 2650, h: 450 }, barrier: { x: 0, y: 1092, w: 2650, h: 16 }, sign: { x: 545, y: 1074 } },
     colline: { area: { x: 2672, y: 0, w: 728, h: 1560 }, barrier: { x: 2650, y: 0, w: 22, h: 1560 }, sign: { x: 2612, y: 565 } },
   },
 

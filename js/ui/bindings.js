@@ -9,11 +9,12 @@ import { CONFIG, clientByPlace, typeById } from '../config.js';
 import { rt } from '../core/game.js';
 import { Fmt } from '../core/format.js';
 import { Flavors } from '../sim/flavors.js';
+import { Factory } from '../sim/factory.js';
 import { Eco } from '../sim/eco.js';
 import { Clock } from '../sim/clock.js';
 import { Events } from '../sim/events.js';
 import { Contracts } from '../sim/contracts.js';
-import { RealEstate, Garage, Recipes } from '../sim/world-systems.js';
+import { RealEstate, Garage, Recipes, Farm } from '../sim/world-systems.js';
 import { Quests } from '../sim/quests.js';
 import { Prestige } from '../sim/sim.js';
 import { Form } from './form.js';
@@ -32,6 +33,15 @@ export const B = {
   stars: s => (s.stars ? `✨ ${s.stars} · +${Math.round(s.stars * CONFIG.prestige.bonusPerStar * 100)} %` : ''),
   cargoTop: s => { const n = Eco.carriedQty(s); return n ? `📦 ${Fmt.int(n)} / ${Fmt.int(Eco.capacity(s))}` : ''; },
   clock: s => Clock.label(s),
+  /* --- Champs à cultiver --- */
+  cantFarm: s => { const c = Farm.nextCost(s); return c == null || s.money < c; },
+  farmState: (s, i) => {
+    const C = Farm.crop(s, i), t = s.farm.t[i];
+    return t > 0 ? `${C.icon} ${C.name} pousse… mûr dans ${Math.ceil(t)} s`
+      : `✨ ${C.icon} ${C.name} est mûr ! Récolte-le (×${CONFIG.farm.handMult}) avant ${Math.max(0, Math.ceil(CONFIG.farm.autoSec - s.farm.wait[i]))} s`;
+  },
+  farmPct: (s, i) => 1 - s.farm.t[i] / Farm.crop(s, i).grow,
+  restTxt: s => (s.rested > 0 ? `😴 +${Math.round(CONFIG.home.restBonus * 100)} % · ${Fmt.time(s.rested)}` : ''),
   eventTxt: s => { const e = Events.current(s); return e ? `${e.icon} ${e.name} · ${Fmt.time(s.event.left)}` : ''; },
   questTitle: s => { const q = Quests.current(s); return q ? q.text : 'Toutes les quêtes sont terminées. Bravo !'; },
   questProg: s => {
@@ -48,12 +58,16 @@ export const B = {
   /* --- Usine --- */
   mat: (s, m) => Fmt.num(s.mat[m]) + ' kg',
   cantMat: (s, a) => { const [m, q] = a.split(','); return s.money < q * CONFIG.materials[m].price; },
-  recipe: s => { const f = Flavors.get(s, s.flavor); return `${f.name} : ${Fmt.num(f.sugar)} kg sucre + ${Fmt.num(f.fruit)} kg fruits / bt`; },
+  recipe: s => Eco.lines(s).map(L => {
+    const f = Flavors.get(s, L.flavor), n = Flavors.needs(s, L.flavor);
+    return `${f.name} : ` + Object.entries(n).map(([m, q]) => `${Fmt.num(q)} kg ${CONFIG.materials[m].icon}`).join(' + ') + ' / bt';
+  }).join(' · '),
   lvLv: (s, k) => 'Niv. ' + s.lv[k],
   lvCost: (s, k) => Fmt.money(Eco.lvCost(s, k)),
   cantLv: (s, k) => s.money < Eco.lvCost(s, k),
   rate: (s, k) => Fmt.num({ cook: Eco.cookRate, bottle: Eco.bottleRate, counter: Eco.counterRate }[k](s)) + ' bt/s',
   flow: (s, k) => 'réel : ' + Fmt.num(rt.flow[k] || 0) + ' bt/s',
+  tankCapTxt: s => `${Fmt.int(Eco.tankCap(s))} L`,
   tankPct: s => s.bulk / Eco.tankCap(s),
   tankTxt: s => `${Fmt.int(s.bulk)} / ${Fmt.int(Eco.tankCap(s))} L · ${Flavors.get(s, s.bulkFlavor).name}`,
   warePct: s => Eco.totalStock(s) / Eco.wareCap(s),
@@ -68,9 +82,37 @@ export const B = {
     return notes.join(' · ');
   },
   bneck: (s, k) => rt.bneck === k,
+  switchTxt: (s, i) => {
+    const L = Eco.lines(s)[Number(i) || 0] || s;
+    return L.bulkFlavor !== L.flavor
+      ? `⏳ La cuve se vide encore de ${Flavors.get(s, L.bulkFlavor).name} (${Fmt.int(L.bulk)} L), puis la marmite passera à ${Flavors.get(s, L.flavor).name}.`
+      : `✓ La marmite cuit du sirop de ${Flavors.get(s, L.flavor).name}.`;
+  },
+  /* --- Lignes de production --- */
+  cantLine: s => { const c = Factory.nextLineCost(s); return c == null || s.money < c; },
+  lineTank: (s, i) => { const L = Eco.lines(s)[i]; return L ? L.bulk / Eco.tankCap(s) : 0; },
+  lineTxt: (s, i) => {
+    const L = Eco.lines(s)[i];
+    if (!L) return '';
+    const f = Flavors.get(s, L.flavor), bn = rt.bnecks[i], fl = rt.lineFlow[i];
+    const state = bn === 'switch' ? `⏳ vide sa cuve (${Flavors.get(s, L.bulkFlavor).name})`
+      : bn === 'mat' ? '⚠️ plus de matières' : bn === 'ware' ? '⚠️ entrepôt plein'
+      : `${Fmt.num(fl ? fl.bottle : 0)} bt/s`;
+    return `· ${f.name} · ${state}`;
+  },
   bneckLabel: () => BNECK[rt.bneck] || '',
   counterBtn: s => (s.counterOn ? '🟢 Ouvert, fermer' : '🔴 Fermé, ouvrir'),
   stockFl: (s, f) => Fmt.int(s.stock[f] || 0),
+  /** « dont 40 réservés » (contrats acceptés pas encore chargés) */
+  stockRes: (s, f) => { const r = Eco.reserved(s, f); return r ? `dont ${Fmt.int(Math.min(r, s.stock[f] || 0))} réservés` : ''; },
+  /** Offre : bouteilles libres (stock moins les réservations) face à la quantité demandée */
+  offerStock: (s, id) => {
+    const o = s.offers.find(x => x.id === Number(id));
+    if (!o) return '';
+    const free = Math.max(0, (s.stock[o.flavor] || 0) - Eco.reserved(s, o.flavor));
+    return `${Fmt.int(free)} / ${Fmt.int(o.qty)} bt${free >= o.qty ? ' ✓ prêt à livrer' : ''}`;
+  },
+  offerOk: (s, id) => { const o = s.offers.find(x => x.id === Number(id)); return !!o && (s.stock[o.flavor] || 0) - Eco.reserved(s, o.flavor) >= o.qty; },
   resFl: (s, f) => { const r = Eco.reserved(s, f); return r ? Fmt.int(r) : '—'; },
   cantUnlock: (s, f) => s.money < CONFIG.flavors[f].unlock,
   cantRestock: s => s.money < CONFIG.restock.cost,
@@ -124,7 +166,8 @@ export const B = {
     const { a, b } = Form.labo;
     if (!CONFIG.flavors[a] || !CONFIG.flavors[b] || a === b) return 'Choisis deux parfums différents';
     const p = Recipes.preview(a, b);
-    return `${Fmt.money(p.price)} / bt · ${Fmt.num(p.sugar)} kg sucre + ${Fmt.num(p.fruit)} kg fruits · cuisson ×${Fmt.num(p.time)}`;
+    const M = CONFIG.materials;
+    return `${Fmt.money(p.price)} / bt · ${Fmt.num(p.sugar)} kg ${M.sugar.icon} + ${Fmt.num(p.fruit / 2)} kg ${M[a].icon} + ${Fmt.num(p.fruit / 2)} kg ${M[b].icon} · cuisson ×${Fmt.num(p.time)}`;
   },
   laboErr: s => Recipes.check(s, Form.labo),
   laboCost: s => (s.recipes.length >= CONFIG.recipes.max ? 'Labo plein' : Fmt.money(Eco.recipeCost(s))),

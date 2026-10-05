@@ -20,19 +20,20 @@ const TOOLS = {
   money10m:  ['+10 M $',         s => { s.money += 1e7; }],
   rep:       ['+10 ⭐',          s => { s.rep += 10; }],
   stock:     ['Stock plein',     s => { for (const k of s.unlocked) s.stock[k] = (s.stock[k] || 0) + 200; }],
-  mats:      ['+1000 matières',  s => { s.mat.sugar += 1000; s.mat.fruit += 1000; }],
-  ripe:      ['Tout est mûr',    s => { for (const a of Object.values(s.fields)) a.fill(0); }],
+  mats:      ['+1000 matières',  s => { for (const k of Object.keys(CONFIG.materials)) s.mat[k] = (s.mat[k] || 0) + 1000; }],
+  ripe:      ['Tout est mûr',    s => { for (const a of Object.values(s.fields)) a.fill(0); s.farm.t.fill(0); }],
   offer:     ['Nouvelle offre',  s => Contracts.generate(s)],
   event:     ['Événement',       s => { const ids = Object.keys(CONFIG.events.list); const i = (ids.indexOf(s.event.id) + 1) % ids.length; if (s.event.id) Events.end(s); Events.start(s, ids[i]); }],
   night:     ['+3 h',            s => { s.clock = (s.clock + CONFIG.clock.daySec / 8) % CONFIG.clock.daySec; }],
   quest:     ['Quête réussie',   s => { if (Quests.current(s)) s.quest.ready = true; }],
-  districts: ['Tout ouvrir',     s => { s.districts.champs = s.districts.colline = true; }],
+  districts: ['Tout ouvrir',     s => { s.districts.colline = true; s.farm.owned = CONFIG.farm.count; }],
   home:      ['Retour usine',    () => World.resetPlayer()],
   hour:      ['Avancer 1 h',     s => Sim.advance(s, 3600)],
   tuto:      ['Tuto : recommencer', () => Tuto.start()],
   tutoNext:  ['Tuto : étape suivante', () => Tuto.next()],
   opened:    ['Ouvrir bâtiments', s => { for (const k of Object.keys(s.opened)) s.opened[k] = true; }],
   tips:      ['Revoir conseils', s => { s.seen = {}; }],
+  line:      ['+1 ligne',        s => { if (s.lines.length < CONFIG.lines.max - 1) s.lines.push({ flavor: s.flavor, bulk: 0, bulkFlavor: s.flavor }); }],
 };
 
 export const Debug = {

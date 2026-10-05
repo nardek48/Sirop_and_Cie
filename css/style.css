@@ -306,3 +306,132 @@ body.arch-on .toasts{bottom:200px}
 .machine-info{margin:0;font-size:15px}
 .machine-card .auto-row{border-bottom:0;padding-bottom:0}
 .machine-nav{justify-content:space-between}
+.sheet[data-panel="parfum"]{align-items:center}
+.sheet[data-panel="parfum"] .sheet-card{max-width:560px}
+.flavors-big .flavor{padding:14px;font-size:16px}
+.switch-txt{margin:12px 0 0;font-size:14px}
+
+/* ---------- Ta maison (v0.4.0) ---------- */
+.chip.rest{background:var(--ok);border-color:var(--ok);color:#fff}
+.sheet[data-panel="deco"] .sheet-card{max-width:640px}
+.deco-sec h3{margin:0 0 10px}
+.deco-sec.is-first{border:2px solid var(--amber)}
+.deco-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:8px}
+.deco-opt{display:grid;justify-items:center;gap:4px;padding:10px 6px;border:2px solid var(--line);border-radius:12px;background:var(--surface2);cursor:pointer;font:inherit;color:var(--ink)}
+.deco-opt.is-active{border-color:var(--amber);background:var(--amber-l)}
+.deco-opt small{font-size:12px;font-weight:600;text-align:center}
+.deco-ico{font-size:30px;line-height:1}
+.deco-sw{width:34px;height:34px;border-radius:50%;background:var(--c);border:2px solid rgba(0,0,0,.15)}
+.deco-sw.rainbow{background:conic-gradient(#d23c4f,#e8703a,#e8c22e,#3f8f5a,#3a6ea5,#7b4fb0,#d23c4f)}
+.deco-rest{display:grid;gap:0}
+.sleep-veil{position:absolute;inset:0;z-index:25;display:grid;place-content:center;justify-items:center;gap:6px;background:#141a33;color:#e9eefc;opacity:0;transition:opacity .7s ease,background .8s ease;pointer-events:none;text-align:center}
+.sleep-veil.in{opacity:1;pointer-events:auto}
+.sleep-veil.morning{background:#f7d58a;color:#5a3a12}
+.sleep-veil span{font-size:64px}
+.sleep-veil p{margin:0;font-family:Fraunces,Georgia,serif;font-size:24px;font-weight:800}
+@media (prefers-reduced-motion:reduce){.sleep-veil{transition:none}}
+
+/* ---------- Lignes de production (v0.7.0) ---------- */
+.line-list{list-style:none;margin:0 0 10px;padding:0;display:grid;gap:6px}
+.line-list li{display:grid;grid-template-columns:auto 1fr;gap:2px 8px;align-items:center;font-size:14px}
+.line-list .bar{grid-column:1/-1;height:6px}
+.line-tabs{margin-bottom:10px}
+
+/* ---------- Tableau de l'usine : une carte par ligne (v0.7.1) ---------- */
+.line-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;align-items:start}
+.line-card{background:var(--surface2);border-radius:12px;padding:12px;display:grid;gap:8px;min-width:0}
+.line-card header{display:flex;flex-wrap:wrap;gap:4px 8px;align-items:baseline}
+.line-card h4{margin:4px 0 0;font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.line-card .bar{height:6px}
+.line-next{border:2px dashed var(--line);background:transparent;align-content:start}
+.mat-lines{display:grid;gap:6px}
+.mat-line{display:grid;grid-template-columns:1fr auto;gap:4px 8px;align-items:center;font-variant-numeric:tabular-nums}
+.mat-line span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mat-line .btn{grid-row:2;white-space:nowrap}
+.mat-line .btn:last-child{grid-column:2}
+.flavors-compact{grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:6px}
+.flavors-compact .flavor{padding:6px 8px;font-size:14px}
+.flavors-compact .flavor small{font-size:11px}
+.pipeline{align-items:start}
+
+/* ---------- Contrats : stock de sirop (v0.7.2) ---------- */
+.stock-chips{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:8px}
+.stock-chip{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 6px;background:var(--surface2);border:1px solid var(--line);border-radius:12px;padding:6px 10px;font-size:14px}
+.stock-chip .dot{align-self:center}
+.stock-chip .n{font-weight:800;font-variant-numeric:tabular-nums}
+.stock-chip small{color:var(--muted);font-size:12px}
+.stock-chip small:empty{display:none}
+.stock-chip .mk{color:var(--hot);font-weight:700}
+.offer-stock.enough{color:var(--ok);font-weight:700}
+
+/* ======================= Habillage v0.8 ======================= */
+/* Bandeau du haut : icônes rondes, libellé au-dessus de la valeur */
+.chip.stat{display:flex;align-items:center;gap:7px;padding:3px 12px 3px 4px}
+.chip.stat i{font-style:normal;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:var(--amber-l);font-size:15px}
+.chip.stat>span{display:grid;line-height:1.1}
+.chip.stat small{font-size:10px;text-transform:uppercase;letter-spacing:.06em;margin:0}
+.chip.stat b{font-size:14px}
+/* Quête du maire : icône, corps, chevron */
+.quest{grid-template-columns:auto 1fr auto;align-items:center;gap:10px}
+.q-ico{width:38px;height:38px;border-radius:10px;background:var(--amber-l);display:grid;place-items:center;font-size:20px}
+.q-body{display:grid;gap:4px;min-width:0}
+.q-chev{font-size:26px;color:var(--muted);line-height:1}
+.quest.min .q-ico{width:30px;height:30px;font-size:16px}
+
+/* Contrats */
+.contract header .c-ico{width:30px;height:30px;border-radius:8px;background:var(--surface);display:grid;place-items:center;font-size:17px}
+.meta.pills{display:flex;flex-wrap:wrap;gap:6px}
+.meta.pills span{background:var(--surface);border-radius:99px;padding:2px 9px;font-size:13px;font-weight:600}
+.c-empty{display:grid;justify-items:center;gap:10px;text-align:center;padding:24px 8px;color:var(--muted)}
+.c-empty b{color:var(--ink);font-size:18px;font-family:Fraunces,Georgia,serif}
+.c-empty-ico{font-size:52px;line-height:1}
+.c-steps{list-style:none;margin:6px 0 0;padding:0;display:flex;gap:4px;align-items:center;flex-wrap:wrap;justify-content:center}
+.c-steps li{display:grid;justify-items:center;gap:2px;font-size:12px;min-width:76px}
+.c-steps li span{width:40px;height:40px;border-radius:50%;background:var(--surface2);display:grid;place-items:center;font-size:20px}
+.c-steps li+li::before{content:"→";position:absolute;transform:translate(-46px,10px);color:var(--muted)}
+.c-steps li{position:relative}
+
+/* Labo : le mélangeur */
+.bottle.xl{width:46px;height:70px;border-radius:9px 9px 14px 14px;display:inline-grid;place-items:center;box-shadow:inset -7px 0 0 rgba(0,0,0,.12),inset 6px 0 0 rgba(255,255,255,.25)}
+.bottle.xl::before{left:15px;top:-12px;width:16px;height:13px;border-radius:3px}
+.bottle.xl em{font-style:normal;font-size:20px;background:rgba(255,255,255,.75);border-radius:6px;padding:1px 3px;line-height:1.2}
+.bottle.xl.sm{width:30px;height:46px;border-radius:6px 6px 10px 10px}
+.bottle.xl.sm::before{left:9px;top:-8px;width:12px;height:9px}
+.bottle.xl.sm em{font-size:13px;padding:0 2px}
+.bottle.xl.md{width:36px;height:56px}
+.bottle.xl.md::before{left:11px;top:-10px;width:14px;height:11px}
+.bottle.xl.md em{font-size:15px}
+.bottle.xl.glow{width:64px;height:96px;border-radius:12px 12px 18px 18px;box-shadow:0 0 0 6px color-mix(in srgb,var(--c) 25%,transparent),0 0 28px color-mix(in srgb,var(--c) 60%,transparent)}
+.bottle.xl.glow::before{left:22px;top:-14px;width:20px;height:15px}
+.mixer{display:flex;justify-content:center;align-items:center;gap:22px;padding:10px 0 0}
+.mix-slot{display:grid;justify-items:center;gap:6px;font-size:14px}
+.mixer .plus{font-family:Fraunces,Georgia,serif;font-size:30px;font-weight:800;color:var(--plum)}
+.mix-arrow{text-align:center;font-size:26px;color:var(--muted);line-height:1;margin:6px 0}
+.mix-result{display:grid;justify-items:center;gap:8px;text-align:center;margin-bottom:6px}
+.lab h4{margin:10px 0 6px;font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.lab-picks{display:flex;gap:8px;flex-wrap:wrap}
+.lab-pick{display:grid;justify-items:center;gap:4px;padding:8px 6px 6px;min-width:70px;border:2px solid var(--line);border-radius:12px;background:var(--surface2);cursor:pointer;font:inherit;color:var(--ink)}
+.lab-pick.is-active{border-color:var(--plum);background:color-mix(in srgb,var(--plum) 12%,var(--surface2))}
+.lab-pick small{font-size:12px;font-weight:600}
+.recipes{display:grid;gap:8px}
+.recipe-card{display:flex;align-items:center;gap:12px;background:var(--surface2);border-radius:12px;padding:10px 12px}
+.recipe-card .grow{flex:1;min-width:0}
+
+/* Agence : cartes de projets, propriétés */
+.projs{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.proj{background:var(--surface2);border-radius:12px;padding:12px;display:grid;gap:6px;justify-items:center;text-align:center}
+.proj select{width:100%}
+.proj-ico{font-size:46px;line-height:1.1}
+.props{display:grid;gap:8px}
+.prop{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--surface2);border-radius:12px;padding:10px 12px}
+.prop .grow{flex:1;min-width:140px}
+.prop-ico{font-size:30px}
+.prop .lvl{font-size:12px;font-weight:700;background:var(--amber-l);border-radius:99px;padding:1px 8px}
+.prop-btns{display:flex;gap:6px;flex-wrap:wrap}
+/* Téléphone : chips compactes, libellés masqués pour tenir sur une ligne */
+@media (max-width:560px){
+  .chip.stat{padding:2px 8px 2px 3px;gap:5px}
+  .chip.stat i{width:22px;height:22px;font-size:12px}
+  .chip.stat small{display:none}
+  .chip.stat b{font-size:13px}
+}

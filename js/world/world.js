@@ -2,9 +2,9 @@
  * world.js — le village jouable : entrées, interactions, déplacement, caméra
  * et assemblage du rendu (tri par profondeur, repères, nuit, météo).
  *
- * Deux scènes : le village, et l'intérieur de l'usine (interior.js), où l'on entre
- * par la porte de l'usine. Dans l'usine, le joueur a sa propre position (Interior.p) :
- * s.player reste devant la porte, la sauvegarde ne voit donc jamais l'intérieur.
+ * Plusieurs scènes : le village, et des salles où l'on entre à pied (ROOMS) :
+ * l'usine (interior.js) et ta maison (home.js). Dans une salle, le joueur a sa propre
+ * position (room.p) : s.player reste devant la porte, la sauvegarde ne voit jamais l'intérieur.
  */
 import { CONFIG, clientByPlace, typeById } from '../config.js';
 import { Game, rt } from '../core/game.js';
@@ -16,6 +16,7 @@ import { Clock } from '../sim/clock.js';
 import { Events } from '../sim/events.js';
 import { Contracts } from '../sim/contracts.js';
 import { Fields, Districts } from '../sim/world-systems.js';
+import { Flavors } from '../sim/flavors.js';
 import { Quests } from '../sim/quests.js';
 import { Openings } from '../sim/openings.js';
 import { UI } from '../ui/ui.js';
@@ -27,8 +28,18 @@ import { Pet } from './pet.js';
 import { Villagers } from './villagers.js';
 import { Meme } from './meme.js';
 import { loadTiledDecor } from './tiled.js';
+import { findPath } from './path.js';
 import { Interior } from './interior.js';
+import { HomeRoom, HomeOutside, HOUSE, HOUSE_GARAGE } from './home.js';
 import { MachineSel } from '../ui/panels/machine.js';
+import { DecoSel } from '../ui/panels/deco.js';
+import { Garage, Home, Farm } from '../sim/world-systems.js';
+import { FieldSel } from '../ui/panels/champ.js';
+import { ParfumSel } from '../ui/panels/parfum.js';
+import { Factory } from '../sim/factory.js';
+
+/** Salles où l'on entre à pied : même interface (W, H, p, spawn, solids, build, draw) */
+const ROOMS = { usine: Interior, maison: HomeRoom };
 
 const DIRS = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'KeyW', 'KeyA', 'KeyS', 'KeyD'];
 const inRect = (p, r) => r && p.x >= r.x && p.x <= r.x + r.w && p.y >= r.y && p.y <= r.y + r.h;
@@ -106,7 +117,7 @@ export const World = {
   fitZoom() {
     const w = this.vw, h = this.vh;
     this.zoom = this.inside
-      ? Math.max(0.6, Math.min(1.3, Math.min(w / Interior.W, h / Interior.H)))
+      ? Math.max(0.6, Math.min(1.3, Math.min(w / this.room.W, h / (this.room.viewH || this.room.H))))
       : Math.max(0.6, Math.min(1.15, Math.min(w / 1000, h / 620)));
   },
 
@@ -129,26 +140,28 @@ export const World = {
   maxX(s) { return s.districts.colline ? MAP.w - 30 : MAP.districts.colline.barrier.x - 20; },
 
   /* ---------------- Scènes ---------------- */
-  get inside() { return this.scene === 'usine'; },
+  get inside() { return this.scene !== 'village'; },
+  /** Salle courante (null dans le village) */
+  get room() { return ROOMS[this.scene] || null; },
   /** Position du joueur dans la scène courante */
-  me(s) { return this.inside ? Interior.p : s.player; },
+  me(s) { return this.inside ? this.room.p : s.player; },
   /** Taille de la scène courante */
-  dims() { return this.inside ? { w: Interior.W, h: Interior.H } : { w: MAP.w, h: MAP.h }; },
+  dims() { return this.inside ? { w: this.room.W, h: this.room.H } : { w: MAP.w, h: MAP.h }; },
 
-  /** Entrer dans l'usine, par la porte ('usine') ou par le quai ('quai') */
-  enterFactory(from = 'usine') {
+  /** Entrer dans une salle ('usine', 'maison') par une de ses portes */
+  enterRoom(scene, from) {
     UI.close();
-    this.scene = 'usine';
-    Interior.spawn(from);
+    this.scene = scene;
+    this.room.spawn(from);
     this.fitZoom();
     this.target = null; this.pending = null; this.keys.clear();
     this.anim.dir = from === 'quai' ? 'gauche' : 'haut'; this.anim.flip = from === 'quai' ? -1 : 1;
-    Pet.reset(Interior.p);
+    Pet.reset(this.room.p);
     this.snapCamera(true);
     Bus.sfx('door');
   },
-  /** Ressortir devant la porte de l'usine ou au quai */
-  exitFactory(to = 'usine') {
+  /** Ressortir au village, devant la porte `to` (CONFIG.places) */
+  exitRoom(to) {
     UI.close();
     this.scene = 'village';
     this.fitZoom();
@@ -160,11 +173,48 @@ export const World = {
     this.snapCamera(true);
     Bus.sfx('door');
   },
-  /** Ce que font les interactions de l'usine */
-  factoryActs: {
-    machine: k => { MachineSel.k = k; UI.open('machine'); },
-    board: () => UI.open('usine'),
-    exit: to => World.exitFactory(to),
+  enterFactory(from = 'usine') { this.enterRoom('usine', from); },
+  exitFactory(to = 'usine') { this.exitRoom(to); },
+
+  /** Ce que font les interactions des salles */
+  roomActs: {
+    machine: (k, line = 0) => { MachineSel.k = k; MachineSel.line = line; UI.open('machine'); },
+    board: (i = 0) => { ParfumSel.line = i; UI.open('parfum'); },
+    buyLine: () => {
+      const s = Game.s, cost = Factory.nextLineCost(s), n = Eco.lineCount(s) + 1;
+      if (cost == null) return;
+      if (s.money < cost) return Bus.toast(`La ligne ${n} coûte ${Fmt.money(cost)} : il te manque ${Fmt.money(cost - s.money)}`, 'bad');
+      UI.confirm(`Acheter la ligne ${n} pour ${Fmt.money(cost)} ?<br><small>Elle cuit son propre parfum, en même temps que les autres lignes.</small>`, () => Factory.buyLine(Game.s), 'Acheter');
+    },
+    locked: i => Bus.toast(`Achète d’abord la ligne ${i} 🏭`),
+    deco: slot => { DecoSel.slot = slot; UI.open('deco'); },
+    ride: i => { if (!Garage.ride(Game.s, i)) Bus.toast(`🔒 Ce véhicule s’achète au garage du village 🚲`); },
+    sleep: () => World.sleep(),
+    exit: to => World.exitRoom(to),
+  },
+
+  /** Dormir dans sa maison : écran qui s'assombrit, puis réveil au matin */
+  sleep() {
+    const s = Game.s;
+    if (!Home.canSleep(s)) {
+      Bus.toast(`Tu n’as pas sommeil… Reviens dormir quand il fera nuit 🌙 (dans ${Home.untilNight(s)} min)`);
+      return;
+    }
+    if (this.sleeping) return;
+    this.sleeping = true;
+    const veil = document.createElement('div');
+    veil.className = 'sleep-veil';
+    veil.innerHTML = `<span>💤</span><p>Bonne nuit, ${s.look.name.replace(/[<>&]/g, '')}…</p>`;
+    document.querySelector('.world-wrap').append(veil);
+    requestAnimationFrame(() => veil.classList.add('in'));
+    setTimeout(() => {
+      Home.sleep(Game.s);
+      veil.classList.add('morning');
+      veil.querySelector('span').textContent = '☀️';
+      veil.querySelector('p').textContent = 'Bonjour ! Bien reposé 😊';
+    }, 1500);
+    setTimeout(() => { veil.classList.remove('in'); }, 2300);
+    setTimeout(() => { veil.remove(); this.sleeping = false; }, 3000);
   },
 
   /* ---------------- Entrées ---------------- */
@@ -202,18 +252,13 @@ export const World = {
   },
 
   /** Trajet simple : rejoindre la route, la longer, puis monter/descendre vers la cible */
+  /**
+   * Trajet le plus direct vers `to` : tout droit si rien ne gêne, sinon en contournant
+   * les bâtiments et l'eau (A* sur une grille, voir path.js). Village et salles.
+   */
   route(from, to) {
-    if (Math.hypot(to.x - from.x, to.y - from.y) < 160) return [{ x: to.x, y: to.y }];
-    // Dans l'usine : passer par l'allée libre entre les machines et le comptoir
-    if (this.inside) { const Y = 420; return [{ x: from.x, y: Y }, { x: to.x, y: Y }, { x: to.x, y: to.y }]; }
-    const Y = CONFIG.roadY, pts = [];
-    // Depuis les Champs, remonter d'abord par le chemin
-    if (from.y > 1110 && to.y < 1110) pts.push({ x: from.x, y: 1172 }, { x: 545, y: 1172 });
-    if (Math.abs((pts.at(-1) || from).y - Y) > 40) pts.push({ x: (pts.at(-1) || from).x, y: Y });
-    if (to.y > 1110 && from.y < 1110) pts.push({ x: 545, y: Y }, { x: 545, y: 1172 }, { x: to.x, y: 1172 });
-    else pts.push({ x: to.x, y: Y });
-    pts.push({ x: to.x, y: to.y });
-    return pts;
+    const solids = this.solids(Game.s), D = this.dims();
+    return findPath(from, to, (x, y) => this.blocked(x, y, solids), D.w, D.h);
   },
 
   interact() {
@@ -257,6 +302,15 @@ export const World = {
         });
       }
     }
+    // Ta maison et son garage
+    L.push({
+      id: 'maison', x: P.maison.x, y: P.maison.y + 14, hit: { x: HOUSE.x, y: HOUSE.y, w: HOUSE.w, h: HOUSE.h },
+      label: `Entrer · 🏠 Ma maison${Clock.isNight(s) ? ' (dodo 😴)' : ''}`, run: () => this.enterRoom('maison', 'maison'),
+    });
+    L.push({
+      id: 'garageMaison', x: P.garageMaison.x, y: P.garageMaison.y + 14, hit: HOUSE_GARAGE,
+      label: `🚲 Mon garage · changer de véhicule`, run: () => this.enterRoom('maison', 'garageMaison'),
+    });
     const u = MAP.buildings[0];
     const ready = s.active.filter(c => Contracts.canLoad(s, c)).length;
     L.push({
@@ -266,14 +320,27 @@ export const World = {
     });
     for (const [g, list] of Object.entries(MAP.fields)) {
       if (!Fields.open(s, g)) continue;
-      const F = CONFIG.fields[g], cane = g === 'canne';
+      const F = CONFIG.fields[g];
       list.forEach((pos, i) => L.push({
-        id: g + i, x: pos.x, y: pos.y + (cane ? 26 : 30),
-        hit: cane ? { x: pos.x - 90, y: pos.y - 100, w: 180, h: 120 } : { x: pos.x - 40, y: pos.y - 75, w: 80, h: 110 },
-        label: s.fields[g][i] > 0 ? `Repousse… ${Math.ceil(s.fields[g][i])} s` : `Récolter · ${F.icon} ${F.name}`,
+        id: g + i, x: pos.x, y: pos.y + 30,
+        hit: { x: pos.x - 40, y: pos.y - 75, w: 80, h: 110 },
+        label: s.fields[g][i] > 0 ? `Repousse… ${Math.ceil(s.fields[g][i])} s`
+          : `Récolter · ${F.icon} ${F.name} (${CONFIG.materials[F.mat === 'auto' ? Flavors.mainFruit(s, s.flavor) : F.mat].icon})`,
         run: () => Fields.pick(s, g, i, { x: pos.x, y: pos.y - 30 }),
       }));
     }
+    // Champs à cultiver : mûr → récolter (×2) ; sinon → la fiche du champ (planter, acheter)
+    MAP.farm.forEach((pos, i) => {
+      const F = s.farm, C = CONFIG.farm.crops[F.crop[i]], at = { x: pos.x, y: pos.y + 26 };
+      const hit = { x: pos.x - 90, y: pos.y - 100, w: 180, h: 120 };
+      const open = () => { FieldSel.i = i; UI.open('champ'); };
+      let label, run = open;
+      if (i < F.owned && F.t[i] <= 0) { label = `Récolter · ${C.icon} ${C.name} (×${CONFIG.farm.handMult} !)`; run = () => Farm.harvest(s, i, { x: pos.x, y: pos.y - 40 }); }
+      else if (i < F.owned) label = `${C.icon} ${C.name} · ${Math.ceil(F.t[i])} s · changer`;
+      else if (i === F.owned) label = `🌱 Champ à vendre · ${Fmt.money(CONFIG.farm.costs[i])}`;
+      else { label = `🔒 Champ ${i + 1}`; run = () => Bus.toast(`Achète d’abord le champ ${F.owned + 1} 🌱`); }
+      L.push({ id: 'farm' + i, ...at, hit, label, run });
+    });
     MAP.plots.forEach((p, i) => {
       if (p.district && !s.districts[p.district]) return;
       const h = s.houses.find(x => x.plot === i), u2 = h && CONFIG.houses.uses[h.use];
@@ -323,8 +390,9 @@ export const World = {
 
   /* ---------------- Déplacement ---------------- */
   solids(s) {
-    if (this.inside) return Interior.solids();
+    if (this.inside) return this.room.solids(s);
     const list = [
+      ...HomeOutside.solids(),
       ...MAP.buildings.map(b => ({ x: b.x, y: b.y + 20, w: b.w, h: b.h - 20 })),
       MAP.water,
       { x: MAP.fountain.x - 50, y: MAP.fountain.y - 30, w: 100, h: 56 },
@@ -424,10 +492,10 @@ export const World = {
     const s = Game.s;
 
     MAP.decor = s.decor || this.baseDecor;          // décor du joueur (Mode architecte) ou du fichier
-    if (this.inside && (s.tuto.active || this.mode === 'edit')) this.exitFactory('usine');   // tutoriel relancé, Mode architecte
-    this.list = this.mode === 'edit' ? [] : this.inside ? Interior.build(s, this.factoryActs) : this.build(s);
+    if (this.inside && (s.tuto.active || this.mode === 'edit')) this.exitRoom(this.scene);   // tutoriel relancé, Mode architecte
+    this.list = this.mode === 'edit' ? [] : this.inside ? this.room.build(s, this.roomActs) : this.build(s);
     this.move(dt, s);
-    if (this.inside) Pet.fetchT = 0;                // pas de cueillette depuis l'usine
+    if (this.inside) Pet.fetchT = 0;                // pas de cueillette depuis une salle
     Pet.update(dt, s, this.me(s), this);
     Villagers.update(dt, s, s.player, this.maxX(s));
     Meme.update(dt, s, this);
@@ -443,13 +511,14 @@ export const World = {
     // Ventes au comptoir → texte flottant périodique au-dessus de l'usine
     this.counterT += dt;
     if (this.counterT > 2.5) {
-      if (rt.counterAcc >= 0.5) this.float(`+${Fmt.money(rt.counterAcc)}`, this.inside ? Interior.counterFloat() : { x: 230, y: 360 }, '#c8f7c5');
+      if (rt.counterAcc >= 0.5 && this.scene !== 'maison')
+        this.float(`+${Fmt.money(rt.counterAcc)}`, this.scene === 'usine' ? Interior.counterFloat() : { x: 230, y: 360 }, '#c8f7c5');
       rt.counterAcc = 0; this.counterT = 0;
     }
     for (const f of this.floats) f.t += dt;
     this.floats = this.floats.filter(f => f.t < 1.6);
 
-    if (this.inside) this.drawFactory(s, dt); else this.draw(s);
+    if (this.inside) this.drawRoom(s, dt); else this.draw(s);
     if (this.hooks.after) this.hooks.after(dt, s);
     requestAnimationFrame(t => this.frame(t));
   },
@@ -469,9 +538,11 @@ export const World = {
     const items = [];
     const add = (y, f) => items.push({ y, f });
     for (const b of MAP.buildings) add(b.y + b.h, () => Render.building(c, b, s, t, dark));
-    MAP.fields.verger.forEach((pos, i) => add(pos.y, () => Render.tree(c, pos, s.fields.verger[i], 'verger')));
+    add(HOUSE.y + HOUSE.h, () => HomeOutside.draw(c, s, t, dark));
+    const vergerColor = CONFIG.flavors[Flavors.mainFruit(s, s.flavor)].color;
+    MAP.fields.verger.forEach((pos, i) => add(pos.y, () => Render.tree(c, pos, s.fields.verger[i], 'verger', vergerColor)));
     MAP.fields.sureau.forEach((pos, i) => add(pos.y, () => Render.tree(c, pos, s.fields.sureau[i], 'sureau')));
-    MAP.fields.canne.forEach((pos, i) => add(pos.y, () => Render.cane(c, pos, s.fields.canne[i], t)));
+    MAP.farm.forEach((pos, i) => add(pos.y, () => Render.farmField(c, pos, i, s, t)));
     for (const h of s.houses) { const pl = MAP.plots[h.plot]; add(pl.y + pl.h - 6, () => Render.house(c, pl, h, dark)); }
     for (const d of MAP.decor) add(d.y, () => Render.decor(c, d, dark));
     add(MAP.fountain.y + 20, () => Render.fountain(c, t));
@@ -507,8 +578,8 @@ export const World = {
     c.globalAlpha = 1;
   },
 
-  /** Rendu de l'intérieur de l'usine */
-  drawFactory(s, dt) {
+  /** Rendu d'une salle (usine, maison) */
+  drawRoom(s, dt) {
     const c = this.ctx, z = this.zoom * this.dpr, t = this.time;
     c.setTransform(1, 0, 0, 1, 0, 0);
     c.fillStyle = '#3b2a1a';
@@ -516,13 +587,24 @@ export const World = {
     c.setTransform(z, 0, 0, z, -this.cam.x * z, -this.cam.y * z);
     const items = [];
     const add = (y, f) => items.push({ y, f });
-    Interior.draw(c, s, t, dt, add);
-    const p = Interior.p;
+    this.room.draw(c, s, t, dt, add);
+    const p = this.room.p;
     if (s.look.pet !== 'aucun') add(Pet.y, () => drawPet(c, Pet.x, Pet.y, s.look.pet, Pet.flip, Pet.moving, Pet.phase, s.look.petName));
     add(p.y, () => this.drawPlayer(c, s));
     items.sort((a, b) => a.y - b.y).forEach(i => i.f());
     this.drawFloats(c);
     if (this.near && !UI.active) Gfx.bubble(c, `E · ${this.near.label}`, p.x, p.y - 96);
+    // Bandeau d'alerte de la salle, fixé en haut de l'écran
+    const msg = this.room.alert && this.room.alert(s);
+    if (msg) {
+      const d = this.dpr;
+      c.setTransform(d, 0, 0, d, 0, 0);
+      c.font = '700 15px "DM Sans", system-ui, sans-serif';
+      const w = c.measureText(msg).width + 32, x = (this.vw - w) / 2, y = 12;
+      c.fillStyle = '#d6453a'; c.beginPath(); c.roundRect(x, y, w, 34, 17); c.fill();
+      c.fillStyle = '#fff'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(msg, this.vw / 2, y + 17);
+      c.textBaseline = 'alphabetic';
+    }
   },
 
   drawPlayer(c, s) {
@@ -568,7 +650,7 @@ export const World = {
     const c = this.ctx, n = Villagers.visible(s);
     Villagers.list.slice(0, n).forEach(v => add(v.y, () => {
       Gfx.shadow(c, v.x, v.y, 13, 5);
-      const top = drawCharacter(c, v.x, v.y, { key: 'villageois', dir: v.dir, moving: v.moving, phase: v.phase, shirt: v.shirt, hair: v.hair });
+      const top = drawCharacter(c, v.x, v.y, { key: 'villageois', alt: (v.hair.charCodeAt(2) + v.hair.charCodeAt(5)) % 2 ? 'e' : '' /* une sur deux, selon les cheveux */, dir: v.dir, moving: v.moving, phase: v.phase, shirt: v.shirt, hair: v.hair });
       if (v.sayT > 0) Gfx.speech(c, v.say, v.x, top - 8, Math.min(1, v.sayT * 2));
     }));
   },
@@ -629,6 +711,7 @@ export const World = {
     };
     for (const d of MAP.decor) if (d.kind === 'lampadaire') push(d.x, d.y - 60, 130);
     for (const b of MAP.buildings) push(CONFIG.places[b.id].x, b.y + b.h - 20, 80);
+    for (const l of HomeOutside.lights()) push(l.x, l.y, l.r);
     push(s.player.x, s.player.y - 30, 140);
     return pts;
   },

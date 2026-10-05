@@ -15,9 +15,10 @@ export const Store = {
     return {
       version: CONFIG.version,
       money: CONFIG.startMoney, rep: 0, stars: 0,
-      mat: { ...CONFIG.startMaterials },
+      mat: { ...Object.fromEntries(Object.keys(CONFIG.materials).map(k => [k, 0])), ...CONFIG.startMaterials },
       flavor: 'menthe', unlocked: ['menthe'], recipes: [],
-      bulk: 0, bulkFlavor: 'menthe',
+      bulk: 0, bulkFlavor: 'menthe',       // ligne 1 (s.flavor, s.bulk, s.bulkFlavor)
+      lines: [],                           // lignes 2 et 3 : { flavor, bulk, bulkFlavor }
       stock: Object.fromEntries(Object.keys(CONFIG.flavors).map(k => [k, 0])),
       lv: Object.fromEntries(Object.keys(CONFIG.levels).map(k => [k, 1])),
       slots: CONFIG.contracts.slotBase,
@@ -26,7 +27,14 @@ export const Store = {
       offers: [], active: [], nextOfferIn: 8, nextId: 1,
       couriers: 0, npcs: [],
       vehicle: 0,
-      districts: { champs: false, colline: false },
+      districts: { colline: false },
+      // Champs à cultiver : combien sont à toi, ce qui y pousse, temps avant d'être mûr, attente une fois mûr
+      farm: {
+        owned: CONFIG.farm.free,
+        crop: Array.from({ length: CONFIG.farm.count }, (_, i) => (i % 2 ? 'canne' : 'menthe')),
+        t: Array.from({ length: CONFIG.farm.count }, (_, i) => CONFIG.farm.crops[i % 2 ? 'canne' : 'menthe'].grow),
+        wait: zeros(CONFIG.farm.count),
+      },
       houses: [],
       fields: Object.fromEntries(Object.entries(F).map(([k, f]) => [k, zeros(f.count)])),
       quest: { i: 0, ready: false },
@@ -43,6 +51,12 @@ export const Store = {
       tipsOn: true,
       decor: null,          // décor modifié au Mode architecte (null = celui du fichier Tiled)
       quests: null,         // quêtes du maire modifiées dans l'éditeur (null = celles du fichier)
+      ride: null,           // véhicule choisi au garage de la maison (null = le meilleur acheté)
+      rested: 0,            // secondes de « Bien reposé » restantes (dormir dans sa maison)
+      home: {               // décoration de ta maison (voir world/home.js)
+        wall: 'creme', floor: 'bois',
+        deco: { mur: 'tableau', coin: 'plante', salon: 'canape', tapis: 'rouge', couette: 'bleu' },
+      },
       lastSeen: Date.now(),
     };
   },
@@ -66,6 +80,24 @@ export const Store = {
       for (const b of Object.keys(out.opened)) { out.opened[b] = true; out.seen['open_' + b] = true; }
     }
     out.stats.byClient = { ...(data.stats && data.stats.byClient) };
+    out.farm = this.migrateFarm(base.farm, data);
+    // Lignes 2 et 3 : parfum connu, cuve valide
+    const okFl = fl => !!CONFIG.flavors[fl] || (out.recipes || []).some(r => r && r.id === fl);
+    out.lines = (Array.isArray(data.lines) ? data.lines : []).slice(0, CONFIG.lines.max - 1)
+      .filter(l => l && typeof l === 'object')
+      .map(l => ({ flavor: okFl(l.flavor) ? l.flavor : out.flavor, bulk: Math.max(0, Number(l.bulk) || 0), bulkFlavor: okFl(l.bulkFlavor) ? l.bulkFlavor : out.flavor }));
+    // v0.6.0 : les « fruits & plantes » deviennent le fruit du parfum en production
+    if (data.mat && Number.isFinite(data.mat.fruit)) {
+      out.mat = { ...Object.fromEntries(Object.keys(CONFIG.materials).map(k => [k, 0])), ...data.mat };
+      const fl = out.flavor, rec = (data.recipes || []).find(r => r && r.id === fl);
+      const to = CONFIG.materials[fl] ? fl : rec && CONFIG.materials[rec.a] ? rec.a : 'menthe';
+      out.mat[to] = (out.mat[to] || 0) + data.mat.fruit;
+    }
+    delete out.mat.fruit;
+    for (const k of Object.keys(out.mat)) if (!CONFIG.materials[k] || !Number.isFinite(out.mat[k])) delete out.mat[k];
+    for (const k of Object.keys(CONFIG.materials)) if (!Number.isFinite(out.mat[k])) out.mat[k] = 0;
+    out.farm.crop = out.farm.crop.map(c => (CONFIG.farm.crops[c] ? c : 'menthe'));
+    out.home = { ...base.home, ...(data.home || {}), deco: { ...base.home.deco, ...((data.home && data.home.deco) || {}) } };
     out.fields = { ...base.fields };
     for (const [k, arr] of Object.entries(data.fields || {}))
       if (Array.isArray(arr) && arr.length === base.fields[k]?.length) out.fields[k] = arr;
@@ -73,6 +105,24 @@ export const Store = {
     out.quests = Array.isArray(data.quests) ? cleanList(data.quests) : null;
     while (out.npcs.length < out.couriers) out.npcs.push({ state: 'idle', cid: null, dest: null, t: 0, dur: 0 });
     out.version = CONFIG.version;
+    return out;
+  },
+
+  /** Champs : nettoie, et convertit les parties d'avant la v0.5.0 (Champs achetés = 8 champs) */
+  migrateFarm(base, data) {
+    const F = CONFIG.farm, d = data.farm;
+    if (!d || typeof d !== 'object') {
+      const out = { ...base, crop: [...base.crop], t: [...base.t], wait: [...base.wait] };
+      if (data.districts && data.districts.champs) { out.owned = F.count; out.crop = Array(F.count).fill('canne'); out.t.fill(0); }
+      return out;
+    }
+    const arr = (a, def) => Array.from({ length: F.count }, (_, i) => (Array.isArray(a) && a[i] != null ? a[i] : def[i]));
+    const out = {
+      owned: Math.max(F.free, Math.min(F.count, Math.floor(Number(d.owned) || F.free))),
+      crop: arr(d.crop, base.crop).map((c, i) => (F.crops[c] ? c : base.crop[i])),
+      t: arr(d.t, base.t).map(v => Math.max(0, Number(v) || 0)),
+      wait: arr(d.wait, base.wait).map(v => Math.max(0, Number(v) || 0)),
+    };
     return out;
   },
 

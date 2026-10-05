@@ -11,6 +11,18 @@ import { Events } from '../sim/events.js';
 import { MAP } from './map.js';
 import { Art } from './art.js';
 import { Gfx } from './gfx.js';
+import { Clock } from '../sim/clock.js';
+
+/**
+ * Repères dans les images des bâtiments (fractions de largeur / hauteur de l'image) :
+ * smoke = haut de la cheminée, flag = haut du mât, clock = cadran, sign = hauteur du panneau (0,45 par défaut).
+ */
+const BAT_ART = {
+  usine:  { smoke: [0.21, 0.06] },
+  labo:   { smoke: [0.78, 0.0], sign: 0.36 },
+  mairie: { flag: [0.50, 0.01] },
+  gare:   { clock: [0.50, 0.275, 0.055], sign: 0.6 },      // clock = centre et rayon (en largeur) du cadran
+};
 
 const TAU = Math.PI * 2;
 
@@ -88,7 +100,8 @@ export const Render = {
     // Champs : chemin + parcelles labourées
     c.fillStyle = '#d8c08f'; c.fillRect(525, 1100, 40, 60);
     c.fillRect(0, 1160, 2650, 26);
-    for (const p of MAP.fields.canne) { c.fillStyle = '#9b7b4f'; c.fillRect(p.x - 90, p.y - 100, 180, 110); }
+    Gfx.sign(c, '🌾 Les Champs', 545, 1098, 13);
+    MAP.farm.forEach((p, i) => { c.fillStyle = i < s.farm.owned ? '#9b7b4f' : '#8a7a5c'; c.fillRect(p.x - 90, p.y - 100, 180, 110); });
 
     // Bois de sureau (Colline)
     c.fillStyle = '#76a85a'; c.fillRect(2730, 880, 540, 260);
@@ -118,6 +131,8 @@ export const Render = {
     const client = b.client ? clientByPlace(b.id) : null;
     const name = b.name || client.name, icon = b.icon || client.icon;
     const lit = dark > 0.2;
+    const img = Art.img['bat_' + b.id];
+    if (img) return this.buildingArt(c, b, s, t, img, name, icon, client);
 
     Gfx.shadow(c, x + w / 2 + 6, y + h + 2, w / 2 + 6, 8);
 
@@ -126,12 +141,7 @@ export const Render = {
       const cx = b.id === 'usine' ? x + 57 : x + w - 34, wide = b.id === 'usine' ? 34 : 18;
       c.fillStyle = b.id === 'usine' ? '#6e3f31' : '#8d7aa8';
       c.fillRect(cx - wide / 2, y - (b.id === 'usine' ? 50 : 26), wide, 70);
-      const on = b.id === 'usine' ? rt.flow.cook > 0.01 : s.recipes.length > 0;
-      if (on) for (let i = 0; i < 4; i++) {
-        const k = (t * 0.5 + i / 4) % 1;
-        c.fillStyle = b.id === 'usine' ? `rgba(245,245,245,${0.6 * (1 - k)})` : `hsla(${(i * 80 + t * 40) % 360},70%,70%,${0.8 * (1 - k)})`;
-        c.beginPath(); c.arc(cx + Math.sin(k * 6 + i) * 10, y - (b.id === 'usine' ? 60 : 32) - k * 80, (b.id === 'usine' ? 10 : 5) + k * 12, 0, TAU); c.fill();
-      }
+      this.smoke(c, s, t, b.id, cx, y - (b.id === 'usine' ? 60 : 32));
     }
 
     c.fillStyle = b.wall; c.fillRect(x, top, w, y + h - top);
@@ -149,10 +159,7 @@ export const Render = {
     // Drapeau de la mairie
     if (b.id === 'mairie') {
       c.fillStyle = '#5b4030'; c.fillRect(x + w / 2 - 2, y - 46, 4, 50);
-      c.fillStyle = Events.is(s, 'fete') ? '#e0562b' : '#d98a1c';
-      c.beginPath(); c.moveTo(x + w / 2 + 2, y - 46);
-      for (let i = 0; i <= 6; i++) c.lineTo(x + w / 2 + 2 + i * 5, y - 46 + Math.sin(t * 5 + i) * 2);
-      c.lineTo(x + w / 2 + 32, y - 30); c.lineTo(x + w / 2 + 2, y - 30); c.fill();
+      this.flag(c, s, t, x + w / 2, y - 46);
     }
 
     // Fenêtres (allumées la nuit)
@@ -188,8 +195,7 @@ export const Render = {
       c.fillStyle = '#4a3a30'; c.fillRect(q.x - 40, y + h - 62, 80, 62);
       c.fillStyle = '#8d8a86';
       for (let i = 0; i < 6; i++) c.fillRect(q.x - 38, y + h - 60 + i * 10, 76, 6);
-      const crates = Math.min(6, Math.ceil(Eco.totalStock(s) / 15));
-      for (let i = 0; i < crates; i++) Gfx.crate(c, q.x - 66 + (i % 2) * 22, y + h - 2 - Math.floor(i / 2) * 16, 20, 15);
+      this.dockCrates(c, s, y + h);
       Gfx.sign(c, '📦 Quai', q.x, y + h - 70);
     }
 
@@ -198,27 +204,19 @@ export const Render = {
     // Bâtiment pas encore ouvert : planches en croix sur la porte et panneau « Bientôt ! »
     if (b.panel && s.opened[b.id] === false) {
       c.fillStyle = 'rgba(60,50,40,.28)'; c.fillRect(x, top, w, y + h - top);
-      c.save(); c.translate(door.x, y + h - 26);
-      c.fillStyle = '#a0703f'; c.strokeStyle = '#6b4226'; c.lineWidth = 2;
-      for (const a of [-0.5, 0.5]) { c.save(); c.rotate(a); c.fillRect(-30, -5, 60, 10); c.strokeRect(-30, -5, 60, 10); c.restore(); }
-      c.restore();
-      Gfx.sign(c, '🔒 Bientôt !', door.x, y + h - 52, 13);
+      this.planks(c, door.x, y + h);
     }
 
     if (client && !Eco.clientOpen(s, client) && (!client.district || s.districts[client.district])) {
       c.fillStyle = 'rgba(60,50,40,.45)'; c.fillRect(x - 10, y, w + 20, h);
       Gfx.label(c, `🔒 ⭐ ${client.rep}`, x + w / 2, y + h / 2 + 10, 18);
     }
-    if (b.id === 'contrats' && s.offers.length) {
-      const bx = x + w - 6, by = y + 6 + Math.sin(t * 4) * 3;
-      c.fillStyle = '#e0562b'; c.beginPath(); c.arc(bx, by, 15, 0, TAU); c.fill();
-      c.strokeStyle = '#fff'; c.lineWidth = 3; c.stroke();
-      Gfx.label(c, String(s.offers.length), bx, by + 6, 16);
-    }
+    if (b.id === 'contrats') this.offerBadge(c, s, t, x + w - 6, y + 6);
   },
 
   /* ---------------- Récoltes ---------------- */
-  tree(c, p, grow, kind) {
+  /** @param {string} [fruitColor] couleur des fruits du verger (celle du parfum en production) */
+  tree(c, p, grow, kind, fruitColor) {
     if (Art.draw(c, kind === 'sureau' ? 'sureau' : 'arbre', p.x, p.y + 6, 90, 110)) return;
     const ripe = grow <= 0, regrow = kind === 'sureau' ? CONFIG.fields.sureau.regrow : CONFIG.fields.verger.regrow;
     Gfx.shadow(c, p.x, p.y + 4, 30, 9);
@@ -226,23 +224,78 @@ export const Render = {
     c.fillStyle = kind === 'sureau' ? (ripe ? '#4f7f3c' : '#6e9d5a') : (ripe ? '#3f8f4a' : '#5da564');
     for (const [dx, dy, r] of [[0, -58, 32], [-22, -44, 22], [22, -44, 22], [0, -36, 24]]) { c.beginPath(); c.arc(p.x + dx, p.y + dy, r, 0, TAU); c.fill(); }
     if (ripe) {
-      c.fillStyle = kind === 'sureau' ? '#3a2a5e' : '#d23c4f';
+      c.fillStyle = kind === 'sureau' ? '#3a2a5e' : fruitColor || '#d23c4f';
       const r = kind === 'sureau' ? 3.5 : 5;
       for (const [dx, dy] of [[-14, -60], [12, -66], [20, -44], [-22, -40], [2, -40], [-4, -76], [8, -52]]) { c.beginPath(); c.arc(p.x + dx, p.y + dy, r, 0, TAU); c.fill(); }
     } else this.ring(c, p.x, p.y - 58, 1 - grow / regrow);
   },
 
-  cane(c, p, grow, t) {
-    if (Art.draw(c, 'canne', p.x, p.y + 4, 180, 120)) return;
-    const k = grow <= 0 ? 1 : 0.35 + 0.5 * (1 - grow / CONFIG.fields.canne.regrow);
+  /**
+   * Un champ à cultiver (s.farm) : en friche s'il n'est pas à toi, sinon menthe ou canne,
+   * qui grandit ; mûr, il brille en attendant d'être récolté.
+   */
+  farmField(c, p, i, s, t) {
+    const F = s.farm;
+    if (i >= F.owned) {
+      c.strokeStyle = 'rgba(70,50,25,.35)'; c.lineWidth = 2;
+      for (let y = p.y - 88; y < p.y; y += 16) { c.beginPath(); c.moveTo(p.x - 80, y); c.lineTo(p.x + 80, y + 4); c.stroke(); }
+      if (i === F.owned) Gfx.sign(c, `🌱 À vendre · ${Fmt.money(CONFIG.farm.costs[i])}`, p.x, p.y - 34, 13);
+      else Gfx.label(c, '🔒', p.x, p.y - 40, 18);
+      return;
+    }
+    const C = CONFIG.farm.crops[F.crop[i]], ripe = F.t[i] <= 0;
+    const k = ripe ? 1 : 0.25 + 0.75 * (1 - F.t[i] / C.grow);
+    if (F.crop[i] === 'canne') this.cane(c, p, k, ripe, t);
+    else if (F.crop[i] === 'menthe') this.mint(c, p, k, ripe, t);
+    else this.fruitCrop(c, p, k, ripe, t, F.crop[i], CONFIG.flavors[C.mat].color);
+    if (ripe) {
+      const b = Math.abs(Math.sin(t * 4)) * 6;
+      Gfx.label(c, `✨ ${C.icon} ×${CONFIG.farm.handMult}`, p.x, p.y - 108 - b, 16, '#fff6c8');
+    } else this.ring(c, p.x, p.y - 108, 1 - F.t[i] / C.grow);
+  },
+
+  cane(c, p, k, ripe, t) {
+    if (Art.draw(c, 'canne', p.x, p.y + 4, 180, 120 * k)) return;
     for (let i = 0; i < 9; i++) {
       const sx = p.x - 72 + i * 18, hgt = (70 + (i % 3) * 10) * k, sway = Math.sin(t * 1.4 + i) * 3;
-      c.strokeStyle = grow <= 0 ? '#c9b24a' : '#8fb05a'; c.lineWidth = 5;
+      c.strokeStyle = ripe ? '#c9b24a' : '#8fb05a'; c.lineWidth = 5;
       c.beginPath(); c.moveTo(sx, p.y); c.lineTo(sx + sway, p.y - hgt); c.stroke();
       c.strokeStyle = '#5f8a3a'; c.lineWidth = 3;
       c.beginPath(); c.moveTo(sx + sway, p.y - hgt); c.lineTo(sx + sway + 12, p.y - hgt + 10); c.stroke();
     }
-    if (grow > 0) this.ring(c, p.x, p.y - 100, 1 - grow / CONFIG.fields.canne.regrow);
+  },
+
+  /** Arbustes à fruits (grenadier, citronnier, sureau) ou fleurs (violettes) : couleur du parfum */
+  fruitCrop(c, p, k, ripe, t, kind, color) {
+    if (Art.draw(c, kind, p.x, p.y + 4, 180, 110 * k)) return;
+    const flower = kind === 'violette';
+    for (let r = 0; r < 2; r++) for (let j = 0; j < 4; j++) {
+      const x = p.x - 60 + j * 40 + (r % 2) * 18, y = p.y - 14 - r * 44, sway = Math.sin(t * 1.3 + j + r) * 1.5;
+      const rad = (flower ? 6 : 9) + (flower ? 6 : 11) * k;
+      if (!flower) { c.fillStyle = '#7a5230'; c.fillRect(x - 2, y - rad * 0.4, 4, rad * 0.8 + 6); }
+      c.fillStyle = ripe ? '#3f8f4a' : '#7fbf6a';
+      c.beginPath(); c.arc(x + sway, y - rad * 0.6, rad, 0, TAU); c.fill();
+      if (ripe || k > 0.7) {
+        c.fillStyle = color;
+        const n = flower ? 5 : 3, fr = flower ? 3.5 : 4;
+        for (let q = 0; q < n; q++) {
+          const a = q / n * TAU + j;
+          c.beginPath(); c.arc(x + sway + Math.cos(a) * rad * 0.55, y - rad * 0.6 + Math.sin(a) * rad * 0.5, fr, 0, TAU); c.fill();
+        }
+      }
+    }
+  },
+
+  /** Menthe : rangées de touffes de feuilles */
+  mint(c, p, k, ripe, t) {
+    if (Art.draw(c, 'menthe', p.x, p.y + 4, 180, 110 * k)) return;
+    for (let r = 0; r < 3; r++) for (let j = 0; j < 5; j++) {
+      const x = p.x - 68 + j * 34 + (r % 2) * 10, y = p.y - 12 - r * 30, sway = Math.sin(t * 1.6 + j + r) * 1.5;
+      const rad = 5 + 9 * k;
+      c.fillStyle = ripe ? '#2f9e5a' : '#7fbf6a';
+      for (const [dx, dy] of [[0, -rad * 0.6], [-rad * 0.7, 0], [rad * 0.7, 0]]) { c.beginPath(); c.arc(x + dx + sway, y + dy, rad * 0.7, 0, TAU); c.fill(); }
+      if (ripe) { c.fillStyle = '#a8e6b8'; c.beginPath(); c.arc(x - 3 + sway, y - rad * 0.8, 2.5, 0, TAU); c.fill(); }
+    }
   },
 
   ring(c, x, y, k) {
@@ -252,10 +305,102 @@ export const Render = {
     c.beginPath(); c.arc(x, y, 12, -Math.PI / 2, -Math.PI / 2 + k * TAU); c.stroke();
   },
 
+  /**
+   * Bâtiment dessiné avec son image (assets/batiments/<id>.png) : même largeur que sa place
+   * sur la carte (+20 px), proportions gardées, posé au même sol. Le code ajoute par-dessus
+   * ce qui bouge ou dépend de la partie : fumée, drapeau, caisses du quai, panneau, « Bientôt ».
+   */
+  buildingArt(c, b, s, t, img, name, icon, client) {
+    const w = b.w + 20, hh = w * img.height / img.width, x = b.x - 10, bot = b.y + b.h, y = bot - hh;
+    const A = BAT_ART[b.id] || {}, door = CONFIG.places[b.id], locked = b.panel && s.opened[b.id] === false;
+    // Client pas encore ouvert (réputation trop basse) ; sa colline doit être achetée pour qu'on le signale
+    const shut = client && !Eco.clientOpen(s, client) && (!client.district || s.districts[client.district]);
+    Gfx.shadow(c, x + w / 2 + 6, bot + 2, w / 2 + 4, 8);
+    if (A.smoke) this.smoke(c, s, t, b.id, x + w * A.smoke[0], y + hh * A.smoke[1]);
+    c.imageSmoothingEnabled = true; c.imageSmoothingQuality = 'high';
+    c.drawImage(locked || shut ? Art.shaded('bat_' + b.id) : img, x, y, w, hh);
+    if (A.clock) this.clockHands(c, s, x + w * A.clock[0], y + hh * A.clock[1], w * A.clock[2]);
+    if (A.flag) this.flag(c, s, t, x + w * A.flag[0], y + hh * A.flag[1]);
+    if (b.id === 'usine') {
+      this.dockCrates(c, s, bot);
+      Gfx.sign(c, '📦 Quai', CONFIG.places.quai.x, y + hh * 0.56);
+    }
+    Gfx.sign(c, `${icon} ${name}`, x + w / 2, y + hh * (A.sign ?? 0.45), 15);
+    if (locked) this.planks(c, door.x, bot);
+    if (shut) Gfx.label(c, `🔒 ⭐ ${client.rep}`, x + w / 2, y + hh * 0.7, 18);
+    if (b.id === 'contrats') this.offerBadge(c, s, t, x + w - 10, y + 10);
+  },
+
+  /** Aiguilles de l'horloge de la gare : l'heure du jeu (cadran de centre cx, cy et de rayon r) */
+  clockHands(c, s, cx, cy, r) {
+    const h = Clock.hour(s);
+    c.strokeStyle = '#2b2118'; c.lineCap = 'round';
+    for (const [a, len, lw] of [[(h % 12) / 12, 0.5, 3.5], [h % 1, 0.78, 2.5]]) {
+      const ang = a * TAU - Math.PI / 2;
+      c.lineWidth = lw; c.beginPath(); c.moveTo(cx, cy); c.lineTo(cx + Math.cos(ang) * r * len, cy + Math.sin(ang) * r * len); c.stroke();
+    }
+    c.fillStyle = '#2b2118'; c.beginPath(); c.arc(cx, cy, 2.5, 0, TAU); c.fill();
+    c.lineCap = 'butt';
+  },
+
+  /** Fumée de l'usine (quand la cuisson tourne) ou bulles du labo (quand une recette existe), depuis (cx, oy) */
+  smoke(c, s, t, id, cx, oy) {
+    const usine = id === 'usine';
+    if (!(usine ? rt.flow.cook > 0.01 : s.recipes.length > 0)) return;
+    for (let i = 0; i < 4; i++) {
+      const k = (t * 0.5 + i / 4) % 1;
+      c.fillStyle = usine ? `rgba(245,245,245,${0.6 * (1 - k)})` : `hsla(${(i * 80 + t * 40) % 360},70%,70%,${0.8 * (1 - k)})`;
+      c.beginPath(); c.arc(cx + Math.sin(k * 6 + i) * 10, oy - k * 80, (usine ? 10 : 5) + k * 12, 0, TAU); c.fill();
+    }
+  },
+
+  /** Drapeau de la mairie, accroché en haut du mât (px, py) */
+  flag(c, s, t, px, py) {
+    c.fillStyle = Events.is(s, 'fete') ? '#e0562b' : '#d98a1c';
+    c.beginPath(); c.moveTo(px + 2, py);
+    for (let i = 0; i <= 6; i++) c.lineTo(px + 2 + i * 5, py + Math.sin(t * 5 + i) * 2);
+    c.lineTo(px + 32, py + 16); c.lineTo(px + 2, py + 16); c.fill();
+  },
+
+  /** Caisses à gauche du quai, selon le stock (sol de l'usine : bot) */
+  dockCrates(c, s, bot) {
+    const q = CONFIG.places.quai, n = Math.min(6, Math.ceil(Eco.totalStock(s) / 15));
+    for (let i = 0; i < n; i++) Gfx.crate(c, q.x - 66 + (i % 2) * 22, bot - 2 - Math.floor(i / 2) * 16, 20, 15);
+  },
+
+  /** Bâtiment pas encore ouvert : planches en croix sur la porte et panneau « Bientôt ! » */
+  planks(c, dx, bot) {
+    c.save(); c.translate(dx, bot - 26);
+    c.fillStyle = '#a0703f'; c.strokeStyle = '#6b4226'; c.lineWidth = 2;
+    for (const a of [-0.5, 0.5]) { c.save(); c.rotate(a); c.fillRect(-30, -5, 60, 10); c.strokeRect(-30, -5, 60, 10); c.restore(); }
+    c.restore();
+    Gfx.sign(c, '🔒 Bientôt !', dx, bot - 52, 13);
+  },
+
+  /** Pastille rouge du bureau des contrats : nombre d'offres en attente */
+  offerBadge(c, s, t, bx, y0) {
+    if (!s.offers.length) return;
+    const by = y0 + Math.sin(t * 4) * 3;
+    c.fillStyle = '#e0562b'; c.beginPath(); c.arc(bx, by, 15, 0, TAU); c.fill();
+    c.strokeStyle = '#fff'; c.lineWidth = 3; c.stroke();
+    Gfx.label(c, String(s.offers.length), bx, by + 6, 16);
+  },
+
   /* ---------------- Maisons ---------------- */
   house(c, p, h, dark) {
     const t = typeById(h.type), u = CONFIG.houses.uses[h.use];
-    if (Art.draw(c, 'maison_' + t.id, p.x + p.w / 2, p.y + p.h - 4, p.w * t.scale, p.h * t.scale)) return;
+    const img = Art.tinted('maison_' + t.id, u.roof);
+    if (img) {
+      // Image (assets/maisons) : largeur selon le type, proportions gardées, posée au bas du terrain
+      const w = p.w * (0.55 + 0.55 * t.scale), hh = w * img.height / img.width;
+      const x = p.x + (p.w - w) / 2, y = p.y + p.h - 6 - hh;
+      Gfx.shadow(c, x + w / 2 + 4, y + hh, w / 2, 7);
+      c.imageSmoothingEnabled = true; c.imageSmoothingQuality = 'high';
+      c.drawImage(img, x, y, w, hh);
+      this.houseProp(c, h.use, x + w, y + hh);
+      Gfx.sign(c, `${u.icon} ${'★'.repeat(h.lvl)}`, x + w / 2, y + 2, 12);
+      return;
+    }
     const w = p.w * t.scale, hh = p.h * t.scale * 0.95, x = p.x + (p.w - w) / 2, y = p.y + p.h - hh - 8, top = y + hh * 0.42;
     Gfx.shadow(c, x + w / 2 + 4, y + hh, w / 2 + 4, 6);
     if (t.id === 'domaine') for (const tx of [x - 8, x + w - 22]) {
@@ -270,6 +415,29 @@ export const Render = {
     if (w > 100) for (const wx of [x + w * 0.2, x + w * 0.8 - 18]) { c.fillStyle = dark > 0.2 ? '#ffd97a' : '#fdf1cf'; c.fillRect(wx, top + 16, 18, 16); }
     if (h.use === 'orchard') { c.fillStyle = '#3f8f4a'; c.beginPath(); c.arc(x + w + 14, y + hh - 20, 14, 0, TAU); c.fill(); }
     Gfx.sign(c, `${u.icon} ${'★'.repeat(h.lvl)}`, x + w / 2, y + 2, 12);
+  },
+
+  /**
+   * Petit objet devant le coin droit d'une maison dessinée en image, pour voir son usage :
+   * caisses (stockage), étal rayé (boutique), arbre fruitier (verger). Rien pour la location.
+   * (rx, by) = coin bas droit de la maison.
+   */
+  houseProp(c, use, rx, by) {
+    const x = rx - 16, y = by + 4;
+    if (use === 'storage') {
+      c.fillStyle = '#a8763e'; c.strokeStyle = '#6b4226'; c.lineWidth = 1.5;
+      for (const [dx, dy] of [[-22, -14], [-6, -14], [-14, -28]]) { c.fillRect(x + dx, y + dy, 15, 14); c.strokeRect(x + dx, y + dy, 15, 14); }
+    } else if (use === 'shop') {
+      c.fillStyle = '#8b5a33'; c.fillRect(x - 24, y - 26, 3, 26); c.fillRect(x + 5, y - 26, 3, 26);
+      c.fillStyle = '#c9965a'; c.fillRect(x - 26, y - 12, 36, 10);
+      for (let i = 0; i < 4; i++) { c.fillStyle = i % 2 ? '#fff' : '#c2453a'; c.fillRect(x - 28 + i * 10, y - 32, 10, 8); }
+      for (const [dx, col] of [[-20, '#4caf7a'], [-10, '#e8c22e'], [0, '#c2453a']]) { c.fillStyle = col; c.fillRect(dx + x, y - 20, 5, 8); }
+    } else if (use === 'orchard') {
+      c.fillStyle = '#6b4226'; c.fillRect(x - 3, y - 20, 6, 20);
+      c.fillStyle = '#3f8f4a'; c.beginPath(); c.arc(x, y - 30, 15, 0, TAU); c.fill();
+      c.fillStyle = '#d9473a';
+      for (const [dx, dy] of [[-7, -32], [5, -26], [2, -38]]) { c.beginPath(); c.arc(x + dx, y + dy, 2.6, 0, TAU); c.fill(); }
+    }
   },
 
   /* ---------------- Décor ---------------- */
@@ -377,14 +545,8 @@ export const Render = {
   lockedDistrict(c, id, t) {
     const D = CONFIG.districts[id], M = MAP.districts[id], a = M.area, b = M.barrier;
     c.fillStyle = 'rgba(52,66,46,.58)'; c.fillRect(a.x, a.y, a.w, a.h);
-    if (id === 'champs') {
-      c.fillStyle = '#9b6a3a';
-      for (let x = 0; x < b.w; x += 40) c.fillRect(x - 3, b.y - 16, 6, 30);
-      c.fillRect(0, b.y - 10, b.w, 5); c.fillRect(0, b.y + 2, b.w, 5);
-    } else {
-      for (let y = 0; y < b.h; y += 24) { c.fillStyle = (y / 24) % 2 ? '#e0562b' : '#f4efe4'; c.fillRect(b.x, y, b.w, 24); }
-    }
-    const cx = a.x + a.w / 2, cy = id === 'champs' ? a.y + 170 : 900;
+    for (let y = 0; y < b.h; y += 24) { c.fillStyle = (y / 24) % 2 ? '#e0562b' : '#f4efe4'; c.fillRect(b.x, y, b.w, 24); }
+    const cx = a.x + a.w / 2, cy = 900;
     Gfx.label(c, `🔒 ${D.icon} ${D.name}`, cx, cy, 30);
     Gfx.label(c, `${Fmt.money(D.cost)}${D.rep ? ` · ⭐ ${D.rep}` : ''}`, cx, cy + 34, 20, '#ffe28a');
   },

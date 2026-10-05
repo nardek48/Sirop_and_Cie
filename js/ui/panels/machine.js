@@ -6,28 +6,26 @@
 import { CONFIG } from '../../config.js';
 import { Fmt } from '../../core/format.js';
 import { MACHINE_INFO, MACHINE_KEYS, machineMeta } from '../../world/interior.js';
+import { lineMat } from './usine.js';
+import { Eco } from '../../sim/eco.js';
 
 /** Machine affichée (choisie par l'intérieur de l'usine) */
-export const MachineSel = { k: 'cook' };
+export const MachineSel = { k: 'cook', line: 0 };
 
 const upBtn = k => `
   <button class="btn block" data-act="up" data-arg="${k}" data-d="cantLv:${k}">⬆️ Améliorer · <span data-t="lvCost:${k}"></span></button>`;
 
-const matBtn = (m, q) => `<button class="btn ghost sm" data-act="buyMat" data-arg="${m},${q}" data-d="cantMat:${m},${q}">+${q} ${CONFIG.materials[m].icon} · ${Fmt.money(q * CONFIG.materials[m].price)}</button>`;
 
 function body(s, k) {
   switch (k) {
     case 'mat': return `
-      <div class="mat-row"><span>🧂 Sucre</span><b data-t="mat:sugar"></b></div>
-      <div class="mat-row"><span>🍓 Fruits</span><b data-t="mat:fruit"></b></div>
-      <p class="sub" data-t="recipe"></p>
-      <div class="grid2">${matBtn('sugar', 100)}${matBtn('fruit', 100)}${matBtn('sugar', 1000)}${matBtn('fruit', 1000)}</div>
+      ${lineMat(s, Math.min(MachineSel.line, Eco.lineCount(s) - 1))}
       <div class="auto-row">
-        <div><b>Réapprovisionnement auto</b><div class="sub">Rachète sucre et fruits quand le stock baisse.</div></div>
+        <div><b>Réapprovisionnement auto</b><div class="sub">Rachète le sucre et les fruits du parfum en production quand le stock baisse.</div></div>
         ${s.auto.restock ? '<span class="ok">✓ Actif</span>'
           : `<button class="btn sm" data-act="restock" data-d="cantRestock">${Fmt.money(CONFIG.restock.cost)}</button>`}
       </div>
-      <p class="hint">Les fruits du verger 🌳 et la canne des Champs 🌾 sont gratuits : va les récolter !</p>`;
+      <p class="hint">Le verger 🌳 donne le fruit du parfum en production ; tes champs 🌾, ce que tu y plantes. Récolte-les toi-même : ça donne le double !</p>`;
     case 'cook': case 'bottle': return `
       <div class="big" data-t="rate:${k}"></div><div class="sub" data-t="flow:${k}"></div>${upBtn(k)}`;
     case 'tank': return `
@@ -44,8 +42,11 @@ function body(s, k) {
 }
 
 export const machine = {
-  get title() { const m = machineMeta(MachineSel.k); return `${m.icon} ${m.name}`; },
-  key: s => [MachineSel.k, s.auto.restock].join('|'),
+  get title() {
+    const m = machineMeta(MachineSel.k);
+    return `${m.icon} ${m.name}${MachineSel.k === 'mat' && MachineSel.line ? ` · ligne ${MachineSel.line + 1}` : ''}`;
+  },
+  key: s => [MachineSel.k, MachineSel.line, s.auto.restock, MachineSel.k === 'mat' ? [s.flavor, ...s.lines.map(L => L.flavor)].join() : ''].join('|'),
   html(s) {
     const k = MachineSel.k, i = MACHINE_KEYS.indexOf(k);
     const prev = MACHINE_KEYS[(i + MACHINE_KEYS.length - 1) % MACHINE_KEYS.length];

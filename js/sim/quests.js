@@ -66,6 +66,12 @@ export const GOALS = {
   district:  { icon: '🗺️', name: 'Ouvrir un quartier', args: districtArgs, once: true,
     text: (n, a) => `Ouvre ${plain(argName(districtArgs, a))}`,
     val: (s, a) => (s.districts[a] ? 1 : 0) },
+  farm:      { icon: '🌱', name: 'Avoir des champs',
+    text: n => `Achète ton ${Fmt.int(n)}${n === 1 ? 'er' : 'e'} champ`,
+    val: s => s.farm.owned },
+  lines:     { icon: '🏭', name: 'Lignes de production',
+    text: n => `Ouvre ${Fmt.int(n)} lignes de production à l’usine`,
+    val: s => 1 + (s.lines ? s.lines.length : 0) },
   recipes:   { icon: '🧪', name: 'Inventer des recettes',
     text: n => (n === 1 ? 'Invente une recette secrète au labo' : `Invente ${Fmt.int(n)} recettes secrètes au labo`),
     val: s => s.recipes.length },
@@ -84,6 +90,9 @@ export const GOALS = {
   earn:      { icon: '🏦', name: 'Gagner de l’argent', money: true,
     text: n => `Gagne ${Fmt.money(n)} avec ton entreprise`,
     val: s => s.run.earned },
+  sleep:     { icon: '😴', name: 'Dormir dans sa maison',
+    text: n => (n === 1 ? 'Dors une nuit dans ta maison 🏠' : `Dors ${Fmt.int(n)} nuits dans ta maison 🏠`),
+    val: s => s.stats.sleeps || 0 },
   stars:     { icon: '✨', name: 'Étoiles de prestige',
     text: n => `Obtiens ${Fmt.int(n)} ${plural(n, 'étoile', 'étoiles')} en revendant l’entreprise`,
     val: s => s.stars },
@@ -99,7 +108,7 @@ export const DEFAULT_QUESTS = [
   { goal: 'vehicle', arg: '1', n: 1, reward: 200 },
   { goal: 'houses', n: 1, reward: 300 },
   { goal: 'rep', n: 10, reward: 400 },
-  { goal: 'district', arg: 'champs', n: 1, reward: 600, text: 'Ouvre les Champs' },
+  { goal: 'farm', n: 3, reward: 600 },
   { goal: 'recipes', n: 1, reward: 1000 },
   { goal: 'couriers', n: 1, reward: 1500 },
   { goal: 'deliver', n: 25, reward: 3000 },
@@ -120,6 +129,8 @@ export const autoText = q => { const g = GOALS[q.goal]; return g ? g.text(q.n, q
  */
 export function cleanQuest(q) {
   if (!q || typeof q !== 'object') return null;
+  // v0.5.0 : « Ouvre les Champs » n'existe plus, les champs s'achètent un par un
+  if (q.goal === 'district' && q.arg === 'champs') q = { ...q, goal: 'farm', n: 3, arg: undefined, text: q.text === 'Ouvre les Champs' ? '' : q.text };
   const g = GOALS[q.goal];
   if (!g) return null;
   const out = { goal: q.goal };

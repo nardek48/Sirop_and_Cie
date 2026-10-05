@@ -27,7 +27,7 @@ function backupDate() {
 
 export const mairie = {
   title: '🏛️ Mairie',
-  key: s => [s.stars, s.look.shirt, s.look.pet, s.quest.i, s.quest.ready, s.districts.champs, s.districts.colline, s.tipsOn, Store.hasBackup(), Quests.rev].join('|'),
+  key: s => [s.stars, s.look.shirt, s.look.pet, s.quest.i, s.quest.ready, s.districts.colline, s.tipsOn, Store.hasBackup(), Quests.rev].join('|'),
   html(s) {
     const q = Quests.current(s);
     const row = (label, k) => `<tr><td>${label}</td><td data-t="stat:${k}"></td></tr>`;

@@ -32,6 +32,13 @@ Art.load(Object.fromEntries(['studio', 'village', 'villa', 'domaine'].map(k => [
 // Bâtiments de la rue principale (repères de cheminée, mât, panneau : BAT_ART dans world/render.js)
 Art.load(Object.fromEntries(['usine', 'labo', 'contrats', 'agence', 'mairie', 'garage', 'epicerie', 'cafe', 'supermarche', 'port', 'gare']
   .map(k => ['bat_' + k, `assets/batiments/${k}.png`])));
+// Village : arbres, plantes des champs, moulin, fontaine, véhicules (assets/village)
+Art.load(Object.fromEntries(['arbre', 'sureau-arbre', 'canne', 'menthe', 'grenadier', 'citronnier', 'sureau', 'violette',
+  'moulin', 'ailes', 'fontaine', 'velo', 'charrette', 'camionnette', 'lampadaire', 'banc', 'buisson', 'rocher', 'panneau',
+  'locomotive', 'wagon'].map(k => ['v_' + k, `assets/village/${k}.png`])));
+// Meubles et déco de ta maison (assets/maison) ; lit et tapis : magenta repeint selon la couleur choisie
+Art.load(Object.fromEntries(['tableau', 'carte', 'horloge', 'arc-en-ciel', 'etoile', 'plante', 'aquarium', 'guitare', 'robot',
+  'nounours', 'canape', 'tele', 'piano', 'ordinateur', 'lit', 'tapis'].map(k => ['m_' + k, `assets/maison/${k}.png`])));
 // Ta maison et son garage : murs magenta, repeints dans la couleur du papier peint (Art.tinted)
 // Personnages : planches 3 images × 4 directions en 64×96, affichées en ~44×65
 // (player, villageois, villageoise : vêtement magenta repeint selon la couleur choisie)
@@ -40,7 +47,7 @@ for (const k of ['ouvrier', 'player', 'meme', 'livreur', 'villageois', 'villageo
 // Compagnons : 3 images (immobile, deux pas) ; ligne 2 = vers la gauche, ligne 3 = vers la droite
 for (const k of ['chien', 'chat']) Art.sheet(k, `assets/persos/${k}.png`, { fw: 96, fh: 80, scale: 0.55 });
 // Intérieur de l'usine (repères : IMG dans world/interior.js)
-Art.load(Object.fromEntries(['sol', 'mur', 'sucre', 'marmite', 'cuve', 'embouteilleuse', 'etagere', 'comptoir', 'tableau']
+Art.load(Object.fromEntries(['cagette-menthe', 'cagette-grenadine', 'cagette-citron', 'cagette-sureau', 'cagette-violette', 'sol', 'mur', 'sucre', 'marmite', 'cuve', 'embouteilleuse', 'etagere', 'comptoir', 'tableau']
   .map(k => ['usine_' + k, `assets/usine/${k}.png`])));
 Art.load({ home_maison: 'assets/batiments/maison-sirotin.png', home_garage: 'assets/batiments/garage-maison.png' });
 window.Art = Art;   // pratique pour essayer depuis la console du navigateur

@@ -18,6 +18,18 @@
  */
 const ROWS = { bas: 0, gauche: 1, droite: 2, haut: 3 };
 
+/**
+ * Copie une image chargée dans un canvas. Sur téléphone (surtout iPhone), le navigateur peut jeter
+ * une image décodée pour libérer de la mémoire : elle n'est alors pas dessinée pendant qu'il la
+ * redécode, et l'écran « clignote » (il ne reste que l'herbe). Un canvas, lui, est toujours gardé.
+ */
+function keep(img) {
+  const cv = document.createElement('canvas');
+  cv.width = img.naturalWidth; cv.height = img.naturalHeight;
+  cv.getContext('2d').drawImage(img, 0, 0);
+  return cv;
+}
+
 export const Art = {
   img: {},
   sheets: {},
@@ -25,7 +37,7 @@ export const Art = {
   load(map) {
     for (const [k, src] of Object.entries(map)) {
       const i = new Image();
-      i.onload = () => { this.img[k] = i; };
+      i.onload = () => { this.img[k] = keep(i); };
       i.src = src;
     }
   },
@@ -47,7 +59,7 @@ export const Art = {
   /** scale : taille d'affichage (une planche en haute définition, ex. 64×96 affichée à 0,68, est lissée) */
   sheet(key, src, { fw = 48, fh = 64, scale = 1 } = {}) {
     const i = new Image();
-    i.onload = () => { this.sheets[key] = { img: i, fw, fh, scale }; };
+    i.onload = () => { this.sheets[key] = { img: keep(i), fw, fh, scale }; };
     i.src = src;
   },
 
@@ -72,7 +84,7 @@ export const Art = {
     if (!src) return null;
     if (!/^#[0-9a-f]{6}$/i.test(hex)) return src;                // couleur inattendue : image d'origine
     const cv = document.createElement('canvas');
-    cv.width = src.naturalWidth; cv.height = src.naturalHeight;
+    cv.width = src.width; cv.height = src.height;
     const g = cv.getContext('2d');
     g.drawImage(src, 0, 0);
     try {
@@ -103,12 +115,28 @@ export const Art = {
     const id = key + '@' + scale, P = (this.patterns ||= {});
     if (P[id] && P[id].c === c) return P[id].p;
     const cv = document.createElement('canvas');
-    cv.width = Math.round(src.naturalWidth * scale); cv.height = Math.round(src.naturalHeight * scale);
+    cv.width = Math.round(src.width * scale); cv.height = Math.round(src.height * scale);
     const g = cv.getContext('2d');
     g.imageSmoothingQuality = 'high';
     g.drawImage(src, 0, 0, cv.width, cv.height);
     P[id] = { c, p: c.createPattern(cv, 'repeat') };
     return P[id].p;
+  },
+
+  /**
+   * Pose une image (ou un canvas) centrée sur cx, le bas sur `bottom`, de largeur w (proportions gardées).
+   * flip : retournée en miroir. @returns {number} hauteur dessinée (0 si rien)
+   */
+  put(c, img, cx, bottom, w, flip = false) {
+    if (!img) return 0;
+    const h = w * img.height / img.width;
+    c.save();
+    c.imageSmoothingEnabled = true; c.imageSmoothingQuality = 'high';
+    c.translate(cx, bottom);
+    if (flip) c.scale(-1, 1);
+    c.drawImage(img, -w / 2, -h, w, h);
+    c.restore();
+    return h;
   },
 
   /** Copie assombrie d'une image (bâtiment pas encore ouvert), gardée en cache */
@@ -117,7 +145,7 @@ export const Art = {
     if (this.img[id]) return this.img[id];
     const src = this.img[key];
     const cv = document.createElement('canvas');
-    cv.width = src.naturalWidth; cv.height = src.naturalHeight;
+    cv.width = src.width; cv.height = src.height;
     const g = cv.getContext('2d');
     g.drawImage(src, 0, 0);
     g.globalCompositeOperation = 'source-atop';               // n'assombrit que le bâtiment, pas le fond transparent

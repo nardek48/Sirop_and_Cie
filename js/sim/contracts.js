@@ -19,11 +19,11 @@ export const Contracts = {
 
   generate(s) {
     const c = pick(C.clients.filter(x => Eco.clientOpen(s, x)));
-    const flavor = pick(s.unlocked), f = Flavors.get(s, flavor);
+    const flavor = pick(s.unlocked);
     const qty = Math.max(5, Math.round((c.qty * (1 + s.rep / C.repScale) + Eco.lineProdRate(s) * c.prodSec) * rand(0.7, 1.3)));
     s.offers.push({
       id: s.nextId++, place: c.place, client: c.name, icon: c.icon, flavor, qty,
-      reward: Math.round(qty * f.price * c.mult * Eco.mult(s) * Events.rewardFactor(s)),
+      reward: Math.round(qty * Eco.basePrice(s, flavor) * c.mult * Eco.mult(s) * Events.rewardFactor(s)),
       time: Math.round(rand(...c.time)), repGain: c.repGain, ttl: C.offerTtlSec,
     });
   },

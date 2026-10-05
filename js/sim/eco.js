@@ -5,6 +5,7 @@ import { CONFIG, typeById } from '../config.js';
 import { Flavors } from './flavors.js';
 import { Clock } from './clock.js';
 import { Events } from './events.js';
+import { Research } from './research.js';
 
 const H = CONFIG.houses;
 
@@ -26,9 +27,9 @@ export const Eco = {
   lines: s => [s, ...(s.lines || [])],
   lineCount: s => 1 + (s.lines ? s.lines.length : 0),
   /** Cuisson d'UNE ligne pour un parfum donné (bt/s) */
-  cookRateOf: (s, fl) => Eco.lvValue(s, 'cook') * Eco.mult(s) * Eco.restMult(s) / (Flavors.get(s, fl) || { time: 1 }).time,
+  cookRateOf: (s, fl) => Eco.lvValue(s, 'cook') * Eco.mult(s) * Eco.restMult(s) * Research.cookK(s) / (Flavors.get(s, fl) || { time: 1 }).time,
   /** Embouteillage d'UNE ligne (bt/s) */
-  bottleRateLine: s => Eco.lvValue(s, 'bottle') * Eco.mult(s) * Eco.restMult(s),
+  bottleRateLine: s => Eco.lvValue(s, 'bottle') * Eco.mult(s) * Eco.restMult(s) * Research.bottleK(s),
   /** Totaux, toutes lignes */
   cookRate: s => Eco.lines(s).reduce((a, L) => a + Eco.cookRateOf(s, L.flavor), 0),
   bottleRate: s => Eco.bottleRateLine(s) * Eco.lineCount(s),
@@ -47,7 +48,9 @@ export const Eco = {
   rent: s => Eco.houseTotal(s, 'rent') * Eco.mult(s),
   orchard: s => Eco.houseTotal(s, 'orchard'),
 
-  sellPrice: (s, fl, factor = 1) => Flavors.get(s, fl).price * factor * Eco.mult(s),
+  /** Prix de base d'un parfum (recette secrète : +25 % avec « Sirop de luxe ») */
+  basePrice: (s, fl) => { const f = Flavors.get(s, fl); return f.price * (f.recipe ? Research.recipeK(s) : 1); },
+  sellPrice: (s, fl, factor = 1) => Eco.basePrice(s, fl) * factor * Eco.mult(s),
   totalStock: s => Object.values(s.stock).reduce((a, b) => a + b, 0),
   /** Bouteilles réservées : contrats acceptés pas encore chargés */
   reserved: (s, fl) => s.active.filter(c => c.flavor === fl && !c.loaded).reduce((a, c) => a + c.qty, 0),
@@ -63,9 +66,9 @@ export const Eco = {
    *  (une commande = un parfum = une ligne ; plus de lignes = plus de commandes en même temps) */
   lineProdRate: s => Eco.prodRate(s) / Eco.lineCount(s),
   /** Capacité d'un véhicule : au moins `cap`, sinon `capSec` secondes de production */
-  capacityOf: (s, v) => Math.max(v.cap, Math.round(Eco.lineProdRate(s) * v.capSec)),
+  capacityOf: (s, v) => Math.round(Math.max(v.cap, Eco.lineProdRate(s) * v.capSec) * Research.carryK(s)),
   capacity: s => Eco.capacityOf(s, Eco.vehicle(s)),
-  speed: s => Eco.vehicle(s).speed,
+  speed: s => Eco.vehicle(s).speed * Research.speedK(s),
 
   clientOpen: (s, c) => s.rep >= c.rep && (!c.district || s.districts[c.district]),
 

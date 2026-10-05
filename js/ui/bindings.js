@@ -18,6 +18,7 @@ import { RealEstate, Garage, Recipes, Farm } from '../sim/world-systems.js';
 import { Quests } from '../sim/quests.js';
 import { Prestige } from '../sim/sim.js';
 import { Form } from './form.js';
+import { Research, fruitById } from '../sim/research.js';
 
 const BNECK = {
   mat: 'Matières épuisées', cook: 'Goulot : cuisson', bottle: 'Goulot : embouteillage',
@@ -91,6 +92,8 @@ export const B = {
   /* --- Lignes de production --- */
   cantLine: s => { const c = Factory.nextLineCost(s); return c == null || s.money < c; },
   lineTank: (s, i) => { const L = Eco.lines(s)[i]; return L ? L.bulk / Eco.tankCap(s) : 0; },
+  lineTankTxt: (s, a) => { const i = Number(a), L = Eco.lines(s)[i]; if (!L) return '';
+    return `${Eco.lineCount(s) > 1 ? `Ligne ${i + 1} · ` : ''}${Fmt.int(L.bulk)} / ${Fmt.int(Eco.tankCap(s))} L · ${Flavors.get(s, L.bulkFlavor).name}`; },
   lineTxt: (s, i) => {
     const L = Eco.lines(s)[i];
     if (!L) return '';
@@ -170,7 +173,13 @@ export const B = {
     return `${Fmt.money(p.price)} / bt · ${Fmt.num(p.sugar)} kg ${M.sugar.icon} + ${Fmt.num(p.fruit / 2)} kg ${M[a].icon} + ${Fmt.num(p.fruit / 2)} kg ${M[b].icon} · cuisson ×${Fmt.num(p.time)}`;
   },
   laboErr: s => Recipes.check(s, Form.labo),
-  laboCost: s => (s.recipes.length >= CONFIG.recipes.max ? 'Labo plein' : Fmt.money(Eco.recipeCost(s))),
+  laboCost: s => (s.recipes.length >= Research.recipeMax(s) ? 'Labo plein' : Fmt.money(Eco.recipeCost(s))),
+  /* --- Arbre du Labo --- */
+  resLeft: s => (s.research.cur ? Fmt.time(Math.max(0, s.research.left)) : ''),
+  resPct: s => Research.progress(s),
+  resGo: (s, id) => { const f = fruitById(id), w = Research.why(s, f); return w || `🌱 Faire pousser · ${Fmt.money(f.cost)}`; },
+  cantRes: (s, id) => !!Research.why(s, fruitById(id)),
+  resCur: s => { const f = s.research.cur && fruitById(s.research.cur); return f ? `${f.icon} ${f.name} mûrit… ${Fmt.time(Math.max(0, s.research.left))}` : ''; },
   cantLabo: s => !!Recipes.check(s, Form.labo) || s.money < Eco.recipeCost(s),
 
   /* --- Mairie --- */

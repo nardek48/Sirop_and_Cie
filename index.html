@@ -49,8 +49,9 @@
 <div class="world-wrap">
   <canvas id="world" aria-label="Le village de Sirop-sur-Mer"></canvas>
 
-  <button type="button" class="quest" id="quest" data-act="questToggle" data-c="ready|questReady" aria-label="Quête du maire">
-    <span class="q-ico" aria-hidden="true">📜</span>
+  <!-- Quête du maire : un bouton rond (anneau = avancement) ; le toucher déplie la carte -->
+  <button type="button" class="quest" id="quest" data-act="questToggle" data-c="ready|questReady" aria-label="Quête du maire" aria-expanded="false">
+    <span class="q-ico" data-ring data-w="questPct" aria-hidden="true"><span>📜</span><em class="q-badge">!</em></span>
     <span class="q-body">
       <span class="q-kicker">Quête du maire</span>
       <span class="q-title" data-t="questTitle"></span>

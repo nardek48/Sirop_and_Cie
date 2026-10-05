@@ -2,6 +2,64 @@
 
 Numérotation : `vMAJEUR.MINEUR.CORRECTIF`. Pour préparer une nouvelle version : `node tools/build-sw.mjs patch` (ou `minor`, `major`), puis décrire les changements ici.
 
+## v0.9.3 · 2026-10-05
+
+- **Tableau de l’usine** : la cuve tampon montre de nouveau son remplissage, comme l’entrepôt. Une barre par ligne, à la couleur du sirop qu’elle contient (« Ligne 2 · 149 / 164 L · Grenadine »).
+
+## v0.9.2 · 2026-10-05
+
+- **Quête du maire** : la grande carte en haut à gauche devient un **bouton rond** 📜, qui cache beaucoup moins le village. L’anneau orange autour montre l’avancement de la quête ; un « ! » rouge apparaît quand elle est réussie. Toucher le bouton déplie la carte complète, le toucher encore la replie.
+- Code : `data-ring` sur un élément lié par `data-w` règle la variable CSS `--p` (anneau) au lieu de la largeur.
+
+## v0.9.1 · 2026-10-05
+
+- **Usine** : le comptoir déménage en bas, à gauche de la porte d’entrée, à côté de la ligne 1. Il bloquait le passage de droite, celui qui monte vers l’entrepôt et le quai. Les clients font la queue devant lui, près de l’entrée.
+
+## v0.9.0 · 2026-10-05
+
+- **Arbre du Labo** 🌳 : un nouvel onglet « Arbre » dans le Labo. 4 branches (Usine, Nature, Livraison, Recettes) de 3 fruits. On paie un fruit, il mûrit (de 2 à 30 min, même jeu fermé), puis son effet marche **pour toujours, même après le prestige**. Un seul fruit à la fois ; le fruit du dessus demande celui du dessous.
+  - 🔥 Marmite en cuivre : cuisson +50 % · 🍾 Tapis rapide : embouteillage +50 %
+  - 🌱 Engrais : récoltes +50 % (champs et vergers) · 🌧️ Pousse rapide : repousse ×2
+  - 👟 Bottes de sept lieues : +30 % de vitesse · 📦 Caisses empilables : +50 % de bouteilles portées
+  - 💰 Sirop de luxe : recettes secrètes +25 % · 📖 Grand carnet : une 5e recette
+  - En haut de chaque branche, un fruit ⏳ « Bientôt » attend un gros chantier : la Verrerie, la Ruche, le Billet de train, les Trois parfums.
+- Un point rouge sur l’onglet « Arbre » quand un fruit peut être lancé ; un message quand un fruit est mûr.
+- Simulateur : le joueur automatique achète les fruits (`--sans-arbre` pour comparer). Prestige possible vers 5 h 40 (5 h 30 sans l’arbre).
+
+## v0.8.16 · 2026-10-05
+
+- **Téléphone : vraie cause des flashs verts trouvée** (grâce à la vidéo). Quand la Caisse change (7,27 K $ → 7,3 K $), sa pastille changeait de largeur et sautait d’une ligne à l’autre en haut de l’écran. Le haut changeait de hauteur, le jeu était redimensionné… et un canvas redimensionné est effacé : on voyait le fond vert derrière.
+  - Le jeu se redessine maintenant immédiatement après un redimensionnement, et ne fait rien si la taille n’a pas changé.
+  - Les nombres des pastilles du haut ont une largeur fixe : elles ne sautent plus de ligne.
+
+## v0.8.15 · 2026-10-05
+
+- **Téléphone : plus de clignotements verts**. Le navigateur du téléphone pouvait jeter les images pour gagner de la mémoire, puis les recharger au moment de les dessiner : pendant un instant il ne restait que l’herbe. Chaque image est maintenant copiée une fois, au chargement, dans une zone que le navigateur garde (`keep()` dans `world/art.js`).
+
+## v0.8.14 · 2026-10-05
+
+- **Usine** : les lignes de production sont dans l’ordre en entrant. La ligne 1 est maintenant en bas, juste devant la porte d’entrée ; la ligne 2 au milieu ; la ligne 3 contre le mur du fond. L’entrepôt et le comptoir (communs) ne bougent pas.
+- **Embouteilleuse** : l’écran ne clignote plus en vert. Un petit voyant fixe (vert quand la machine tourne, gris sinon) le remplace.
+
+## v0.8.13 · 2026-10-05
+
+- **Décor du village en images** : lampadaires (lanterne allumée la nuit), bancs, buissons, rochers, panneaux (avec leur texte), dans `assets/village/`.
+- **Train de la Colline** : une locomotive rouge et trois wagons (bleu, jaune, vert : magenta repeint par le jeu).
+- **Ta maison** 🏠 : meubles et déco en images (`assets/maison/`). Le lit et le tapis prennent la couleur choisie dans « Décorer » ; l’horloge au mur donne l’heure du jeu. Le tapis arc-en-ciel reste dessiné.
+
+## v0.8.12 · 2026-10-05
+
+- **Village en images** 🌳 (dans `assets/village/`) :
+  - **Verger** : arbres dont les fruits prennent la couleur du parfum en production quand ils sont mûrs (fruits magenta repeints par le jeu) ; sureaux de la Colline.
+  - **Champs** : 2 rangées de 3 plants (canne à sucre, menthe, grenadier, citronnier, sureau, violettes) qui grandissent pendant la pousse et se balancent un peu.
+  - **Moulin** avec ses ailes qui tournent, **fontaine** avec ses jets d’eau.
+  - **Véhicules** : vélo, charrette (tirée derrière Sirotin, avec les caisses dessus) et camionnette, retournés selon le sens de la marche.
+- Code : `Art.put()` pose une image centrée, le bas sur une ligne, avec miroir possible.
+
+## v0.8.11 · 2026-10-05
+
+- **Cagettes de fruits** 🍋 : dans l’usine, les matières de chaque ligne sont des cagettes en images, pleines du fruit de son parfum (menthe, grenadines, citrons, baies de sureau, violettes). La pile grandit avec le stock. Images dans `assets/usine/cagette-*.png`.
+
 ## v0.8.10 · 2026-10-05
 
 - **Compagnons animés** 🐶🐱 : Caramel le chien et le chat ont leur planche de marche (immobile et deux pas), dans `assets/persos/`. La marche vers la gauche est le miroir de la marche vers la droite.

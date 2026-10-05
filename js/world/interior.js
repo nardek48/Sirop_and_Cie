@@ -41,6 +41,10 @@ const IMG = {
 const W = 1100, H = 1300;
 /** Décalage vertical de chaque ligne de production (ligne 1 au mur du fond, lignes 2 et 3 dessous) */
 const ROW_DY = [0, 460, 760];
+/** Rangée d'une ligne : la ligne 1 est en bas, près de l'entrée ; la dernière contre le mur du fond */
+const slotOf = i => ROW_DY.length - 1 - i;
+const dyOf = i => ROW_DY[slotOf(i)];
+const boardOf = i => BOARDS[slotOf(i)];
 const ROW_KEYS = ['mat', 'cook', 'tank', 'bottle'];   // ce qu'a chaque ligne (l'entrepôt et le comptoir sont communs)
 const BASE = 300;                 // pied des machines du fond
 const SPOT_Y = 352;               // où l'on se tient devant elles
@@ -53,7 +57,8 @@ const MACHINES = {
   bottle:  { x: 600, w: 285, spot: 735, name: 'Embouteillage',  icon: '🍾' },
   ware:    { x: 905, w: 160, spot: 985, name: 'Entrepôt',       icon: '📦' },
 };
-const COUNTER = { x: 900, y: 520, w: 160, h: 46, spot: { x: 980, y: 504 } };
+// Comptoir : en bas, à gauche de la porte d'entrée (le passage de droite reste libre)
+const COUNTER = { x: 290, y: 1150, w: 150, h: 46, spot: { x: 365, y: 1132 } };
 /** Un tableau noir par ligne (son parfum), juste sous ses matières premières ; on se tient à sa droite */
 const BOARD_Y = 380;
 const BOARDS = [0, 460, 760].map(dy => ({ x: 60, y: BOARD_Y + dy, w: 150, h: 96, spot: { x: 252, y: BOARD_Y + dy + 66 } }));
@@ -100,12 +105,12 @@ export const Interior = {
       { x: DOOR.x + DOOR.w, y: H - 26, w: W, h: 26 },                       // … et à droite
       { x: COUNTER.x, y: COUNTER.y, w: COUNTER.w, h: COUNTER.h },           // comptoir
     ];
-    for (const m of Object.values(MACHINES)) L.push({ x: m.x, y: BASE - 80, w: m.w, h: 96 });
-    // Lignes 2 et 3 achetées : leurs machines et leur tableau
+    { const m = MACHINES.ware; L.push({ x: m.x, y: BASE - 80, w: m.w, h: 96 }); }   // entrepôt (commun, au fond)
+    // Lignes achetées : leurs machines et leur tableau
     for (let i = 0; i < n; i++) {
-      const B = BOARDS[i];
+      const B = boardOf(i), dy = dyOf(i);
       L.push({ x: B.x + 20, y: B.y + B.h - 18, w: B.w - 40, h: 20 });
-      if (i) for (const k of ROW_KEYS) { const m = MACHINES[k]; L.push({ x: m.x, y: BASE - 80 + ROW_DY[i], w: m.w, h: 96 }); }
+      for (const k of ROW_KEYS) { const m = MACHINES[k]; L.push({ x: m.x, y: BASE - 80 + dy, w: m.w, h: 96 }); }
     }
     return L;
   },
@@ -117,38 +122,33 @@ export const Interior = {
    */
   build(s, act) {
     const L = [];
-    for (const [k, m] of Object.entries(MACHINES)) {
-      const hot = rt.bneck === k || (k === 'cook' && rt.bneck === 'switch');
-      L.push({
-        id: 'm-' + k, x: m.spot, y: SPOT_Y, hit: { x: m.x, y: 60, w: m.w, h: BASE - 40 },
-        label: k === 'mat' ? `${m.icon} Matières${Eco.lineCount(s) > 1 ? ' · ligne 1' : ''} · ` + matLabel(s, s)
-          : `${m.icon} ${m.name} · niv. ${s.lv[k]}${hot ? ' · 🐢' : ''}`,
-        run: () => act.machine(k),
-      });
-    }
+    { const m = MACHINES.ware;
+      L.push({ id: 'm-ware', x: m.spot, y: SPOT_Y, hit: { x: m.x, y: 60, w: m.w, h: BASE - 40 },
+        label: `${m.icon} ${m.name} · niv. ${s.lv.ware}${rt.bneck === 'ware' ? ' · 🐢' : ''}`, run: () => act.machine('ware') }); }
     L.push({
       id: 'm-counter', ...COUNTER.spot, hit: COUNTER,
       label: `🛎️ Comptoir · niv. ${s.lv.counter} · ${s.counterOn ? 'ouvert' : 'fermé'}`, run: () => act.machine('counter'),
     });
     const lines = Eco.lines(s), multi = lines.length > 1;
     lines.forEach((Ln, i) => {
-      const B = BOARDS[i], f = Flavors.get(s, Ln.flavor);
+      const B = boardOf(i), f = Flavors.get(s, Ln.flavor);
       L.push({ id: 'board' + i, ...B.spot, hit: B, label: `🍬 ${multi ? `Ligne ${i + 1} · ` : ''}${f.name} · changer de parfum`, run: () => act.board(i) });
-      if (!i) return;
       for (const k of ROW_KEYS) {
-        const m = MACHINES[k], dy = ROW_DY[i], bn = rt.bnecks[i];
+        const m = MACHINES[k], dy = dyOf(i), bn = rt.bnecks[i], lab = multi ? ` · ligne ${i + 1}` : '';
         const hot = bn === k || (k === 'tank' && bn === 'switch');
         L.push({
-          id: `m-${k}-${i}`, x: m.spot, y: SPOT_Y + dy, hit: { x: m.x, y: 60 + dy, w: m.w, h: BASE - 40 },
-          label: k === 'mat' ? `${m.icon} Matières · ligne ${i + 1} · ` + matLabel(s, Ln)
-            : `${m.icon} ${m.name} · ligne ${i + 1} · niv. ${s.lv[k]}${hot ? ' · 🐢' : ''}`,
+          id: i ? `m-${k}-${i}` : 'm-' + k, x: m.spot, y: SPOT_Y + dy,
+          // Matières : seulement la pile (le tableau de la rangée du dessus est juste au-dessus)
+          hit: k === 'mat' ? { x: m.x, y: BASE - 110 + dy, w: m.w, h: 130 } : { x: m.x, y: 60 + dy, w: m.w, h: BASE - 40 },
+          label: k === 'mat' ? `${m.icon} Matières${lab} · ` + matLabel(s, Ln)
+            : `${m.icon} ${m.name}${lab} · niv. ${s.lv[k]}${hot ? ' · 🐢' : ''}`,
           run: () => act.machine(k, i),
         });
       }
     });
     // Ligne suivante à acheter, et la dernière (fermée)
     for (let i = lines.length; i < ROW_DY.length; i++) {
-      const dy = ROW_DY[i], next = i === lines.length, cost = CONFIG.lines.costs[i];
+      const dy = dyOf(i), next = i === lines.length, cost = CONFIG.lines.costs[i];
       L.push({
         id: 'line' + i, x: 510, y: SPOT_Y + dy, hit: { x: 245, y: 120 + dy, w: 640, h: BASE - 100 },
         label: next ? `🏭 Ligne ${i + 1} · acheter ${Fmt.money(cost)}` : `🔒 Ligne ${i + 1} · après la ligne ${i}`,
@@ -171,8 +171,8 @@ export const Interior = {
   draw(c, s, t, dt, add) {
     this.room(c, s, t);
     const lines = Eco.lines(s);
-    ROW_DY.forEach((dy, i) => {
-      const Ln = lines[i], fx = this.fx[i];
+    ROW_DY.forEach((_, i) => {
+      const Ln = lines[i], fx = this.fx[i], dy = dyOf(i), B = boardOf(i);
       const lf = (rt.lineFlow && rt.lineFlow[i]) || { cook: 0, bottle: 0 };
       // Une ligne pas encore achetée : machines en silhouette
       if (!Ln) { add(BASE + dy + 1, () => this.ghostRow(c, s, i, dy)); return; }
@@ -185,10 +185,13 @@ export const Interior = {
       add(BASE + dy + 1, at(() => this.tank(c, s, Ln, f.color)));
       add(BASE + dy + 1, at(() => this.bottler(c, t, lf.bottle, f.color, fx)));
       add(BASE + dy + 2, at(() => this.rowSigns(c, s, t, i)));
-      add(BOARDS[i].y + BOARDS[i].h, () => this.board(c, s, Ln, BOARDS[i], lines.length > 1 ? i + 1 : 0));
+      add(B.y + B.h, () => this.board(c, s, Ln, B, lines.length > 1 ? i + 1 : 0));
       this.workers(c, t, i, dy, lf, add);
     });
-    add(BASE + 1, () => this.warehouse(c, s));
+    add(BASE + 1, () => {
+      this.warehouse(c, s);
+      const m = MACHINES.ware; Gfx.sign(c, `${m.icon} ${m.name} · ${s.lv.ware}`, m.spot, BASE + 22, 12);
+    });
     add(COUNTER.y + COUNTER.h, () => this.counter(c, s, t, dt));
     this.clients(c, s, t, add);
   },
@@ -284,8 +287,13 @@ export const Interior = {
     }
     for (let i = 0; i < fruit; i++) {
       const [cx, r] = slots[i], x = 160 + cx * 24 - 12, y = BASE - 6 - r * 22;
+      const fm = fr[i % fr.length], cag = img('cagette-' + fm);
+      if (cag) {                                                       // cagette pleine du fruit (image)
+        const w = 30, h = w * cag.height / cag.width;
+        c.drawImage(cag, x - w / 2, y - h, w, h);
+        continue;
+      }
       Gfx.crate(c, x, y, 26, 20);
-      const fm = fr[i % fr.length];
       c.fillStyle = CONFIG.flavors[fm] ? CONFIG.flavors[fm].color : '#d23c4f';
       for (let k = -1; k <= 1; k++) { c.beginPath(); c.arc(x + k * 7, y - 20, 4, 0, Math.PI * 2); c.fill(); }
     }
@@ -389,9 +397,10 @@ export const Interior = {
     if (im) {
       const E = IMG.embout, X = 600, w = E.w, h = w * im.height / im.width, top = BASE - h;
       c.drawImage(im, X, top, w, h);
-      if (flow > 0 && Math.sin(t * 8) > 0) {                         // l'écran clignote vert quand ça tourne
-        const [sx, sy, sw, sh] = E.screen;
-        c.fillStyle = 'rgba(125,240,138,.5)'; c.fillRect(X + w * sx, top + h * sy, w * sw, h * sh);
+      {                                                              // petit voyant fixe : vert quand ça tourne
+        const [sx, sy, sw] = E.screen;
+        c.fillStyle = flow > 0 ? '#5fd36b' : '#9aa3aa';
+        c.beginPath(); c.arc(X + w * (sx + sw / 2), top + h * sy - 5, 3, 0, Math.PI * 2); c.fill();
       }
       // Bouteilles sur le tapis : remplies en passant sous la buse
       const by = top + h * E.belt, x1 = X + w * E.to, fillX = X + w * E.nozzle;
@@ -461,19 +470,17 @@ export const Interior = {
    * Ligne 1 : toutes les machines (entrepôt compris). Lignes 2 et 3 : matières, cuisson, cuve, embouteillage.
    */
   rowSigns(c, s, t, i) {
-    const keys = i ? ROW_KEYS : Object.keys(MACHINES);
-    for (const k of keys) {
+    for (const k of ROW_KEYS) {
       const m = MACHINES[k];
       Gfx.sign(c, k === 'mat' ? `${m.icon} ${m.name}` : `${m.icon} ${m.name} · ${s.lv[k]}`, m.spot, BASE + 22, 12);
     }
     const raw = rt.bnecks[i] || '';
-    // Sur les lignes 2 et 3, matières et entrepôt (communs) sont signalés sur la machine qui attend
-    const bn = raw === 'switch' ? 'tank' : !i ? raw : raw === 'ware' ? 'bottle' : raw;
+    const bn = raw === 'switch' ? 'tank' : raw;
     const m = MACHINES[bn];
     // « Entrepôt plein » : déjà dit par le bandeau rouge en haut de la salle
     if (!m || raw === 'ware') return;
     const alert = raw === 'mat' || raw === 'ware' || raw === 'switch';
-    const txt = !alert ? '🐢 Le plus lent' : raw === 'mat' && i ? '⚠️ Plus de matières !' : raw === 'ware' && i ? '⚠️ Entrepôt plein !' : '⚠️ Ça bloque ici !';
+    const txt = !alert ? '🐢 Le plus lent' : raw === 'mat' ? '⚠️ Plus de matières !' : '⚠️ Ça bloque ici !';
     const y = 58 + Math.sin(t * 4) * 4;
     Gfx.label(c, txt, m.x + m.w / 2, y, alert ? 16 : 14, alert ? '#ffd0c8' : '#fff');
   },

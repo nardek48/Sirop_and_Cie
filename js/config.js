@@ -175,6 +175,30 @@ export const CONFIG = {
   },
   offline: { capHours: 8, minSec: 30 },
   // Étoiles = base + perDecade × log10(gains / minRunEarned) : 3 au seuil (20 M $), +4 à chaque ×10
+  // Arbre du Labo : 4 branches × 3 fruits. Un seul fruit mûrit à la fois ; ce qui est mûr reste
+  // pour toujours (même après le prestige). soon : gros chantier pas encore construit (verrouillé).
+  research: {
+    branches: {
+      usine:     { name: 'Usine',     color: '#d2553c' },
+      nature:    { name: 'Nature',    color: '#3f8f5a' },
+      livraison: { name: 'Livraison', color: '#3a6ea5' },
+      recettes:  { name: 'Recettes',  color: '#7b4fb0' },
+    },
+    fruits: [
+      { id: 'u1', b: 'usine',     tier: 1, icon: '🔥', name: 'Marmite en cuivre',     what: 'La marmite cuit 50 % plus vite.',                  cost: 8000,   sec: 180 },
+      { id: 'u2', b: 'usine',     tier: 2, icon: '🍾', name: 'Tapis rapide',          what: 'Les bouteilles se remplissent 50 % plus vite.',    cost: 250000, sec: 1200 },
+      { id: 'u3', b: 'usine',     tier: 3, icon: '🏺', name: 'La Verrerie',           what: 'Fabriquer tes propres bouteilles.',                 soon: true },
+      { id: 'n1', b: 'nature',    tier: 1, icon: '🌱', name: 'Engrais',               what: 'Chaque récolte donne 50 % de fruits en plus.',     cost: 5000,   sec: 120 },
+      { id: 'n2', b: 'nature',    tier: 2, icon: '🌧️', name: 'Pousse rapide',         what: 'Les champs et les arbres repoussent 2 fois plus vite.', cost: 150000, sec: 900 },
+      { id: 'n3', b: 'nature',    tier: 3, icon: '🐝', name: 'La Ruche',              what: 'Des abeilles qui font du miel pour tes sirops.',   soon: true },
+      { id: 'l1', b: 'livraison', tier: 1, icon: '👟', name: 'Bottes de sept lieues', what: 'Tu marches et roules 30 % plus vite.',              cost: 3000,   sec: 120 },
+      { id: 'l2', b: 'livraison', tier: 2, icon: '📦', name: 'Caisses empilables',    what: 'Tu portes 50 % de bouteilles en plus.',            cost: 120000, sec: 900 },
+      { id: 'l3', b: 'livraison', tier: 3, icon: '🚂', name: 'Billet de train',       what: 'Le Train Express t’emmène dans d’autres villes.',  soon: true },
+      { id: 'r1', b: 'recettes',  tier: 1, icon: '💰', name: 'Sirop de luxe',         what: 'Les recettes secrètes se vendent 25 % plus cher.', cost: 40000,  sec: 300 },
+      { id: 'r2', b: 'recettes',  tier: 2, icon: '📖', name: 'Grand carnet',          what: 'Une 5e recette secrète à inventer.',               cost: 600000, sec: 1800 },
+      { id: 'r3', b: 'recettes',  tier: 3, icon: '🌈', name: 'Trois parfums',         what: 'Mélanger trois parfums dans une seule recette.',   soon: true },
+    ],
+  },
   prestige: { minRunEarned: 2e7, base: 3, perDecade: 4, bonusPerStar: 0.1 },
 
   // Portes des bâtiments (coordonnées monde), partagées par la simulation

@@ -219,6 +219,17 @@ export const Render = {
   tree(c, p, grow, kind, fruitColor) {
     if (Art.draw(c, kind === 'sureau' ? 'sureau' : 'arbre', p.x, p.y + 6, 90, 110)) return;
     const ripe = grow <= 0, regrow = kind === 'sureau' ? CONFIG.fields.sureau.regrow : CONFIG.fields.verger.regrow;
+    const im = kind === 'sureau' ? Art.img['v_sureau-arbre']
+      // Fruits magenta : couleur du parfum quand l'arbre est mûr, sinon verts (cachés dans le feuillage)
+      : Art.tinted('v_arbre', ripe ? fruitColor || '#d23c4f' : '#5da564');
+    if (im) {
+      Gfx.shadow(c, p.x, p.y + 4, 30, 9);
+      c.save(); if (!ripe && kind === 'sureau') c.globalAlpha = 0.85;
+      const h = Art.put(c, im, p.x, p.y + 6, kind === 'sureau' ? 80 : 88);
+      c.restore();
+      if (!ripe) this.ring(c, p.x, p.y + 6 - h * 0.6, 1 - grow / regrow);
+      return;
+    }
     Gfx.shadow(c, p.x, p.y + 4, 30, 9);
     c.fillStyle = '#7a5230'; c.fillRect(p.x - 7, p.y - 26, 14, 30);
     c.fillStyle = kind === 'sureau' ? (ripe ? '#4f7f3c' : '#6e9d5a') : (ripe ? '#3f8f4a' : '#5da564');
@@ -245,7 +256,15 @@ export const Render = {
     }
     const C = CONFIG.farm.crops[F.crop[i]], ripe = F.t[i] <= 0;
     const k = ripe ? 1 : 0.25 + 0.75 * (1 - F.t[i] / C.grow);
-    if (F.crop[i] === 'canne') this.cane(c, p, k, ripe, t);
+    const plant = Art.img['v_' + F.crop[i]];
+    if (plant) {
+      // 2 rangées de 3 plants, qui grandissent avec la pousse (k) et se balancent un peu
+      const w = (F.crop[i] === 'canne' ? 52 : 48) * (0.45 + 0.55 * k);
+      for (const [ry, dx0] of [[-46, -50], [-6, -58]]) for (let j = 0; j < 3; j++) {
+        const x = p.x + dx0 + j * 54, sway = Math.sin(t * 1.4 + j + ry) * 0.04;
+        c.save(); c.translate(x, p.y + ry); c.rotate(sway); Art.put(c, plant, 0, 0, w); c.restore();
+      }
+    } else if (F.crop[i] === 'canne') this.cane(c, p, k, ripe, t);
     else if (F.crop[i] === 'menthe') this.mint(c, p, k, ripe, t);
     else this.fruitCrop(c, p, k, ripe, t, F.crop[i], CONFIG.flavors[C.mat].color);
     if (ripe) {
@@ -442,20 +461,32 @@ export const Render = {
 
   /* ---------------- Décor ---------------- */
   fountain(c, t) {
-    const f = MAP.fountain;
-    c.fillStyle = '#b8b0a3'; c.beginPath(); c.ellipse(f.x, f.y, f.r + 8, 24, 0, 0, TAU); c.fill();
-    c.fillStyle = '#7cc0e3'; c.beginPath(); c.ellipse(f.x, f.y - 2, f.r, 17, 0, 0, TAU); c.fill();
-    c.fillStyle = '#b8b0a3'; c.fillRect(f.x - 6, f.y - 40, 12, 38);
+    const f = MAP.fountain, im = Art.img.v_fontaine;
+    let top = f.y - 44;                                               // haut du pilier : départ des jets
+    if (im) { const h = Art.put(c, im, f.x, f.y + 24, (f.r + 14) * 2); top = f.y + 24 - h * 0.95; }
+    else {
+      c.fillStyle = '#b8b0a3'; c.beginPath(); c.ellipse(f.x, f.y, f.r + 8, 24, 0, 0, TAU); c.fill();
+      c.fillStyle = '#7cc0e3'; c.beginPath(); c.ellipse(f.x, f.y - 2, f.r, 17, 0, 0, TAU); c.fill();
+      c.fillStyle = '#b8b0a3'; c.fillRect(f.x - 6, f.y - 40, 12, 38);
+    }
     c.fillStyle = 'rgba(200,235,255,.9)';
     for (let i = 0; i < 6; i++) {
       const k = (t * 1.2 + i / 6) % 1, a = (i / 6) * TAU;
-      c.beginPath(); c.arc(f.x + Math.cos(a) * 26 * k, f.y - 44 + 60 * k * k - 30 * k, 3, 0, TAU); c.fill();
+      c.beginPath(); c.arc(f.x + Math.cos(a) * 26 * k, top + 60 * k * k - 30 * k, 3, 0, TAU); c.fill();
     }
   },
 
   windmill(c, t) {
     const m = MAP.windmill;
     Gfx.shadow(c, m.x, m.y + 2, 40, 10);
+    const tour = Art.img.v_moulin, ailes = Art.img.v_ailes;
+    if (tour && ailes) {
+      const h = Art.put(c, tour, m.x, m.y + 2, 84), hy = m.y + 2 - h * 0.74;   // moyeu : sur la tour, sous le toit
+      c.save(); c.translate(m.x, hy); c.rotate(t * 0.8);
+      c.imageSmoothingEnabled = true; c.drawImage(ailes, -62, -62, 124, 124);
+      c.restore();
+      return;
+    }
     c.fillStyle = '#e8dcc4';
     c.beginPath(); c.moveTo(m.x - 34, m.y); c.lineTo(m.x - 22, m.y - 110); c.lineTo(m.x + 22, m.y - 110); c.lineTo(m.x + 34, m.y); c.fill();
     c.fillStyle = '#8a3f2e'; c.beginPath(); c.moveTo(m.x - 28, m.y - 108); c.lineTo(m.x, m.y - 140); c.lineTo(m.x + 28, m.y - 108); c.fill();
@@ -475,13 +506,17 @@ export const Render = {
     c.save();
     c.beginPath(); c.rect(r.x0, 0, MAP.w - r.x0, MAP.h); c.clip();
     const cars = ['#c2453a', '#3a6ea5', '#e8c22e', '#3f8f5a'];
-    cars.forEach((col, i) => {
+    const loco = Art.img.v_locomotive;
+    if (loco && Art.img.v_wagon) {                                  // locomotive en tête, wagons repeints
+      Art.put(c, loco, x + 44, r.y + 4, 92);
+      cars.slice(1).forEach((col, i) => Art.put(c, Art.tinted('v_wagon', col), x + 96 * (i + 1) + 46, r.y + 4, 94));
+    } else cars.forEach((col, i) => {
       const cx = x + i * 96;
       c.fillStyle = col; c.beginPath(); c.roundRect(cx, r.y - 40, 88, 36, 6); c.fill();
       c.fillStyle = '#bfe3f2'; for (let k = 0; k < 3; k++) c.fillRect(cx + 10 + k * 26, r.y - 34, 16, 12);
       c.fillStyle = '#2b2b2b'; for (const wx of [cx + 16, cx + 72]) { c.beginPath(); c.arc(wx, r.y - 2, 8, 0, TAU); c.fill(); }
     });
-    c.fillStyle = '#2b2b2b'; c.fillRect(x + 8, r.y - 62, 16, 24);
+    if (!loco) { c.fillStyle = '#2b2b2b'; c.fillRect(x + 8, r.y - 62, 16, 24); }
     for (let i = 0; i < 3; i++) { c.fillStyle = `rgba(240,240,240,${0.6 - i * 0.18})`; c.beginPath(); c.arc(x + 16 + i * 22, r.y - 72 - i * 10, 10 + i * 5, 0, TAU); c.fill(); }
     c.restore();
     // entrée du tunnel
@@ -490,6 +525,16 @@ export const Render = {
   },
 
   decor(c, d, dark) {
+    // Images (assets/village) : largeur de chaque objet, posé sur d.y
+    const DW = { lampadaire: 17, banc: 58, buisson: 46, rocher: 54, panneau: 46 }, im = Art.img['v_' + d.kind];
+    if (im && DW[d.kind]) {
+      const h = Art.put(c, im, d.x, d.y + 2, DW[d.kind]);
+      if (d.kind === 'lampadaire' && dark > 0.15) {                 // lanterne allumée la nuit
+        c.fillStyle = 'rgba(255,231,160,.55)'; c.beginPath(); c.arc(d.x, d.y + 2 - h * 0.88, 8, 0, TAU); c.fill();
+      }
+      if (d.kind === 'panneau' && d.text) Gfx.sign(c, d.text, d.x, d.y + 2 - h * 0.62, 13);
+      return;
+    }
     if (d.kind === 'lampadaire') {
       c.fillStyle = '#3b3b3b'; c.fillRect(d.x - 3, d.y - 56, 6, 56);
       c.fillRect(d.x - 8, d.y - 4, 16, 4);

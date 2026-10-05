@@ -53,6 +53,7 @@ export const Store = {
       quests: null,         // quêtes du maire modifiées dans l'éditeur (null = celles du fichier)
       ride: null,           // véhicule choisi au garage de la maison (null = le meilleur acheté)
       rested: 0,            // secondes de « Bien reposé » restantes (dormir dans sa maison)
+      research: { done: [], cur: null, left: 0 },   // arbre du Labo (gardé au prestige)
       home: {               // décoration de ta maison (voir world/home.js)
         wall: 'creme', floor: 'bois',
         deco: { mur: 'tableau', coin: 'plante', salon: 'canape', tapis: 'rouge', couette: 'bleu' },
@@ -97,6 +98,10 @@ export const Store = {
     for (const k of Object.keys(out.mat)) if (!CONFIG.materials[k] || !Number.isFinite(out.mat[k])) delete out.mat[k];
     for (const k of Object.keys(CONFIG.materials)) if (!Number.isFinite(out.mat[k])) out.mat[k] = 0;
     out.farm.crop = out.farm.crop.map(c => (CONFIG.farm.crops[c] ? c : 'menthe'));
+    // Arbre du Labo : fruits connus seulement
+    { const r = data.research || {}, ok = id => CONFIG.research.fruits.some(f => f.id === id && !f.soon);
+      const done = (Array.isArray(r.done) ? r.done : []).filter(ok);
+      out.research = { done: [...new Set(done)], cur: ok(r.cur) && !done.includes(r.cur) ? r.cur : null, left: Math.max(0, Number(r.left) || 0) }; }
     out.home = { ...base.home, ...(data.home || {}), deco: { ...base.home.deco, ...((data.home && data.home.deco) || {}) } };
     out.fields = { ...base.fields };
     for (const [k, arr] of Object.entries(data.fields || {}))

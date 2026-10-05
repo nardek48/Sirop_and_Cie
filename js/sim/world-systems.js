@@ -9,6 +9,7 @@ import { Wallet } from './wallet.js';
 import { Events } from './events.js';
 import { Clock } from './clock.js';
 import { Flavors } from './flavors.js';
+import { Research } from './research.js';
 import { Fmt } from '../core/format.js';
 
 /* ---------- Récoltes à la main (verger, bois de sureau, canne à sucre) ---------- */
@@ -27,16 +28,17 @@ export const Fields = {
       return false;
     }
     const mat = F.mat === 'auto' ? Flavors.mainFruit(s, s.flavor) : F.mat;
-    s.mat[mat] = (s.mat[mat] || 0) + F.yield;
+    const n = Math.round(F.yield * Research.yieldK(s));       // « Engrais » : +50 %
+    s.mat[mat] = (s.mat[mat] || 0) + n;
     arr[i] = F.regrow;
     s.stats.picked++;
-    Bus.float(`+${F.yield} kg ${CONFIG.materials[mat].icon}`, pos, mat === 'sugar' ? '#fff3c4' : '#ffd0d6');
+    Bus.float(`+${n} kg ${CONFIG.materials[mat].icon}`, pos, mat === 'sugar' ? '#fff3c4' : '#ffd0d6');
     Bus.sfx('pick');
     return true;
   },
 
   step(s, dt) {
-    const k = Events.regrowFactor(s) * dt;
+    const k = Events.regrowFactor(s) * Research.growK(s) * dt;   // « Pousse rapide » : ×2
     for (const arr of Object.values(s.fields))
       for (let i = 0; i < arr.length; i++) if (arr[i] > 0) arr[i] = Math.max(0, arr[i] - k);
   },
@@ -54,7 +56,7 @@ export const Farm = {
   yieldOf(s, i) {
     const C = this.crop(s, i);
     const need = C.mat === 'sugar' ? Flavors.get(s, s.flavor).sugar : CONFIG.flavors[C.mat].fruit;
-    return Math.max(C.yield, Math.round(Eco.cookRate(s) * need * C.prodSec));
+    return Math.round(Math.max(C.yield, Eco.cookRate(s) * need * C.prodSec) * Research.yieldK(s));   // « Engrais » : +50 %
   },
   /** Plante disponible ? (les fruits arrivent avec leur parfum) */
   cropOpen: (s, crop) => { const C = CONFIG.farm.crops[crop]; return !!C && (!C.flavor || s.unlocked.includes(C.flavor)); },
@@ -96,7 +98,7 @@ export const Farm = {
 
   /** Pousse ; un champ mûr oublié est ramassé tout seul (récolte normale) et se replante */
   step(s, dt) {
-    const k = Events.regrowFactor(s) * dt, F = s.farm;
+    const k = Events.regrowFactor(s) * Research.growK(s) * dt, F = s.farm;
     for (let i = 0; i < F.owned; i++) {
       if (F.t[i] > 0) { F.t[i] = Math.max(0, F.t[i] - k); continue; }
       F.wait[i] += dt;
@@ -209,7 +211,7 @@ export const Recipes = {
 
   /** @returns {string} message d'erreur, ou '' si la recette est possible */
   check(s, { a, b, name }) {
-    if (s.recipes.length >= CONFIG.recipes.max) return 'Le labo est plein : 4 recettes maximum';
+    if (s.recipes.length >= Research.recipeMax(s)) return `Le labo est plein : ${Research.recipeMax(s)} recettes maximum`;
     if (!s.unlocked.includes(a) || !s.unlocked.includes(b)) return 'Débloque d’abord ces deux parfums à l’usine';
     if (a === b) return 'Choisis deux parfums différents';
     if (s.recipes.some(r => (r.a === a && r.b === b) || (r.a === b && r.b === a))) return 'Ce mélange existe déjà';

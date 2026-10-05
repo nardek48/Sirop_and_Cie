@@ -5,15 +5,30 @@
 import { CONFIG, RECIPE_COLORS } from '../../config.js';
 import { Fmt, esc } from '../../core/format.js';
 import { Form } from '../form.js';
+import { Research } from '../../sim/research.js';
+import { tree } from './arbre.js';
 
 const M = CONFIG.materials;
 /** Grosse bouteille : couleur du sirop, fruit sur l'étiquette */
 const bigBottle = (color, icon, cls = '') => `<span class="bottle xl ${cls}" style="--c:${color}" aria-hidden="true"><em>${icon || ''}</em></span>`;
 
+/** Onglets du Labo ; « Arbre » montre un point quand un fruit peut être lancé */
+const tabBar = s => {
+  const can = !s.research.cur && CONFIG.research.fruits.some(f => !Research.why(s, f));
+  const t = (id, label) => `<button type="button" class="tab ${Form.laboTab === id ? 'on' : ''}" data-act="laboTab" data-arg="${id}" aria-pressed="${Form.laboTab === id}">${label}</button>`;
+  return `<div class="tabs lab-tabs">${t('recettes', '🧪 Recettes')}${t('arbre', `🌳 Arbre${can ? ' <span class="dot"></span>' : ''}`)}</div>`;
+};
+
 export const labo = {
-  title: '🧪 Labo des recettes',
-  key: s => [s.recipes.length, s.unlocked.join(), Form.labo.color, Form.labo.a, Form.labo.b, s.flavor].join('|'),
+  title: '🧪 Labo',
+  key: s => [Form.laboTab, Form.laboTab === 'arbre' ? tree.key(s) : '', s.recipes.length, s.unlocked.join(), Form.labo.color, Form.labo.a, Form.labo.b, s.flavor].join('|'),
   html(s) {
+    const tabs = tabBar(s);
+    if (Form.laboTab === 'arbre') return tabs + tree.html(s);
+    return tabs + labo.recipes(s);
+  },
+
+  recipes(s) {
     const F = Form.labo;
     const base = Object.entries(CONFIG.flavors).filter(([k]) => s.unlocked.includes(k));
     if (base.length < 2) return `
@@ -56,7 +71,7 @@ export const labo = {
         <p class="warn" data-t="laboErr"></p>
         <button class="btn block" data-act="laboCreate" data-d="cantLabo">✨ Inventer · <span data-t="laboCost"></span></button>
       </section>
-      <section class="card"><h3>Recettes découvertes (${s.recipes.length} / ${CONFIG.recipes.max})</h3>
+      <section class="card"><h3>Recettes découvertes (${s.recipes.length} / ${Research.recipeMax(s)})</h3>
         <div class="recipes">${list}</div>
         <p class="hint">Une recette se vend ${Fmt.num(CONFIG.recipes.priceBonus * 2)} fois le prix moyen de ses deux parfums, et les clients peuvent la commander.</p>
       </section>

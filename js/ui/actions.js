@@ -23,6 +23,7 @@ import { Editor } from '../editor/editor.js';
 import { QuestEditor } from '../editor/quest-editor.js';
 import { UI } from './ui.js';
 import { Form } from './form.js';
+import { Research } from '../sim/research.js';
 import { SaveFile } from './savefile.js';
 import { MachineSel } from './panels/machine.js';
 import { UsineSel } from './panels/usine.js';
@@ -71,6 +72,9 @@ const map = {
   courier: s => Couriers.hire(s),
   // labo
   laboColor: (s, a) => { Form.labo.color = a; },
+  laboTab: (s, a) => { Form.laboTab = a; },
+  resSel: (s, a) => { Form.resSel = a; },
+  resGo: (s, a) => { Research.start(s, a); },
   laboA: (s, a) => { Form.labo.a = a; },
   laboB: (s, a) => { Form.labo.b = a; },
   laboCreate: s => { if (Recipes.create(s, Form.labo)) Form.labo.name = ''; },
@@ -129,7 +133,7 @@ const map = {
   install: () => PWA.install(),
   checkUpdate: () => PWA.check(),
   hideHelp: () => { UI.el.help.hidden = true; try { localStorage.setItem('siropcie_help', '0'); } catch (e) { /* */ } },
-  questToggle: () => UI.el.quest.classList.toggle('min'),
+  questToggle: () => { const q = UI.el.quest, open = q.classList.toggle('open'); q.setAttribute('aria-expanded', open); },
 };
 
 export const Actions = {

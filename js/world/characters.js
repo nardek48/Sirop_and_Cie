@@ -77,6 +77,25 @@ export function drawCarry(c, x, top, crates, name) {
  */
 export function drawVehicle(c, x, y, vehicle, flip, moving, phase, crates, shirt) {
   const f = flip < 0 ? -1 : 1;
+  // Véhicules en images (assets/village) : vus de côté vers la droite, retournés vers la gauche
+  const im = Art.img['v_' + vehicle];
+  if (im) {
+    const bump = moving ? Math.abs(Math.sin(phase)) * 1.2 : 0;
+    if (vehicle === 'velo') { Gfx.shadow(c, x, y, 26, 5); Art.put(c, im, x, y + 1 - bump, 62, f < 0); return 'under'; }
+    if (vehicle === 'charrette') {
+      const cx = x - f * 40;                                     // tirée derrière le joueur, poignée vers lui
+      Gfx.shadow(c, cx, y, 28, 5);
+      const h = Art.put(c, im, cx, y + 1 - bump, 74, f > 0);
+      for (let i = 0; i < Math.min(3, crates); i++) Gfx.crate(c, cx + f * 6 - 12 + i * 12, y - h * 0.62 - (i % 2) * 6, 14, 12);
+      return 'under';
+    }
+    if (vehicle === 'camionnette') {
+      Gfx.shadow(c, x, y, 44, 8);
+      Art.put(c, im, x, y + 1 - bump, 104, f < 0);
+      Gfx.label(c, '🍾', x - f * 13, y - 70, 13);
+      return 'replace';
+    }
+  }
   if (vehicle === 'velo') {
     c.strokeStyle = '#2b2b2b'; c.lineWidth = 3;
     const spin = moving ? phase : 0;

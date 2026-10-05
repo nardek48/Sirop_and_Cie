@@ -16,6 +16,7 @@
  *   node tools/simulate.mjs --human=2                joueur plus lent (trajets ×2)
  *   node tools/simulate.mjs --csv                    écrit la courbe dans tools/sim-courbe.csv
  *   node tools/simulate.mjs --strategie=usine        tout miser sur l'usine (comptoir juste sous l'embouteillage)
+ *   node tools/simulate.mjs --sans-arbre             sans acheter de fruits dans l'arbre du Labo
  */
 import { writeFileSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -53,6 +54,7 @@ try {
   if (list) Quests.base = list;
 } catch (e) { /* pas de fichier : quêtes par défaut */ }
 const { Sim, Prestige } = await import('../js/sim/sim.js');
+const { Research } = await import('../js/sim/research.js');
 
 // Réglages temporaires : --set=chemin.vers.valeur=nombre
 for (const s of sets) {
@@ -192,6 +194,11 @@ function makeBot(s) {
       if (nextFl && can(nextFl[1].unlock)) { Factory.unlock(s, nextFl[0]); return true; }
       const lineCost = Factory.nextLineCost(s);
       if (lineCost != null && can(lineCost)) { Factory.buyLine(s); return true; }
+      // Arbre du Labo : le fruit le moins cher qu'on peut lancer
+      if (!args['sans-arbre'] && !s.research.cur) {
+        const f = CONFIG.research.fruits.filter(f => !Research.why(s, f)).sort((a, b) => a.cost - b.cost)[0];
+        if (f && can(f.cost)) { Research.start(s, f.id); return true; }
+      }
       if (s.recipes.length < CONFIG.recipes.max && can(Eco.recipeCost(s))) {
         const base = Object.keys(CONFIG.flavors).filter(k => s.unlocked.includes(k)).sort((a, b) => CONFIG.flavors[b].price - CONFIG.flavors[a].price);
         for (let i = 0; i < base.length; i++) for (let j = i + 1; j < base.length; j++) {
@@ -270,6 +277,8 @@ const STEPS = [
   ['4 recettes', s => s.recipes.length >= 4],
   ['1er domaine', s => s.houses.some(h => h.type === 'domaine')],
   ['Toutes les quêtes', s => s.quest.i >= Quests.count(s)],
+  ['Arbre : 4 fruits', s => s.research.done.length >= 4],
+  ['Arbre : 8 fruits', s => s.research.done.length >= 8],
   ['Ligne 2', s => Eco.lineCount(s) >= 2],
   ['Ligne 3', s => Eco.lineCount(s) >= 3],
   ['Prestige possible', s => Prestige.can(s)],

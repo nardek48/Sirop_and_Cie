@@ -25,6 +25,13 @@ const M = CONFIG.materials;
 const buyBtn = (m, q) => `<button class="btn ghost sm" data-act="buyMat" data-arg="${m},${q}" data-d="cantMat:${m},${q}">+${q} ${M[m].icon} · ${Fmt.money(q * M[m].price)}</button>`;
 
 /** Ligne choisie (fiche « Changer de parfum », achat d'une ligne) */
+/** Remplissage de la cuve de chaque ligne (une barre à la couleur du sirop qu'elle contient) */
+const tankBars = s => Eco.lines(s).map((L, i) => `
+  <div class="tank-row">
+    <div class="bar"><i data-w="lineTank:${i}" style="background:${Flavors.get(s, L.bulkFlavor).color}"></i></div>
+    <div class="sub" data-t="lineTankTxt:${i}"></div>
+  </div>`).join('');
+
 export const UsineSel = { line: 0 };
 
 /** Matières d'UNE ligne : une rangée par matière (stock + achats), compacte */
@@ -94,7 +101,7 @@ function linesBlock(s) {
 
 export const usine = {
   title: '🏭 Usine',
-  key: s => [Eco.lines(s).map(L => L.flavor).join(), UsineSel.line, s.unlocked.join(), s.auto.restock].join('|'),
+  key: s => [Eco.lines(s).map(L => L.flavor + L.bulkFlavor).join(), UsineSel.line, s.unlocked.join(), s.auto.restock].join('|'),
   html(s) {
 
 
@@ -113,7 +120,7 @@ export const usine = {
       <div class="split"><h3>Chaîne de production</h3><span class="tag" data-t="bneckLabel"></span></div>
       <div class="pipeline">
         ${stage('cook', `<div class="big" data-t="rate:cook"></div><div class="sub" data-t="flow:cook"></div>`)}
-        ${stage('tank', `<div class="big" data-t="tankCapTxt"></div><div class="sub">par ligne</div>`, 'bottle')}
+        ${stage('tank', `<div class="big" data-t="tankCapTxt"></div><div class="sub">par ligne</div>${tankBars(s)}`, 'bottle')}
         ${stage('bottle', `<div class="big" data-t="rate:bottle"></div><div class="sub" data-t="flow:bottle"></div>`)}
         ${stage('ware', `<div class="bar"><i data-w="warePct"></i></div><div class="sub" data-t="wareTxt"></div>`)}
         ${stage('counter', `<div class="big" data-t="rate:counter"></div><div class="sub" data-t="flow:sell"></div>

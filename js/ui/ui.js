@@ -88,7 +88,11 @@ export const UI = {
     for (const { el, t, d, w, c } of nodes) {
       if (t) { const v = String(B[t.n](s, t.a)); if (el.textContent !== v) el.textContent = v; }
       if (d) { const v = !!B[d.n](s, d.a); if (el.disabled !== v) el.disabled = v; }
-      if (w) { const v = Math.max(0, Math.min(1, B[w.n](s, w.a) || 0)); el.style.width = (v * 100).toFixed(1) + '%'; }
+      if (w) {
+        const v = Math.max(0, Math.min(1, B[w.n](s, w.a) || 0));
+        // data-ring : anneau de progression (variable CSS --p) au lieu d'une barre (largeur)
+        if ('ring' in el.dataset) el.style.setProperty('--p', v.toFixed(3)); else el.style.width = (v * 100).toFixed(1) + '%';
+      }
       if (c) for (const part of c.cls.split(',')) el.classList.toggle(part, !!B[c.n](s, c.a));
     }
   },

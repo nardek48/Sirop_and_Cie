@@ -18,6 +18,7 @@ import { Couriers } from './couriers.js';
 import { Fields, Farm, RealEstate } from './world-systems.js';
 import { Quests } from './quests.js';
 import { Openings } from './openings.js';
+import { Research } from './research.js';
 
 export const Sim = {
   step(s, dt) {
@@ -31,6 +32,7 @@ export const Sim = {
       if (s.auto.restock) Factory.autoRestock(s);
       RealEstate.step(s, dt);
     }
+    Research.step(s, dt);
     Fields.step(s, dt);
     Farm.step(s, dt);
     Factory.step(s, dt);
@@ -54,12 +56,13 @@ export const Sim = {
 
 export const Prestige = {
   can: s => s.run.earned >= CONFIG.prestige.minRunEarned && Eco.prestigeGain(s) > 0,
-  /** Repart de zéro ; garde les étoiles, le personnage, les stats, les quêtes et les bâtiments ouverts */
+  /** Repart de zéro ; garde les étoiles, le personnage, les stats, les quêtes, les bâtiments ouverts et l'arbre du Labo */
   reset(s) {
     const n = Store.fresh();
     n.stars = s.stars + Eco.prestigeGain(s);
     n.stats = s.stats; n.look = s.look; n.quest = s.quest;
     n.tuto = s.tuto; n.opened = s.opened; n.seen = s.seen; n.tipsOn = s.tipsOn; n.decor = s.decor; n.quests = s.quests; n.home = s.home;
+    n.research = s.research;            // l'arbre du Labo reste pour toujours
     Game.s = n;
     Sim.seed(n);
   },

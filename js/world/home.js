@@ -71,6 +71,10 @@ export function decoPick(s, slot) {
 export const HOUSE = { x: 890, y: 870, w: 200, h: 160 };
 export const HOUSE_GARAGE = { x: 1110, y: 948, w: 132, h: 82 };
 
+/** Image de meuble ou de déco (assets/maison/<id>.png), ou undefined si pas chargée */
+const IMG_ID = { arcenciel: 'arc-en-ciel', ordi: 'ordinateur' };
+const mImg = id => Art.img['m_' + (IMG_ID[id] || id)];
+
 const EMOJI_FONT = '"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';
 const emoji = (c, ch, x, y, size) => {
   // Couleur opaque : Chrome applique la transparence de fillStyle aux emoji en couleur
@@ -220,8 +224,19 @@ export const HomeRoom = {
     c.globalAlpha = 0.8; c.fillRect(290, 28, 22, 136); c.fillRect(438, 28, 22, 136); c.globalAlpha = 1;
 
     // Cadre au mur
-    const mur = decoPick(s, 'mur');
-    if (mur.icon) {
+    const mur = decoPick(s, 'mur'), mi = mur.icon && mImg(mur.id);
+    if (mi) {
+      const h = Art.put(c, mi, 520, 160, mur.id === 'etoile' ? 80 : mur.id === 'arcenciel' ? 84 : 110);
+      if (mur.id === 'horloge') {                                     // aiguilles : l'heure du jeu
+        const cy = 160 - h / 2, hr = Clock.hour(s);
+        c.strokeStyle = '#3b2a1a'; c.lineCap = 'round';
+        for (const [a, len, lw] of [[(hr % 12) / 12, 22, 4], [hr % 1, 34, 3]]) {
+          const ang = a * Math.PI * 2 - Math.PI / 2;
+          c.lineWidth = lw; c.beginPath(); c.moveTo(520, cy); c.lineTo(520 + Math.cos(ang) * len, cy + Math.sin(ang) * len); c.stroke();
+        }
+        c.lineCap = 'butt';
+      }
+    } else if (mur.icon) {
       c.fillStyle = '#7a4a2a'; c.fillRect(472, 52, 96, 96);
       c.fillStyle = '#fffaf0'; c.fillRect(480, 60, 80, 80);
       emoji(c, mur.icon, 520, 122, 54);
@@ -240,11 +255,15 @@ export const HomeRoom = {
 
   bed(c, s, t, dt) {
     const { x, y, w, h } = BED, col = decoPick(s, 'couette').color;
+    const lit = Art.tinted('m_lit', col);
+    if (lit) Art.put(c, lit, x + w / 2, y + h + 4, w + 30);         // couette magenta → couleur choisie
+    else {
     c.fillStyle = '#8a5a34'; c.fillRect(x, y - 30, w, 40);                  // tête de lit
     c.fillStyle = '#a8733f'; c.fillRect(x, y + 6, w, h - 6);
     c.fillStyle = '#fffaf0'; c.beginPath(); c.roundRect(x + 10, y + 10, w - 20, 34, 10); c.fill();   // oreiller
     c.fillStyle = col; c.beginPath(); c.roundRect(x + 4, y + 46, w - 8, h - 50, 10); c.fill();
     c.fillStyle = 'rgba(255,255,255,.25)'; c.fillRect(x + 4, y + 46, w - 8, 10);
+    }
     // Panier du compagnon au pied du lit
     if (s.look.pet !== 'aucun') {
       c.fillStyle = '#b07a44'; c.beginPath(); c.ellipse(x + w + 50, y + h + 30, 32, 14, 0, 0, Math.PI * 2); c.fill();
@@ -268,6 +287,8 @@ export const HomeRoom = {
     if (!o.icon) return;
     const x = 645, y = 262;
     Gfx.shadow(c, x, y, 34, 8);
+    const im = mImg(o.id);
+    if (im) { Art.put(c, im, x, y + 4, o.id === 'guitare' ? 50 : o.id === 'plante' ? 76 : 88); return; }
     if (o.id === 'aquarium') {
       c.fillStyle = '#6b4a2e'; c.fillRect(x - 40, y - 34, 80, 34);
       c.fillStyle = 'rgba(120,200,240,.75)'; c.fillRect(x - 36, y - 84, 72, 50);
@@ -283,7 +304,9 @@ export const HomeRoom = {
     if (!o.icon) return;
     const x = SALON.x + SALON.w / 2, y = SALON.y + SALON.h;
     Gfx.shadow(c, x, y - 4, 52, 10);
-    emoji(c, o.icon, x, y + 4, 90);
+    const im = mImg(o.id);
+    if (im) Art.put(c, im, x, y + 4, o.id === 'canape' ? 150 : 110);
+    else emoji(c, o.icon, x, y + 4, 90);
   },
 
   paintPot(c) {
@@ -296,6 +319,8 @@ export const HomeRoom = {
     const o = decoPick(s, 'tapis');
     if (!o.color) return;
     const x = 330, y = 470, rx = 110, ry = 42;
+    const tap = o.color !== 'rainbow' && Art.tinted('m_tapis', o.color);
+    if (tap) { const th = 2 * rx * tap.height / tap.width; Art.put(c, tap, x, y + th / 2, 2 * rx); return; }
     if (o.color === 'rainbow') {
       ['#d23c4f', '#e8703a', '#e8c22e', '#3f8f5a', '#3a6ea5', '#7b4fb0'].forEach((col, i) => {
         c.fillStyle = col; c.beginPath(); c.ellipse(x, y, rx - i * 16, ry - i * 6, 0, 0, Math.PI * 2); c.fill();

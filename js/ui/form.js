@@ -6,5 +6,7 @@ import { RECIPE_COLORS } from '../config.js';
 
 export const Form = {
   houseUse: {},                                            // usage choisi par type de maison
+  laboTab: 'recettes',                                     // onglet du Labo : 'recettes' | 'arbre'
+  resSel: 'u1',                                            // fruit choisi dans l'arbre
   labo: { a: 'menthe', b: 'grenadine', name: '', color: RECIPE_COLORS[0] },
 };

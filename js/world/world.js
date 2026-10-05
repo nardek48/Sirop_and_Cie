@@ -107,11 +107,15 @@ export const World = {
 
   resize() {
     const r = this.cv.getBoundingClientRect();
-    this.dpr = Math.min(2, window.devicePixelRatio || 1);
-    this.vw = r.width; this.vh = r.height;
-    this.cv.width = Math.max(1, Math.round(r.width * this.dpr));
-    this.cv.height = Math.max(1, Math.round(r.height * this.dpr));
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    const w = Math.max(1, Math.round(r.width * dpr)), h = Math.max(1, Math.round(r.height * dpr));
+    if (w === this.cv.width && h === this.cv.height && dpr === this.dpr) return;   // rien n'a changé
+    this.dpr = dpr; this.vw = r.width; this.vh = r.height;
+    this.cv.width = w; this.cv.height = h;            // ← efface le dessin
     this.fitZoom();
+    // Redessine tout de suite : sinon le téléphone affiche une image vide (le fond vert) jusqu'à la prochaine image
+    const s = Game.s;
+    if (s && this.ctx) { this.snapCamera(true); if (this.inside) this.drawRoom(s, 0); else this.draw(s); }
   },
   /** Village : ~1000×620 visibles ; usine : toute la salle si l'écran le permet */
   fitZoom() {

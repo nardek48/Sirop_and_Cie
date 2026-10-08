@@ -54,6 +54,7 @@ export const Store = {
       ride: null,           // véhicule choisi au garage de la maison (null = le meilleur acheté)
       rested: 0,            // secondes de « Bien reposé » restantes (dormir dans sa maison)
       research: { done: [], cur: null, left: 0 },   // arbre du Labo (gardé au prestige)
+      train: { trips: 0, best: 0, readyAt: 0 },      // voyages en train (mini-jeu) : nombre, record d'étoiles, prochain voyage payé
       home: {               // décoration de ta maison (voir world/home.js)
         wall: 'creme', floor: 'bois',
         deco: { mur: 'tableau', coin: 'plante', salon: 'canape', tapis: 'rouge', couette: 'bleu' },
@@ -73,7 +74,7 @@ export const Store = {
   migrate(data) {
     const base = this.fresh();
     const out = { ...base, ...data };
-    for (const k of ['mat', 'stock', 'lv', 'auto', 'stats', 'run', 'player', 'look', 'districts', 'quest', 'event', 'tuto', 'opened', 'seen'])
+    for (const k of ['mat', 'stock', 'lv', 'auto', 'stats', 'run', 'player', 'look', 'districts', 'quest', 'event', 'tuto', 'opened', 'seen', 'train'])
       out[k] = { ...base[k], ...(data[k] || {}) };
     // Partie commencée avant le tutoriel (v0.1.0) : tout est déjà ouvert, pas de tutoriel imposé
     if (!data.tuto) {

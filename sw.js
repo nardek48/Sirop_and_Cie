@@ -20,8 +20,8 @@
  */
 
 // <build>
-const VERSION = 'v0.9.3';
-const BUILD = '3fc2b45f5f';
+const VERSION = 'v0.10.0';
+const BUILD = 'd27d059f09';
 const PRECACHE = [
   './index.html',
   './manifest.webmanifest',
@@ -38,6 +38,9 @@ const PRECACHE = [
   './js/editor/editor.js',
   './js/editor/quest-editor.js',
   './js/main.js',
+  './js/minigames/host.js',
+  './js/minigames/index.js',
+  './js/minigames/train.js',
   './js/pwa.js',
   './js/sim/clock.js',
   './js/sim/contracts.js',
@@ -51,6 +54,7 @@ const PRECACHE = [
   './js/sim/quests.js',
   './js/sim/research.js',
   './js/sim/sim.js',
+  './js/sim/trips.js',
   './js/sim/wallet.js',
   './js/sim/world-systems.js',
   './js/tutorial/overlay.js',

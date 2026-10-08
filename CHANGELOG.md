@@ -2,6 +2,18 @@
 
 Numérotation : `vMAJEUR.MINEUR.CORRECTIF`. Pour préparer une nouvelle version : `node tools/build-sw.mjs patch` (ou `minor`, `major`), puis décrire les changements ici.
 
+## v0.10.0 · 2026-10-08
+
+- **Conduire le train** 🚂 : à la gare de la Colline, « Conduire le train » lance le premier mini-jeu, la **Ligne des Fraises**. On conduit la locomotive jusqu’à la Gare des Fraises en maintenant **Accélérer** ou **Freiner** (clavier : → pour accélérer, ← ou Espace pour freiner).
+  - Respecter les panneaux de vitesse (60, 40 sur le pont, 80, puis 30 à l’approche) : trop vite, et des bouteilles tombent du wagon.
+  - Arrêter la loco pile au panneau **STOP** du quai. Les repères 20, 10 et 5 et l’écran de bord aident pour les derniers mètres.
+  - 3 étoiles : arrêt à 3 m du STOP ou moins, au moins 10 bouteilles sur 12, arrivée en 65 s ou moins. Jamais d’échec : on livre toujours.
+  - Deux points de vue : **Cabine** (depuis les yeux du conducteur, avec compteur, écran de bord et levier) et **Extérieur** (de côté). Le choix est gardé.
+  - Récompense : de 30 s à 2 min 30 de production de l’usine selon les étoiles, et ⭐ +1 par étoile. Un voyage payé toutes les 5 minutes ; entre deux, on peut rouler pour le plaisir.
+- Quand on porte la commande du Train Express, la gare propose d’abord « Livrer », comme avant.
+- Le jeu continue de tourner pendant le mini-jeu ; le village attend derrière.
+- Code : `js/minigames/host.js` ouvre un mini-jeu en plein écran (canvas, boucle, Quitter, Échap), prêt pour la pêche. Le train est dans `js/minigames/train.js`, ses récompenses dans `js/sim/trips.js` et ses réglages dans `CONFIG.train`. Debug (F2) : « 🚂 Conduire le train » et « Train : voyage payé ».
+
 ## v0.9.3 · 2026-10-05
 
 - **Tableau de l’usine** : la cuve tampon montre de nouveau son remplissage, comme l’entrepôt. Une barre par ligne, à la couleur du sirop qu’elle contient (« Ligne 2 · 149 / 164 L · Grenadine »).

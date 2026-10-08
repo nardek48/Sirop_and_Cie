@@ -13,6 +13,7 @@ import { UI } from './ui/ui.js';
 import { World } from './world/world.js';
 import { VERSION } from './version.js';
 import { Tuto } from './tutorial/tutorial.js';
+import { Minis } from './minigames/index.js';
 
 const TOOLS = {
   money1k:   ['+1 K $',          s => { s.money += 1e3; }],
@@ -33,6 +34,8 @@ const TOOLS = {
   tutoNext:  ['Tuto : étape suivante', () => Tuto.next()],
   opened:    ['Ouvrir bâtiments', s => { for (const k of Object.keys(s.opened)) s.opened[k] = true; }],
   tips:      ['Revoir conseils', s => { s.seen = {}; }],
+  train:     ['🚂 Conduire le train', () => Minis.train()],
+  trainWait: ['Train : voyage payé', s => { s.train.readyAt = 0; }],
   line:      ['+1 ligne',        s => { if (s.lines.length < CONFIG.lines.max - 1) s.lines.push({ flavor: s.flavor, bulk: 0, bulkFlavor: s.flavor }); }],
 };
 

@@ -56,13 +56,14 @@ export const Sim = {
 
 export const Prestige = {
   can: s => s.run.earned >= CONFIG.prestige.minRunEarned && Eco.prestigeGain(s) > 0,
-  /** Repart de zéro ; garde les étoiles, le personnage, les stats, les quêtes, les bâtiments ouverts et l'arbre du Labo */
+  /** Repart de zéro ; garde les étoiles, le personnage, les stats, les quêtes, les bâtiments ouverts l'arbre du Labo et les voyages en train */
   reset(s) {
     const n = Store.fresh();
     n.stars = s.stars + Eco.prestigeGain(s);
     n.stats = s.stats; n.look = s.look; n.quest = s.quest;
     n.tuto = s.tuto; n.opened = s.opened; n.seen = s.seen; n.tipsOn = s.tipsOn; n.decor = s.decor; n.quests = s.quests; n.home = s.home;
     n.research = s.research;            // l'arbre du Labo reste pour toujours
+    n.train = s.train;                  // voyages en train : record et attente conservés
     Game.s = n;
     Sim.seed(n);
   },

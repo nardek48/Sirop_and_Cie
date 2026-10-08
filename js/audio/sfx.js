@@ -19,6 +19,10 @@ const SOUNDS = {
   step:   [[110, 0, .025, 'triangle', .035]],
   woof:   [[300, 0, .07, 'sawtooth', .04, 200], [260, .1, .09, 'sawtooth', .04, 180]],
   meow:   [[700, 0, .25, 'sine', .05, 520]],
+  // Mini-jeu du train : sifflet, bouteille qui tombe, butoir
+  whistle:[[880, 0, .45, 'sine', .05, 860], [1108, 0, .45, 'sine', .035, 1080], [880, .5, .25, 'sine', .05]],
+  clink:  [[1568, 0, .06, 'triangle', .07], [2093, .05, .12, 'triangle', .05, 1400]],
+  bump:   [[90, 0, .18, 'square', .08, 50]],
 };
 
 export const Sfx = {

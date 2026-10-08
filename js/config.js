@@ -96,6 +96,10 @@ export const CONFIG = {
     colline: { name: 'La Colline', icon: '⛰️', cost: 300000, rep: 25, desc: 'La gare du Train Express, 4 terrains et un bois de sureau.' },
   },
 
+  // Mini-jeu « Ligne des Fraises » (gare de la Colline) : un voyage payé toutes les cooldownSec secondes.
+  // Gain = minutes de production de l'usine selon les étoiles (0, 1, 2, 3), au moins minPerMin $ la minute.
+  train: { cooldownSec: 300, minutesByStars: [0.5, 1, 1.5, 2.5], minPerMin: 60, repPerStar: 1 },
+
   // Récoltes à la main (joueur ou compagnon)
   fields: {
     // mat 'auto' : le verger donne le fruit du parfum en production (un peu de tout pousse au verger communal)

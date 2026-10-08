@@ -37,6 +37,7 @@ import { Garage, Home, Farm } from '../sim/world-systems.js';
 import { FieldSel } from '../ui/panels/champ.js';
 import { ParfumSel } from '../ui/panels/parfum.js';
 import { Factory } from '../sim/factory.js';
+import { Minis } from '../minigames/index.js';
 
 /** Salles où l'on entre à pied : même interface (W, H, p, spawn, solids, build, draw) */
 const ROOMS = { usine: Interior, maison: HomeRoom };
@@ -52,6 +53,7 @@ export const World = {
   floats: [], confetti: [], time: 0, last: 0, fps: 60,
   anim: { phase: 0, moving: false, dir: 'bas', flip: 1 },
   stuckT: 0, counterT: 0, stepT: 0,
+  paused: false,         // un mini-jeu est ouvert par-dessus : le village ne se dessine plus et n'écoute plus le clavier
   debug: { solids: false },
   mode: 'play',          // 'play' ou 'edit' (Mode architecte, voir js/editor/)
   scene: 'village',      // 'village' ou 'usine' (intérieur de l'usine, voir interior.js)
@@ -90,6 +92,7 @@ export const World = {
     this.cv.addEventListener('pointermove', e => this.editPointer('move', e));
     window.addEventListener('pointerup', e => this.editPointer('up', e));
     Bus.on('float', (text, where, color) => this.float(text, where, color));
+    Bus.on('minigame', on => { this.paused = on; this.keys.clear(); this.target = null; this.pending = null; });
 
     // Décor Tiled optionnel (remplace le décor par défaut s'il est présent)
     loadTiledDecor('assets/decor.tiled.json').then(d => { if (d && d.length) this.baseDecor = d; });
@@ -223,6 +226,7 @@ export const World = {
 
   /* ---------------- Entrées ---------------- */
   onKey(e, down) {
+    if (this.paused) return;
     if (e.target.closest && e.target.closest('input,select,textarea')) return;
     const code = e.code;
     if (down && code === 'Escape') { UI.closeModal(); UI.close(); return; }
@@ -299,6 +303,15 @@ export const World = {
       } else {
         const c = clientByPlace(b.id), open = Eco.clientOpen(s, c);
         const carried = Eco.carried(s).filter(k => k.place === b.id).length;
+        // La gare : livrer le Train Express si on porte sa commande, sinon conduire le train (mini-jeu)
+        if (b.id === 'gare') {
+          L.push({
+            id: b.id, ...at, hit: b,
+            label: open && carried ? `Livrer ${c.name}` : '🚂 Conduire le train',
+            run: () => { if (open && carried && Contracts.deliverAt(s, b.id)) return; Minis.train(); },
+          });
+          continue;
+        }
         L.push({
           id: b.id, ...at, hit: b,
           label: !open ? `🔒 ${c.name} (⭐ ${c.rep})` : carried ? `Livrer ${c.name}` : c.name,
@@ -490,6 +503,7 @@ export const World = {
 
   /* ---------------- Boucle d'image ---------------- */
   frame(ts) {
+    if (this.paused) { this.last = ts; requestAnimationFrame(t => this.frame(t)); return; }   // mini-jeu ouvert
     const dt = Math.min(0.05, (ts - this.last) / 1000);
     this.last = ts; this.time += dt;
     this.fps += ((dt ? 1 / dt : 60) - this.fps) * 0.05;

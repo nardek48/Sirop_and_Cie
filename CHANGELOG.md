@@ -2,6 +2,10 @@
 
 Numérotation : `vMAJEUR.MINEUR.CORRECTIF`. Pour préparer une nouvelle version : `node tools/build-sw.mjs patch` (ou `minor`, `major`), puis décrire les changements ici.
 
+## v0.10.1 · 2026-10-24
+
+- Version de test : vérifie la publication sur GitHub Pages et la fenêtre « Mettre à jour » du jeu. Aucun changement de jeu.
+
 ## v0.10.0 · 2026-10-08
 
 - **Conduire le train** 🚂 : à la gare de la Colline, « Conduire le train » lance le premier mini-jeu, la **Ligne des Fraises**. On conduit la locomotive jusqu’à la Gare des Fraises en maintenant **Accélérer** ou **Freiner** (clavier : → pour accélérer, ← ou Espace pour freiner).

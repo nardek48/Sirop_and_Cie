@@ -70,7 +70,7 @@ img{-webkit-user-drag:none;user-drag:none}
 #act-btn{position:absolute;right:max(14px,env(safe-area-inset-right,0px));bottom:max(14px,env(safe-area-inset-bottom,0px));max-width:min(60vw,320px);font-size:15px;padding:12px 16px;border-radius:14px;box-shadow:var(--shadow)}
 
 /* --- Quête du maire (HUD) --- */
-.quest{position:absolute;top:12px;left:12px;width:min(290px,calc(100% - 24px));display:grid;gap:4px;text-align:left;cursor:pointer;
+.quest{position:absolute;top:12px;left:max(12px,env(safe-area-inset-left,0px));width:min(290px,calc(100% - 24px));display:grid;gap:4px;text-align:left;cursor:pointer;
   background:color-mix(in srgb,var(--surface) 94%,transparent);border:1px solid var(--line);border-radius:14px;padding:10px 12px;
   box-shadow:var(--shadow);color:var(--ink);font:inherit}
 .q-kicker{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
@@ -84,7 +84,8 @@ img{-webkit-user-drag:none;user-drag:none}
 @media (prefers-reduced-motion:reduce){.quest.ready{animation:none}}
 
 /* --- Intérieur d'un bâtiment --- */
-.sheet{position:absolute;inset:0;background:rgba(20,12,4,.45);display:flex;justify-content:center;align-items:flex-start;padding:16px;overflow:auto;z-index:10}
+.sheet{position:absolute;inset:0;background:rgba(20,12,4,.45);display:flex;justify-content:center;align-items:flex-start;
+  padding:16px max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));overflow:auto;z-index:10}
 .sheet-card{background:var(--bg);border-radius:18px;max-width:1080px;width:100%;padding:16px;box-shadow:var(--shadow)}
 .sheet-head{display:flex;align-items:center;gap:10px;margin-bottom:14px}
 .sheet-head h2{margin:0;font-size:24px;margin-right:auto}
@@ -100,7 +101,7 @@ img{-webkit-user-drag:none;user-drag:none}
 .warn{color:var(--bad);font-size:13px;min-height:1.2em;margin:4px 0 10px}
 .empty{color:var(--muted);font-style:italic;padding:8px 0}
 .cols{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-.cols>.card{margin-bottom:0}
+.cols>.card{margin-bottom:0;min-width:0}   /* le tableau du stock défile dans sa carte au lieu d’élargir la feuille */
 .cols{margin-bottom:14px}
 @media (max-width:760px){.cols{grid-template-columns:1fr}}
 .scroll-x{overflow-x:auto}
@@ -242,6 +243,8 @@ select,.field input{font:inherit;width:100%;padding:7px 8px;border-radius:9px;bo
 .tuto-intro{font-size:54px;text-align:center;line-height:1;margin-bottom:8px}
 body.tuto-on .quest{display:none}
 body.tuto-on.tuto-quest .quest{display:grid}
+/* Dernière étape : la carte de Mémé descend pour laisser voir le bouton de quête qu'elle montre */
+body.tuto-on.tuto-quest .tuto-card:not(.tip){top:auto;bottom:max(12px,env(safe-area-inset-bottom,0px))}
 body.tuto-low .toasts{bottom:190px}
 body.tuto-low .sheet{padding-bottom:220px}
 @keyframes tuto-pop{from{opacity:.4;scale:.96}to{opacity:1;scale:1}}
@@ -338,7 +341,7 @@ body.arch-on .toasts{bottom:200px}
 .line-tabs{margin-bottom:10px}
 
 /* ---------- Tableau de l'usine : une carte par ligne (v0.7.1) ---------- */
-.line-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;align-items:start}
+.line-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(260px,100%),1fr));gap:12px;align-items:start}
 .line-card{background:var(--surface2);border-radius:12px;padding:12px;display:grid;gap:8px;min-width:0}
 .line-card header{display:flex;flex-wrap:wrap;gap:4px 8px;align-items:baseline}
 .line-card h4{margin:4px 0 0;font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}

@@ -236,9 +236,11 @@ export const World = {
       return;
     }
     // e.code = position physique : KeyW = Z et KeyA = Q sur un clavier AZERTY
-    if (!DIRS.includes(code) || UI.active || UI.modalOpen()) return;
+    if (!DIRS.includes(code)) return;
+    if (!down) { this.keys.delete(code); return; }     // relâchement toujours pris en compte, même panneau ouvert
+    if (UI.active || UI.modalOpen()) return;
     e.preventDefault();
-    if (down) this.keys.add(code); else this.keys.delete(code);
+    this.keys.add(code);
   },
 
   /** Position monde d'un événement pointeur */
@@ -256,7 +258,7 @@ export const World = {
     const p = this.pointerPos(e);
     const hit = this.list.find(i => inRect(p, i.hit));
     if (hit) { this.target = this.route(this.me(Game.s), hit); this.pending = hit.id; }
-    else { this.target = [p]; this.pending = null; }
+    else { this.target = this.route(this.me(Game.s), p); this.pending = null; }   // contourne les obstacles
   },
 
   /** Trajet simple : rejoindre la route, la longer, puis monter/descendre vers la cible */
@@ -301,8 +303,10 @@ export const World = {
         const run = b.id === 'usine' ? () => (s.tuto.active ? UI.open('usine') : this.enterFactory('usine')) : () => UI.open(b.panel);
         L.push({ id: b.id, ...at, hit, label: `Entrer · ${b.name}`, run });
       } else {
-        const c = clientByPlace(b.id), open = Eco.clientOpen(s, c);
+        const c = clientByPlace(b.id);
         const carried = Eco.carried(s).filter(k => k.place === b.id).length;
+        // Une commande déjà chargée reste livrable, même si la réputation est repassée sous le seuil du client
+        const open = Eco.clientOpen(s, c) || carried > 0;
         // La gare : livrer le Train Express si on porte sa commande, sinon conduire le train (mini-jeu)
         if (b.id === 'gare') {
           L.push({
@@ -442,6 +446,9 @@ export const World = {
     const p = this.me(s), k = this.keys;
     let vx = 0, vy = 0;
     if (this.mode === 'edit') { this.anim.moving = false; this.panCamera(dt); return; }
+    const solids = this.solids(s);
+    if (this.blocked(p.x, p.y, solids)) this.unstick(p, solids);   // une machine vient d'apparaître sous le joueur
+    let left = Infinity;                                         // distance au prochain point du trajet
     if (!UI.active && !UI.modalOpen()) {
       vx = (k.has('ArrowRight') || k.has('KeyD') ? 1 : 0) - (k.has('ArrowLeft') || k.has('KeyA') ? 1 : 0);
       vy = (k.has('ArrowDown') || k.has('KeyS') ? 1 : 0) - (k.has('ArrowUp') || k.has('KeyW') ? 1 : 0);
@@ -452,15 +459,15 @@ export const World = {
       if (d < 6) {
         this.target.shift();
         if (!this.target.length) { this.target = null; this.arrive(s); }
-      } else { vx = dx / d; vy = dy / d; }
+      } else { vx = dx / d; vy = dy / d; left = d; }
     }
 
     const len = Math.hypot(vx, vy);
     this.anim.moving = len > 0;
     if (!len) { this.stuckT = 0; return; }
     vx /= len; vy /= len;
-    const solids = this.solids(s);
-    const sp = (this.inside ? CONFIG.vehicles[0].speed : Eco.speed(s)) * dt, ox = p.x, oy = p.y;
+    // Pas plafonné au point visé : sinon un véhicule rapide oscille autour sans jamais l'atteindre
+    const sp = Math.min(left, (this.inside ? CONFIG.vehicles[0].speed : Eco.speed(s)) * dt), ox = p.x, oy = p.y;
     if (!this.blocked(p.x + vx * sp, p.y, solids)) p.x += vx * sp;
     if (!this.blocked(p.x, p.y + vy * sp, solids)) p.y += vy * sp;
     this.anim.phase += dt * 13;
@@ -476,6 +483,15 @@ export const World = {
       this.stuckT += dt;
       if (this.stuckT > 0.4) { this.target = null; this.pending = null; this.stuckT = 0; }
     } else this.stuckT = 0;
+  },
+
+  /** Pousse le joueur vers la place libre la plus proche (cercles de plus en plus grands) */
+  unstick(p, solids) {
+    for (let r = 8; r <= 320; r += 8)
+      for (let a = 0; a < 16; a++) {
+        const x = p.x + Math.cos(a * Math.PI / 8) * r, y = p.y + Math.sin(a * Math.PI / 8) * r;
+        if (!this.blocked(x, y, solids)) { p.x = x; p.y = y; this.target = null; return; }
+      }
   },
 
   arrive(s) {
@@ -504,7 +520,7 @@ export const World = {
   /* ---------------- Boucle d'image ---------------- */
   frame(ts) {
     if (this.paused) { this.last = ts; requestAnimationFrame(t => this.frame(t)); return; }   // mini-jeu ouvert
-    const dt = Math.min(0.05, (ts - this.last) / 1000);
+    const dt = Math.max(0, Math.min(0.05, (ts - this.last) / 1000));   // 1re image : ts peut précéder last
     this.last = ts; this.time += dt;
     this.fps += ((dt ? 1 / dt : 60) - this.fps) * 0.05;
     const s = Game.s;

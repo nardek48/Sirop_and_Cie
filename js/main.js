@@ -54,6 +54,8 @@ window.Art = Art;   // pratique pour essayer depuis la console du navigateur
 
 function showOffline(r) {
   if (!r) return;
+  // Une fenêtre est déjà ouverte (bienvenue, confirmation…) : on ne la remplace pas
+  if (UI.modalOpen()) return UI.toast(`Pendant ton absence : +${Fmt.money(r.earned)} 💰`, 'ok');
   UI.modal(`
     <h2>Pendant ton absence…</h2>
     <p class="sub">${Fmt.time(r.t)} simulées${r.capped ? ` (plafond ${CONFIG.offline.capHours} h)` : ''}</p>
@@ -66,28 +68,49 @@ function showOffline(r) {
 }
 
 const Loop = {
-  last: 0, saveAcc: 0,
+  last: 0, wall: 0, saveAcc: 0,
+  away: null,          // résumé cumulé des rattrapages pendant que la page est cachée
   start() {
-    this.last = performance.now();
+    this.last = performance.now(); this.wall = Date.now();
     setInterval(() => this.tick(), CONFIG.tickMs);
     window.addEventListener('beforeunload', () => Store.save(Game.s));
     window.addEventListener('pagehide', () => Store.save(Game.s));      // iOS et applications installées
-    document.addEventListener('visibilitychange', () => { if (document.hidden) Store.save(Game.s); });
+    document.addEventListener('visibilitychange', () => { if (document.hidden) Store.save(Game.s); else this.tick(); });
+    // La partie a été écrite par une autre fenêtre : on arrête d'enregistrer pour ne pas l'écraser
+    window.addEventListener('storage', e => {
+      if (e.key !== Store.KEY || Store.stale) return;
+      Store.stale = true;
+      UI.modal(`<h2>Partie ouverte ailleurs</h2>
+        <p>Sirop & Cie est ouvert dans une autre fenêtre. Recharge pour reprendre la partie la plus récente.</p>`,
+      [{ label: 'Recharger', primary: true, run: () => location.reload() }]);
+    });
   },
   tick() {
-    const now = performance.now(), dt = (now - this.last) / 1000;
-    this.last = now;
-    if (dt > 5) showOffline(Offline.catchUp(Game.s, dt));     // onglet en veille
+    // Horloge murale en plus : performance.now() peut s'arrêter pendant la veille de l'appareil
+    const now = performance.now(), wall = Date.now();
+    const dt = Math.max(now - this.last, wall - this.wall) / 1000;
+    this.last = now; this.wall = wall;
+    if (dt > 5) this.addAway(Offline.catchUp(Game.s, dt));    // onglet en veille
     else Sim.advance(Game.s, dt * rt.timeScale);
+    if (this.away && !document.hidden) { showOffline(this.away); this.away = null; }
     this.saveAcc += dt;
     if (this.saveAcc >= CONFIG.saveEverySec) { this.saveAcc = 0; Store.save(Game.s); }
     UI.render(Game.s);
+  },
+  /** Additionne les rattrapages successifs (onglet caché réveillé une fois par minute) */
+  addAway(r) {
+    if (!r) return;
+    const a = this.away;
+    if (!a) { this.away = { ...r }; return; }
+    for (const k of ['t', 'earned', 'bottles', 'sold', 'done', 'fail']) a[k] += r[k];
+    a.capped = a.capped || r.capped;
   },
 };
 
 /** @param {{save?:object}} data état transmis par un rechargement à chaud (artifact) */
 function start(data = {}) {
-  const saved = data.save ? Store.migrate(data.save) : Store.load();
+  let saved = null;
+  try { saved = data.save ? Store.migrate(data.save) : Store.load(); } catch (e) { saved = Store.load(); }
   Game.s = saved || Store.fresh();
   UI.init((name, arg) => Actions.run(name, arg));
   QuestEditor.init();
@@ -100,7 +123,10 @@ function start(data = {}) {
   Tuto.init();                          // avant World.init : branche Mémé et les repères
   if (!saved) {
     Sim.seed(Game.s);
-    Tuto.propose();                     // proposé, jamais imposé
+    if (!Store.broken) Tuto.propose();  // proposé, jamais imposé
+    else UI.modal(`<h2>Oups 😕</h2><p>Ta sauvegarde n’a pas pu être lue : une nouvelle partie commence.</p>
+      <p class="sub">${Store.stale ? 'Elle n’est pas effacée : le jeu n’enregistre rien tant qu’elle est là.' : 'Une copie de l’ancienne sauvegarde est gardée sur cet appareil.'}</p>`,
+    [{ label: 'Continuer', primary: true, run: () => Tuto.propose() }]);
   } else if (Game.s.tuto.active) Tuto.enter(Game.s);   // reprise à l'étape sauvegardée
   World.init();
   UI.render(Game.s);

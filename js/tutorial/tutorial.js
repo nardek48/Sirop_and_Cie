@@ -13,7 +13,6 @@
 import { CONFIG } from '../config.js';
 import { Game } from '../core/game.js';
 import { Bus } from '../core/bus.js';
-import { Eco } from '../sim/eco.js';
 import { Sim } from '../sim/sim.js';
 import { UI } from '../ui/ui.js';
 import { MAP } from '../world/map.js';
@@ -49,7 +48,8 @@ export const Tuto = {
     for (const ev of ['keydown', 'pointerdown']) window.addEventListener(ev, () => { this.idle = 0; }, true);
   },
 
-  cur: s => STEPS[s.tuto.step],
+  /** Étape en cours ; une étape inconnue (sauvegarde d'une autre version) repart du début */
+  cur(s) { if (!STEPS[s.tuto.step]) s.tuto.step = 0; return STEPS[s.tuto.step]; },
   contract: s => s.active.find(c => c.tuto),
 
   /* ---------------- Début, étapes, fin ---------------- */
@@ -80,7 +80,9 @@ export const Tuto = {
   start(s = Game.s) {
     UI.close();
     s.tuto.active = true; s.tuto.step = 0; s.tuto.skipped = false;
-    s.offers = [];              // seule la commande de Mémé sera proposée
+    // Seule la commande de Mémé sera proposée : les autres offres (Fête comprise) attendent la fin
+    if (!s.tuto.stash) s.tuto.stash = s.offers.filter(o => !o.tuto);
+    s.offers = [];
     this.enter(s);
   },
 
@@ -107,8 +109,9 @@ export const Tuto = {
     s.tuto.active = false; s.tuto.done = true; s.tuto.skipped = skipped; s.tuto.step = 0;
     // La commande d'entraînement disparaît (ses bouteilles reviennent au stock)
     const c = this.contract(s);
-    if (c) { if (c.loaded) s.stock[c.flavor] += c.qty; s.active = s.active.filter(x => x !== c); }
-    s.offers = s.offers.filter(o => !o.tuto);
+    if (c) s.active = s.active.filter(x => x !== c);
+    s.offers = [...(s.tuto.stash || []), ...s.offers.filter(o => !o.tuto)];   // les offres mises de côté reviennent
+    s.tuto.stash = null;
     if (!s.offers.length) Sim.seed(s);
     s.nextOfferIn = Math.min(s.nextOfferIn, 8);
     this.hideUI();
@@ -164,14 +167,13 @@ export const Tuto = {
     this.tree = i;
   },
 
-  /** Crée la commande de Mémé pour l'épicerie (avec les bouteilles mises de côté) */
+  /** Crée la commande de Mémé pour l'épicerie : ses bouteilles sont mises de côté, hors du stock */
   ensureOffer(s) {
     if (this.contract(s) || s.offers.some(o => o.tuto)) return;
-    const fl = s.flavor, need = T0.qty + Eco.reserved(s, fl);
-    if ((s.stock[fl] || 0) < need) s.stock[fl] = need;
+    const replay = s.tuto.done;        // tutoriel rejoué : sans récompense, pour ne rien gagner gratuitement
     s.offers.unshift({
-      id: s.nextId++, place: 'epicerie', client: 'Épicerie du coin', icon: '🏪', flavor: fl, qty: T0.qty,
-      reward: T0.reward, time: 600, repGain: 1, ttl: 1e9, special: true, tuto: true,
+      id: s.nextId++, place: 'epicerie', client: 'Épicerie du coin', icon: '🏪', flavor: s.flavor, qty: T0.qty,
+      reward: replay ? 0 : T0.reward, time: 600, repGain: replay ? 0 : 1, ttl: 1e9, special: true, tuto: true, replay,
     });
   },
 
@@ -240,6 +242,7 @@ export const Tuto = {
 
     // La commande d'entraînement a disparu avant d'être chargée : on revient à « accepter »
     if (st.id === 'charger' && !this.contract(s)) { s.tuto.step = STEPS.findIndex(x => x.id === 'accepter'); this.enter(s); st = this.cur(s); }
+    if (st.id === 'accepter') this.ensureOffer(s);     // offre disparue (ancienne version) : Mémé la repropose
     if (st.done(s, this)) { this.next(s); return; }
 
     // Mémé appelle le joueur s'il ne fait plus rien

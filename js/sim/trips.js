@@ -18,7 +18,12 @@ export const Trips = {
   /** Gain d'un voyage payé selon les étoiles (0 à 3) */
   gain: (s, stars) => Math.round(Trips.perMin(s) * T().minutesByStars[stars]),
   /** Secondes avant le prochain voyage payé (0 = disponible) */
-  wait: s => Math.max(0, Math.ceil((s.train.readyAt - Date.now()) / 1000)),
+  wait: s => {
+    // Horloge de l'appareil reculée : l'attente ne dépasse jamais un délai complet
+    const max = Date.now() + T().cooldownSec * 1000;
+    if (s.train.readyAt > max) s.train.readyAt = max;
+    return Math.max(0, Math.ceil((s.train.readyAt - Date.now()) / 1000));
+  },
   ready: s => Trips.wait(s) === 0,
 
   /**

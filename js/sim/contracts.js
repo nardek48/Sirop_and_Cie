@@ -37,10 +37,12 @@ export const Contracts = {
     s.active.push({ ...o, left: o.time, loaded: null });
     Bus.sfx('click');
   },
-  decline(s, id) { s.offers = s.offers.filter(o => o.id !== Number(id)); },
+  /** La commande de Mémé ne se refuse pas (le tutoriel en a besoin) */
+  decline(s, id) { s.offers = s.offers.filter(o => o.id !== Number(id) || o.tuto); },
 
-  canLoad: (s, c) => !c.loaded && (s.stock[c.flavor] || 0) + 1e-9 >= c.qty,
-  load(s, c, who) { s.stock[c.flavor] -= c.qty; c.loaded = who; },
+  // La commande de Mémé utilise ses propres bouteilles : elle ne touche pas au stock
+  canLoad: (s, c) => !c.loaded && (c.tuto || (s.stock[c.flavor] || 0) + 1e-9 >= c.qty),
+  load(s, c, who) { if (!c.tuto) s.stock[c.flavor] -= c.qty; c.loaded = who; },
 
   /**
    * Le joueur charge au quai toutes les commandes prêtes qui tiennent dans son véhicule.
@@ -48,6 +50,9 @@ export const Contracts = {
    */
   loadAll(s) {
     let room = Eco.capacity(s) - Eco.carriedQty(s), n = 0, b = 0, tooBig = false;
+    // Pendant le tutoriel, seule la commande de Mémé se charge (et elle passe toujours)
+    const tuto = s.tuto && s.tuto.active && s.active.find(c => c.tuto && !c.loaded);
+    if (tuto) { this.load(s, tuto, 'player'); Bus.sfx('load'); return { n: 1, b: tuto.qty, tooBig: false }; }
     for (const c of s.active) {
       if (!this.canLoad(s, c)) continue;
       if (c.qty > room) { tooBig = true; continue; }
@@ -63,8 +68,10 @@ export const Contracts = {
     if (c.place === 'cafe' && Clock.isNight(s)) { reward = Math.round(reward * C.nightCafeBonus); bonus = ' (bonus soirée 🌙)'; }
     Wallet.earn(s, reward);
     s.rep += c.repGain;
-    s.stats.cDone++;
-    s.stats.byClient[c.place] = (s.stats.byClient[c.place] || 0) + 1;
+    if (!c.replay) {                     // tutoriel rejoué : ne compte pas pour les quêtes ni les ouvertures
+      s.stats.cDone++;
+      s.stats.byClient[c.place] = (s.stats.byClient[c.place] || 0) + 1;
+    }
     s.active = s.active.filter(x => x !== c);
     Bus.toast(`${c.icon} ${c.client} : merci ! +${Fmt.money(reward)}${bonus}`, 'ok');
     Bus.float(`+${Fmt.money(reward)}  ⭐+${c.repGain}`, c.place, '#ffe28a');
@@ -86,7 +93,7 @@ export const Contracts = {
 
   /** Retire un contrat non livré (retard ou abandon) : les caisses reviennent au stock */
   drop(s, c, pen) {
-    if (c.loaded) s.stock[c.flavor] += c.qty;
+    if (c.loaded && !c.tuto) s.stock[c.flavor] += c.qty;
     if (c.loaded === 'npc') Couriers.abort(s, c.id);
     s.money = Math.max(0, s.money - pen.money);
     s.rep = Math.max(0, s.rep - pen.rep);

@@ -69,7 +69,7 @@ export const MiniGames = {
 
     const loop = now => {
       if (this.cur !== cur) return;
-      const dt = Math.min(0.05, (now - cur.last) / 1000);
+      const dt = Math.max(0, Math.min(0.05, (now - cur.last) / 1000));   // 1re image : now peut précéder last
       cur.last = now;
       game.frame(dt);
       game.render(ctx, cur.W, cur.H);

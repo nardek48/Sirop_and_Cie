@@ -56,6 +56,8 @@ const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const rnd = i => { const s = Math.sin(i * 127.1 + 311.7) * 43758.5453; return s - Math.floor(s); };
 const limitAt = m => (LINE.segments.find(s => m >= s.from && m < s.to) || LINE.segments.at(-1)).limit;
 const nextSegment = m => LINE.segments.find(s => s.from > m);
+/** Position du panneau d'une limite : au début réel de la zone (celui du départ, un peu devant la loco) */
+const signAt = seg => Math.max(seg.from, 6);
 
 /* =========================================================
    ÉTAT
@@ -265,7 +267,7 @@ function renderCab() {
     } });
   }
   for (const seg of LINE.segments) {                               // panneaux de limite
-    const d = seg.from + 6 - s.x; if (d < DMIN || d > DMAX) continue;
+    const d = signAt(seg) - s.x; if (d < DMIN || d > DMAX) continue;
     objs.push({ d, draw: () => cabSign(P3, d, 2.6, f, String(seg.limit), 'round') });
   }
   for (const r of [20, 10, 5]) {                                   // repères avant le STOP
@@ -480,7 +482,7 @@ function renderSide() {
   sideStation(sx, groundY);
 
   for (const seg of LINE.segments) {                            // panneaux de limite
-    const x = sx(seg.from + 6);
+    const x = sx(signAt(seg));
     if (x < -40 || x > W + 40) continue;
     ctx.fillStyle = '#5b5560'; ctx.fillRect(x - 1.5, groundY - 46, 3, 46);
     ctx.fillStyle = '#fff'; ctx.strokeStyle = '#d63a4f'; ctx.lineWidth = 5;
@@ -690,7 +692,8 @@ function showResult(r, gainHtml) {
 
 /** HUD de la vue extérieure + frise (écrits seulement si la valeur change) */
 function updateDOM() {
-  const kmh = Math.round(st.v * 3.6), lim = limitAt(st.x), over = kmh > lim + CFG.TOLERANCE_KMH;
+  // Rouge sur la vitesse exacte, comme le moteur (l'arrondi n'est que pour l'affichage)
+  const kmh = Math.round(st.v * 3.6), lim = limitAt(st.x), over = st.v * 3.6 > lim + CFG.TOLERANCE_KMH;
   if (ui.kmh.textContent !== String(kmh)) ui.kmh.textContent = kmh;
   if (ui.limit.textContent !== String(lim)) ui.limit.textContent = lim;
   ui.hud.classList.toggle('over', over && st.running);
@@ -714,7 +717,7 @@ const KEYS = { ArrowRight: 'go', ArrowUp: 'go', KeyD: 'go', KeyW: 'go', ArrowLef
 function onKey(e) {
   const k = KEYS[e.code];
   if (!k) {
-    if (e.type === 'keydown' && e.code === 'Enter' && !st.running) {   // Entrée : partir / rejouer
+    if (e.type === 'keydown' && e.code === 'Enter' && !e.repeat && !st.running) {   // Entrée : partir / rejouer (pas en maintien)
       e.preventDefault();
       if (!ui.intro.hidden) start(); else if (!ui.result.hidden) ui.result.querySelector('.tr-again').click();
     }

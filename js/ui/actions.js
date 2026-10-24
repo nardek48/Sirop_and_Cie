@@ -5,7 +5,7 @@
 import { CONFIG, typeById } from '../config.js';
 import { Game } from '../core/game.js';
 import { Store } from '../core/store.js';
-import { Fmt } from '../core/format.js';
+import { Fmt, esc } from '../core/format.js';
 import { Factory } from '../sim/factory.js';
 import { Contracts } from '../sim/contracts.js';
 import { Couriers } from '../sim/couriers.js';
@@ -53,7 +53,7 @@ const map = {
     const c = Contracts.find(s, a);
     if (!c) return;
     const pen = Contracts.penalty(c, true);
-    UI.confirm(`Abandonner la commande de ${c.icon} ${c.client} ?<br><small>Tu perds ${Fmt.money(pen.money)} et ⭐ ${pen.rep}.${c.loaded ? ' Les bouteilles reviennent au stock.' : ''}</small>`,
+    UI.confirm(`Abandonner la commande de ${esc(c.icon)} ${esc(c.client)} ?<br><small>Tu perds ${Fmt.money(pen.money)} et ⭐ ${pen.rep}.${c.loaded ? ' Les bouteilles reviennent au stock.' : ''}</small>`,
       () => Contracts.abandon(Game.s, a), 'Abandonner');
   },
   // agence
@@ -94,7 +94,8 @@ const map = {
   },
   save: s => { const ok = Store.save(s); UI.toast(ok ? 'Partie sauvegardée' : 'Sauvegarde indisponible ici', ok ? 'ok' : 'bad'); },
   reset: () => UI.confirm('Effacer la partie et tout recommencer ?<br><small>Elle est gardée de côté : « Reprendre la partie d’avant » la ramène.</small>', () => {
-    Store.backup(Game.s); Store.wipe(); Game.s = Store.fresh(); Sim.seed(Game.s); UI.close(); World.resetPlayer();
+    if (!Store.backup(Game.s)) return UI.modal(`<h2>Oups 😕</h2><p>Impossible de garder ta partie actuelle de côté : le stockage de l’appareil est plein ou indisponible.</p><p class="sub">Exporte-la d’abord (📤 à la mairie) pour ne rien perdre.</p>`);   // rien n'est effacé sans copie
+    Store.wipe(); Game.s = Store.fresh(); Sim.seed(Game.s); UI.close(); World.resetPlayer();
     Tuto.propose();
   }, 'Effacer'),
   saveExport: s => SaveFile.export(s),

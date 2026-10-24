@@ -53,7 +53,7 @@ export const Eco = {
   sellPrice: (s, fl, factor = 1) => Eco.basePrice(s, fl) * factor * Eco.mult(s),
   totalStock: s => Object.values(s.stock).reduce((a, b) => a + b, 0),
   /** Bouteilles réservées : contrats acceptés pas encore chargés */
-  reserved: (s, fl) => s.active.filter(c => c.flavor === fl && !c.loaded).reduce((a, c) => a + c.qty, 0),
+  reserved: (s, fl) => s.active.filter(c => c.flavor === fl && !c.loaded && !c.tuto).reduce((a, c) => a + c.qty, 0),
   carried: s => s.active.filter(c => c.loaded === 'player'),
   carriedQty: s => Eco.carried(s).reduce((a, c) => a + c.qty, 0),
 

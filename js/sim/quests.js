@@ -182,7 +182,15 @@ export const Quests = {
 
   current(s) {
     const q = this.list(s)[s.quest.i];
-    return q ? { text: q.text, goal: q.n, reward: q.reward, val: st => GOALS[q.goal].val(st, q.arg) } : null;
+    return q ? { text: q.text, goal: q.n, reward: q.reward, val: st => GOALS[q.goal].val(st, q.arg),
+      key: [q.goal, q.arg, q.n, q.reward].join('|') } : null;
+  },
+
+  /** « Réussie » vaut pour une quête précise : si la liste a changé (nouveau quests.json), on revérifie */
+  checkReady(s, q) {
+    if (!s.quest.ready || s.quest.key === q.key) return;
+    s.quest.ready = q.val(s) >= q.goal;
+    s.quest.key = s.quest.ready ? q.key : undefined;
   },
 
   progress(s) {
@@ -193,8 +201,10 @@ export const Quests = {
 
   step(s) {
     const q = this.current(s);
-    if (!q || s.quest.ready || q.val(s) < q.goal) return;
-    s.quest.ready = true;
+    if (!q) return;
+    this.checkReady(s, q);
+    if (s.quest.ready || q.val(s) < q.goal) return;
+    s.quest.ready = true; s.quest.key = q.key;
     Bus.toast(`🎁 Quête réussie : ${q.text}. Va voir le maire !`, 'ok');
     Bus.sfx('quest');
   },
@@ -202,6 +212,7 @@ export const Quests = {
   /** @returns {boolean} true si une récompense a été donnée */
   claim(s) {
     const q = this.current(s);
+    if (q) this.checkReady(s, q);
     if (!q || !s.quest.ready) return false;
     Wallet.earn(s, q.reward);
     Bus.float(`+${Fmt.money(q.reward)} 🎁`, 'mairie', '#ffe28a');

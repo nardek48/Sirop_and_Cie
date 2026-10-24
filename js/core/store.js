@@ -1,10 +1,14 @@
 /**
  * store.js — état initial, sauvegarde localStorage versionnée, migration.
  */
-import { CONFIG, SHIRTS } from '../config.js';
+import { CONFIG, SHIRTS, typeById } from '../config.js';
 import { cleanList } from '../sim/quests.js';
 
 const zeros = n => Array(n).fill(0);
+const num = (v, d = 0) => (Number.isFinite(v) ? v : d);
+const int = (v, lo, hi, d = lo) => Math.max(lo, Math.min(hi, Math.floor(num(v, d))));
+/** Texte affiché en HTML : sans balise ni guillemet */
+export const plain = (v, max) => String(v ?? '').replace(/[<>&"']/g, '').slice(0, max);
 
 export const Store = {
   KEY: 'siropcie_save_v3',
@@ -63,11 +67,21 @@ export const Store = {
     };
   },
 
+  BROKEN_KEY: 'siropcie_save_abimee',
+  broken: false,      // la sauvegarde n'a pas pu être lue (une copie est gardée sous BROKEN_KEY)
+  stale: false,       // une autre fenêtre a écrit la partie : celle-ci n'enregistre plus
+
   load() {
-    try {
-      const raw = localStorage.getItem(this.KEY);
-      return raw ? this.migrate(JSON.parse(raw)) : null;
-    } catch (e) { return null; }
+    let raw = null;
+    try { raw = localStorage.getItem(this.KEY); } catch (e) { return null; }
+    if (!raw) return null;
+    try { return this.migrate(JSON.parse(raw)); }
+    catch (e) {
+      // Sauvegarde illisible : copie de secours avant qu'une partie neuve ne l'écrase
+      this.broken = true;
+      try { localStorage.setItem(this.BROKEN_KEY, raw); } catch (e2) { this.stale = true; }   // pas de copie : on n'écrase rien
+      return null;
+    }
   },
 
   /** Fusionne une sauvegarde sur l'état par défaut (tolère les champs ajoutés). */
@@ -75,7 +89,14 @@ export const Store = {
     const base = this.fresh();
     const out = { ...base, ...data };
     for (const k of ['mat', 'stock', 'lv', 'auto', 'stats', 'run', 'player', 'look', 'districts', 'quest', 'event', 'tuto', 'opened', 'seen', 'train'])
-      out[k] = { ...base[k], ...(data[k] || {}) };
+      out[k] = { ...base[k], ...(data[k] && typeof data[k] === 'object' ? data[k] : {}) };
+    // Listes et nombres vérifiés : une sauvegarde abîmée ou retouchée ne doit pas faire planter la simulation
+    for (const k of ['unlocked', 'recipes', 'offers', 'active', 'npcs', 'houses']) if (!Array.isArray(out[k])) out[k] = [...base[k]];
+    for (const k of ['money', 'rep', 'stars']) out[k] = Math.max(0, num(out[k]));
+    const known = fl => !!CONFIG.flavors[fl];
+    out.recipes = out.recipes.filter(r => r && typeof r === 'object' && typeof r.id === 'string' && known(r.a) && known(r.b)
+      && ['price', 'sugar', 'fruit', 'time'].every(k => Number.isFinite(r[k]) && r[k] > 0))
+      .map(r => ({ ...r, name: plain(r.name, 18) || 'Recette' }));
     // Partie commencée avant le tutoriel (v0.1.0) : tout est déjà ouvert, pas de tutoriel imposé
     if (!data.tuto) {
       out.tuto.done = true;
@@ -84,7 +105,12 @@ export const Store = {
     out.stats.byClient = { ...(data.stats && data.stats.byClient) };
     out.farm = this.migrateFarm(base.farm, data);
     // Lignes 2 et 3 : parfum connu, cuve valide
-    const okFl = fl => !!CONFIG.flavors[fl] || (out.recipes || []).some(r => r && r.id === fl);
+    const okFl = fl => known(fl) || out.recipes.some(r => r.id === fl);
+    out.unlocked = [...new Set(out.unlocked.filter(okFl))];
+    if (!out.unlocked.includes('menthe')) out.unlocked.unshift('menthe');
+    if (!okFl(out.flavor)) out.flavor = 'menthe';
+    if (!okFl(out.bulkFlavor)) out.bulkFlavor = out.flavor;
+    out.bulk = Math.max(0, num(out.bulk));
     out.lines = (Array.isArray(data.lines) ? data.lines : []).slice(0, CONFIG.lines.max - 1)
       .filter(l => l && typeof l === 'object')
       .map(l => ({ flavor: okFl(l.flavor) ? l.flavor : out.flavor, bulk: Math.max(0, Number(l.bulk) || 0), bulkFlavor: okFl(l.bulkFlavor) ? l.bulkFlavor : out.flavor }));
@@ -108,7 +134,35 @@ export const Store = {
     for (const [k, arr] of Object.entries(data.fields || {}))
       if (Array.isArray(arr) && arr.length === base.fields[k]?.length) out.fields[k] = arr;
     for (const r of out.recipes) if (out.stock[r.id] == null) out.stock[r.id] = 0;
+    for (const k of Object.keys(out.stock)) if (!Number.isFinite(out.stock[k])) out.stock[k] = 0;
+    for (const k of Object.keys(CONFIG.levels)) out.lv[k] = int(out.lv[k], 1, 1e6, 1);
+    out.vehicle = int(out.vehicle, 0, CONFIG.vehicles.length - 1);
+    if (out.ride != null) out.ride = int(out.ride, 0, CONFIG.vehicles.length - 1);
+    out.slots = int(out.slots, CONFIG.contracts.slotBase, CONFIG.contracts.slotMax);
+    out.couriers = int(out.couriers, 0, CONFIG.couriers.max);
+    out.nextId = int(out.nextId, 1, Number.MAX_SAFE_INTEGER, 1);
+    if (out.event.id != null && !CONFIG.events.list[out.event.id]) out.event.id = null;
+    out.event.left = num(out.event.left); out.event.next = num(out.event.next, CONFIG.events.firstIn);
+    out.houses = out.houses.filter(h => h && typeById(h.type) && CONFIG.houses.uses[h.use])
+      .map(h => ({ ...h, lvl: int(h.lvl, 1, CONFIG.houses.maxLevel, 1) }));
+    // Commandes : lieu et parfum connus, textes sans HTML (ils vont dans les panneaux)
+    const okPlace = p => p === 'mairie' || CONFIG.contracts.clients.some(c => c.place === p);
+    const orders = (list, active) => (Array.isArray(list) ? list : [])
+      .filter(o => o && typeof o === 'object' && okPlace(o.place) && okFl(o.flavor))
+      .map(o => {
+        const time = Math.max(1, num(o.time, 60));
+        return { ...o, id: num(o.id), client: plain(o.client, 40), icon: plain(o.icon, 8), qty: Math.max(1, num(o.qty, 1)),
+          reward: Math.max(0, num(o.reward)), time, repGain: Math.max(0, num(o.repGain)), ttl: num(o.ttl, 60),
+          ...(active ? { left: num(o.left, time), loaded: o.loaded === 'player' || o.loaded === 'npc' ? o.loaded : null } : {}) };
+      });
+    out.offers = orders(out.offers, false);
+    out.active = orders(out.active, true);
+    out.tuto.stash = Array.isArray(out.tuto.stash) ? orders(out.tuto.stash, false) : null;
+    out.tuto.step = int(out.tuto.step, 0, 1e3);
+    out.quest.i = int(out.quest.i, 0, 1e6); out.quest.ready = out.quest.ready === true;
+    out.train.readyAt = num(out.train.readyAt);
     out.quests = Array.isArray(data.quests) ? cleanList(data.quests) : null;
+    out.npcs = out.npcs.filter(n => n && typeof n === 'object');
     while (out.npcs.length < out.couriers) out.npcs.push({ state: 'idle', cid: null, dest: null, t: 0, dur: 0 });
     out.version = CONFIG.version;
     return out;
@@ -133,6 +187,7 @@ export const Store = {
   },
 
   save(s) {
+    if (this.stale) return false;
     try { s.lastSeen = Date.now(); localStorage.setItem(this.KEY, JSON.stringify(s)); return true; }
     catch (e) { return false; }
   },
@@ -180,7 +235,7 @@ export const Store = {
 
   /** Un fichier vient de l'extérieur : les textes affichés dans les panneaux ne doivent pas contenir de HTML */
   sanitize(s) {
-    const txt = (v, max) => String(v ?? '').replace(/[<>&"']/g, '').slice(0, max);
+    const txt = plain;
     const color = v => (/^#[0-9a-f]{3,8}$/i.test(v) ? v : '#c2453a');
     s.look.name = txt(s.look.name, 14) || 'Sirotin';
     s.look.petName = txt(s.look.petName, 14);

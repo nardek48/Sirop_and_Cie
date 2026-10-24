@@ -2,6 +2,30 @@
 
 Numérotation : `vMAJEUR.MINEUR.CORRECTIF`. Pour préparer une nouvelle version : `node tools/build-sw.mjs patch` (ou `minor`, `major`), puis décrire les changements ici.
 
+## v0.10.2 · 2026-10-24
+
+Corrections de bugs, après une relecture complète du jeu.
+
+- **Plus de blocage** :
+  - Acheter la ligne 2 ou 3 en se tenant à l’endroit des nouvelles machines ne coince plus le joueur dans l’usine : il est poussé à côté.
+  - Une commande déjà chargée se livre toujours, même si la réputation est repassée sous le seuil du client (Café, Train Express…).
+  - Une flèche relâchée pendant qu’un panneau est ouvert ne fait plus repartir le personnage tout seul.
+  - Avec un véhicule rapide sur un téléphone peu fluide, le trajet automatique arrive bien au but (il tremblait autour sans fin).
+  - Toucher le sol contourne les bâtiments, l’eau et la fontaine, comme un toucher sur un bâtiment.
+- **Tutoriel** :
+  - La commande de Mémé ne peut plus être refusée. Ses 5 bouteilles sont mises de côté par Mémé, hors du stock, et elle se charge toujours en premier.
+  - Rejouer le tutoriel à la mairie ne fait plus perdre les offres en cours (Fête comprise) et ne rapporte plus d’argent, d’étoile ni de livraison pour les quêtes.
+  - À la dernière étape, la carte de Mémé descend en bas de l’écran pour laisser voir le bouton de quête.
+- **Sauvegarde** :
+  - Une sauvegarde illisible n’est plus écrasée : une copie de secours est gardée, et le jeu prévient.
+  - Les sauvegardes importées sont vérifiées (commandes, maisons, recettes, niveaux, tutoriel…) : un fichier abîmé ou retouché ne peut plus bloquer le jeu ni y glisser du code.
+  - Effacer la partie ou en importer une ne se fait que si la partie actuelle a bien été gardée de côté.
+  - Deux fenêtres ouvertes sur le jeu ne s’écrasent plus : celle qui n’est plus à jour arrête d’enregistrer et propose de recharger.
+- **Absence** : le temps passé téléphone en veille est bien rattrapé. Le résumé « Pendant ton absence » additionne toute l’absence, et il ne remplace plus une fenêtre déjà ouverte (un message court s’affiche à la place).
+- **Train** : les panneaux de vitesse sont placés au début réel de la limite. Entrée maintenue ne saute plus l’écran de départ. En vue Extérieur, le compteur passe au rouge exactement quand des bouteilles tombent. Horloge de l’appareil reculée : l’attente du prochain voyage payé ne dépasse plus 5 minutes.
+- **Quêtes** : une quête réussie reste liée à cette quête-là. Si la liste des quêtes change dans une nouvelle version, elle est revérifiée.
+- **Affichage** : l’usine ne déborde plus sur un écran de 320 px. Le nom d’une recette ne peut plus contenir de balise. La quête et les panneaux évitent l’encoche de l’iPhone en paysage.
+
 ## v0.10.1 · 2026-10-24
 
 - Version de test : vérifie la publication sur GitHub Pages et la fenêtre « Mettre à jour » du jeu. Aucun changement de jeu.

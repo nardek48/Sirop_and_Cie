@@ -220,6 +220,8 @@ export const Recipes = {
   },
 
   create(s, form) {
+    // Le nom s'affiche dans les panneaux : sans balise ni guillemet
+    form = { ...form, name: String(form.name || '').replace(/[<>&"']/g, '') };
     const err = this.check(s, form);
     if (err) { Bus.toast(err, 'bad'); return false; }
     if (!Wallet.spend(s, Eco.recipeCost(s))) return false;

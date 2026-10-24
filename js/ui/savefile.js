@@ -25,6 +25,9 @@ const when = iso => {
   return isNaN(d) ? '' : `${d.toLocaleDateString('fr-FR')} à ${d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`;
 };
 
+/** Copie de côté impossible (stockage plein) : on ne remplace rien */
+const NOSPACE = `<h2>Oups 😕</h2><p>Impossible de garder ta partie actuelle de côté : le stockage de l’appareil est plein ou indisponible.</p><p class="sub">Exporte-la d’abord (📤 à la mairie) pour ne rien perdre.</p>`;
+
 export const SaveFile = {
   export(s) {
     Store.save(s);
@@ -51,7 +54,7 @@ export const SaveFile = {
       ${summary(r.save)}
       <p class="sub">Ta partie actuelle est gardée de côté : « ↩️ Reprendre la partie d’avant » (mairie) la ramène.</p>`,
     [{ label: 'Annuler' }, { label: 'Charger cette partie', primary: true, run: () => {
-      Store.backup({ ...Game.s, lastSeen: Date.now() });
+      if (!Store.backup({ ...Game.s, lastSeen: Date.now() })) return UI.modal(NOSPACE);
       this.apply(r.save);
     } }]);
   },
@@ -65,15 +68,15 @@ export const SaveFile = {
       ${summary(r.save)}
       <p class="sub">Ta partie actuelle prend sa place de côté : tu pourras encore revenir en arrière.</p>`,
     [{ label: 'Annuler' }, { label: 'Reprendre', primary: true, run: () => {
-      Store.backup({ ...Game.s, lastSeen: Date.now() });
+      if (!Store.backup({ ...Game.s, lastSeen: Date.now() })) return UI.modal(NOSPACE);
       this.apply(r.save);
     } }]);
   },
 
   /** Remplace la partie et relance le jeu dessus */
   apply(save) {
+    if (!Store.save(save)) return UI.modal('<h2>Oups 😕</h2><p>Impossible d’enregistrer cette partie sur l’appareil : rien n’a changé.</p>');
     Game.s = save;                       // l'enregistrement de sortie de page écrira bien celle-ci
-    Store.save(save);
     UI.toast('Chargement de la partie…', 'ok');
     setTimeout(() => location.reload(), 300);
   },

@@ -112,10 +112,11 @@ export const B = {
   offerStock: (s, id) => {
     const o = s.offers.find(x => x.id === Number(id));
     if (!o) return '';
+    if (o.tuto) return `${Fmt.int(o.qty)} / ${Fmt.int(o.qty)} bt ✓ mises de côté par Mémé`;
     const free = Math.max(0, (s.stock[o.flavor] || 0) - Eco.reserved(s, o.flavor));
     return `${Fmt.int(free)} / ${Fmt.int(o.qty)} bt${free >= o.qty ? ' ✓ prêt à livrer' : ''}`;
   },
-  offerOk: (s, id) => { const o = s.offers.find(x => x.id === Number(id)); return !!o && (s.stock[o.flavor] || 0) - Eco.reserved(s, o.flavor) >= o.qty; },
+  offerOk: (s, id) => { const o = s.offers.find(x => x.id === Number(id)); return !!o && (o.tuto || (s.stock[o.flavor] || 0) - Eco.reserved(s, o.flavor) >= o.qty); },
   resFl: (s, f) => { const r = Eco.reserved(s, f); return r ? Fmt.int(r) : '—'; },
   cantUnlock: (s, f) => s.money < CONFIG.flavors[f].unlock,
   cantRestock: s => s.money < CONFIG.restock.cost,
@@ -132,10 +133,10 @@ export const B = {
   cTimePct: (s, id) => { const c = Contracts.find(s, id); return c ? c.left / c.time : 0; },
   cStock: (s, id) => {
     const c = Contracts.find(s, id); if (!c) return '';
-    const have = c.loaded ? c.qty : Math.min(s.stock[c.flavor] || 0, c.qty);
+    const have = c.loaded || c.tuto ? c.qty : Math.min(s.stock[c.flavor] || 0, c.qty);
     return `${Fmt.int(have)} / ${Fmt.int(c.qty)} bt`;
   },
-  cStockPct: (s, id) => { const c = Contracts.find(s, id); return !c ? 0 : c.loaded ? 1 : (s.stock[c.flavor] || 0) / c.qty; },
+  cStockPct: (s, id) => { const c = Contracts.find(s, id); return !c ? 0 : c.loaded || c.tuto ? 1 : (s.stock[c.flavor] || 0) / c.qty; },
   cStatus: (s, id) => {
     const c = Contracts.find(s, id); if (!c) return '';
     const where = c.place === 'mairie' ? '🏛️ la Mairie' : `${clientByPlace(c.place).icon} ${clientByPlace(c.place).name}`;

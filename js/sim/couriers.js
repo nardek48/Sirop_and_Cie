@@ -38,7 +38,7 @@ export const Couriers = {
   step(s, dt) {
     for (const n of s.npcs) {
       if (n.state === 'idle') {
-        const c = s.active.find(k => Contracts.canLoad(s, k));
+        const c = s.active.find(k => !k.tuto && Contracts.canLoad(s, k));   // la commande de Mémé se porte à pied
         if (!c) continue;
         Contracts.load(s, c, 'npc');
         Object.assign(n, { state: 'go', cid: c.id, dest: c.place, t: 0, dur: this.dist('quai', c.place) / K.speed });

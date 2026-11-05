@@ -503,6 +503,9 @@ svg.tree text{font-family:'DM Sans',system-ui,sans-serif}
 .mg-extra:empty{display:none}
 .mg-top .btn.ghost{color:#f6efe2;border-color:rgba(246,239,226,.35);flex:none}
 @media (max-width:480px){ .mg-title{font-size:15px} .tr-view{padding:6px 10px;font-size:13px} }
+/* Trois vues 3D sur téléphone : le titre tronqué (« 🚂 … ») laisse sa place aux boutons */
+@media (max-width:480px){ .mg-top:has(.tr-view[data-view="chase"]:not([hidden])) .mg-title{display:none}
+  .mg-top:has(.tr-view[data-view="chase"]:not([hidden])) .tr-views{margin-right:auto} }
 .mg-stage{position:relative;flex:1;min-height:0;margin:0 8px;border-radius:12px;overflow:hidden;background:#9fd3ea}
 .mg-stage canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
 .mg-layer{position:absolute;inset:0;pointer-events:none}
@@ -523,6 +526,10 @@ svg.tree text{font-family:'DM Sans',system-ui,sans-serif}
 .tr-bottles{display:inline-flex;gap:2px;align-items:center}
 .tr-bottles i{width:6px;height:15px;border-radius:3px 3px 2px 2px;background:#d63a4f}
 .tr-bottles i.lost{background:#e3d3b5}
+/* Écran de bord en 3D : même vocabulaire que la cabine 2D (afficheur vert sur cadre brun) */
+.tr-hud>.tr-board{margin:0 auto;background:#17332a;color:#9ef0c4;border:3px solid #3a2a20;border-radius:10px;padding:4px 12px;
+  font:700 14px/1.2 ui-monospace,Menlo,Consolas,monospace;white-space:nowrap}
+.tr-hud>.tr-board.hot{color:#f2c84b}
 .tr-panel{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(440px,calc(100% - 24px));max-height:calc(100% - 24px);overflow:auto;
   background:var(--surface);color:var(--ink);border-radius:16px;padding:18px 20px;box-shadow:0 10px 30px rgba(0,0,0,.3);display:grid;gap:10px}
 .tr-panel h2{margin:0;font-size:22px}

@@ -2,8 +2,8 @@
  * train.js — mini-jeu « Ligne des Fraises » : conduire le train jusqu'à la Gare des Fraises.
  *
  * Maintenir Accélérer / Freiner, respecter les panneaux de vitesse (sinon des bouteilles
- * tombent du wagon) et arrêter la loco pile au panneau STOP. Deux points de vue :
- * la cabine (perspective) et l'extérieur (vue de côté). Jamais d'échec : on livre toujours.
+ * tombent du wagon) et arrêter la loco pile au panneau STOP. Jamais d'échec : on livre toujours.
+ * Rendu 3D (train3d.js : cabine, poursuite, côté) ; sans WebGL, rendu 2D (cabine, extérieur).
  *
  * Options reçues de l'hôte (voir js/minigames/index.js) :
  *   intro()      → texte HTML de la récompense, affiché avant le départ
@@ -11,6 +11,8 @@
  *
  * Résultat : { stars, criteria:{stop,cargo,time}, stopErrorM, bottles, timeS, overSpeedS }
  */
+
+import { Train3D } from './train3d.js';
 
 /* =========================================================
    RÉGLAGES (unités : mètres, secondes)
@@ -65,7 +67,8 @@ const signAt = seg => Math.max(seg.from, 6);
 let st = null;               // état de la partie en cours
 let host = null;             // { top, layer, bottom, opts, close, sfx }
 let ctx = null, W = 0, H = 0;
-let view = 'cab';            // 'cab' (cabine) ou 'side' (extérieur)
+let view = 'cab';            // 'cab' (cabine), 'chase' (poursuite, 3D seulement) ou 'side' (côté)
+let use3d = false;           // la scène 3D est chargée et affichée
 let shake = 0, leverPos = 0;
 const particles = [];        // fumée + bouteilles qui tombent (coordonnées monde)
 const held = { go: false, brake: false };
@@ -154,7 +157,18 @@ function finish() {
 function render(c, w, h) {
   ctx = c; W = w; H = h;
   if (!st || W < 2) return;
+  if (use3d) return Train3D.draw(st, view, W, H);
   if (view === 'cab') renderCab(); else renderSide();
+}
+
+/** Message de l'écran de bord : distance au STOP, prochaine limite */
+function boardText() {
+  const dStop = LINE.stopAt - st.x, nx = nextSegment(st.x);
+  if (dStop < -0.5) return `STOP dépassé de ${(-dStop).toFixed(1)} m`;
+  if (dStop < 25) return `STOP dans ${dStop.toFixed(1)} m`;
+  if (dStop < 160) return `Gare dans ${Math.round(dStop)} m`;
+  if (nx && nx.from - st.x < 80) return `Bientôt limite ${nx.limit}`;
+  return `Limite ${limitAt(st.x)} km/h`;
 }
 
 /* ---------------------------------------------------------
@@ -411,13 +425,7 @@ function cabDial(x, y, r) {
 }
 /** Écran de bord : distance au STOP, prochaine limite, cargaison */
 function cabScreen(x, y, w, h) {
-  const dStop = LINE.stopAt - st.x, nx = nextSegment(st.x);
-  let line1;
-  if (dStop < -0.5) line1 = `STOP dépassé de ${(-dStop).toFixed(1)} m`;
-  else if (dStop < 25) line1 = `STOP dans ${dStop.toFixed(1)} m`;
-  else if (dStop < 160) line1 = `Gare dans ${Math.round(dStop)} m`;
-  else if (nx && nx.from - st.x < 80) line1 = `Bientôt limite ${nx.limit}`;
-  else line1 = `Limite ${limitAt(st.x)} km/h`;
+  const dStop = LINE.stopAt - st.x, line1 = boardText();
   ctx.fillStyle = '#3a2a20'; ctx.beginPath(); ctx.roundRect(x - w / 2 - 5, y - h / 2 - 5, w + 10, h + 10, 10); ctx.fill();
   ctx.fillStyle = '#17332a'; ctx.beginPath(); ctx.roundRect(x - w / 2, y - h / 2, w, h, 7); ctx.fill();
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
@@ -594,8 +602,9 @@ function wheel(x, y, r, a) {
 function buildUI() {
   // Bascule Cabine / Extérieur, dans la barre du haut
   host.top.innerHTML = `
-    <span class="tr-views" role="group" aria-label="Point de vue">
+    <span class="tr-views" role="group" aria-label="Point de vue (V)">
       <button type="button" class="tr-view" data-view="cab">Cabine</button>
+      <button type="button" class="tr-view" data-view="chase" hidden>Poursuite</button>
       <button type="button" class="tr-view" data-view="side">Extérieur</button>
     </span>`;
   host.top.querySelectorAll('.tr-view').forEach(b => b.addEventListener('click', () => setView(b.dataset.view)));
@@ -605,6 +614,7 @@ function buildUI() {
       <span class="tr-speed"><b class="tr-kmh">0</b> km/h</span>
       <span class="tr-limit">60</span>
       <span class="tr-bottles"></span>
+      <span class="tr-board" hidden></span>
     </div>
     <div class="tr-panel tr-intro">
       <h2>Livre le sirop à la Gare des Fraises</h2>
@@ -632,7 +642,7 @@ function buildUI() {
 
   const q = sel => host.layer.querySelector(sel) || host.bottom.querySelector(sel);
   Object.assign(ui, {
-    hud: q('.tr-hud'), kmh: q('.tr-kmh'), limit: q('.tr-limit'), bottles: q('.tr-bottles'),
+    hud: q('.tr-hud'), kmh: q('.tr-kmh'), limit: q('.tr-limit'), bottles: q('.tr-bottles'), board: q('.tr-board'),
     intro: q('.tr-intro'), reward: q('.tr-reward'), result: q('.tr-result'),
     resTitle: q('.tr-res-title'), stars: q('.tr-stars'), crit: q('.tr-crit'), gain: q('.tr-gain'),
     strip: q('.tr-strip'), gas: q('.tr-gas'), brake: q('.tr-brake'),
@@ -659,10 +669,35 @@ function buildUI() {
 }
 
 function setView(v) {
-  view = v === 'side' ? 'side' : 'cab';
-  host.top.querySelectorAll('.tr-view').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.view === view)));
-  ui.hud.hidden = view === 'cab';                  // en cabine, le tableau de bord suffit
-  try { localStorage.setItem(VIEW_KEY, view); } catch (e) { /* stockage indisponible */ }
+  const views = use3d ? ['cab', 'chase', 'side'] : ['cab', 'side'];
+  view = views.includes(v) ? v : v === 'chase' ? 'side' : 'cab';     // pas de poursuite en 2D
+  host.top.querySelectorAll('.tr-view').forEach(b => {
+    b.hidden = !views.includes(b.dataset.view);
+    b.setAttribute('aria-pressed', String(b.dataset.view === view));
+    if (b.dataset.view === 'side') b.textContent = use3d ? 'Côté' : 'Extérieur';
+  });
+  ui.hud.hidden = view === 'cab' && !use3d;        // en cabine 2D, le tableau de bord dessiné suffit
+  ui.board.hidden = !use3d;                        // en 3D, l'écran de bord passe dans le bandeau
+  try { localStorage.setItem(VIEW_KEY, v); } catch (e) { /* stockage indisponible */ }
+}
+/** Touche V : point de vue suivant */
+function nextView() {
+  const views = use3d ? ['cab', 'chase', 'side'] : ['cab', 'side'];
+  setView(views[(views.indexOf(view) + 1) % views.length]);
+}
+
+/** Bascule en 3D dès que Three.js et la scène sont prêts (sinon on reste en 2D) */
+function enable3d() {
+  Train3D.load({ CFG, LINE, limitAt, nextSegment, signAt, rnd }).then(() => {
+    if (!host) return;                             // mini-jeu déjà refermé
+    const stage = host.layer.parentElement;
+    Train3D.attach(stage);
+    stage.querySelector('canvas:not(.mg-3d)').style.visibility = 'hidden';
+    use3d = true;
+    let saved = null;
+    try { saved = localStorage.getItem(VIEW_KEY); } catch (e) { /* */ }
+    setView(saved || view);
+  }).catch(() => { /* pas de WebGL ou fichier absent : le rendu 2D continue */ });
 }
 
 function start() {
@@ -696,6 +731,11 @@ function updateDOM() {
   const kmh = Math.round(st.v * 3.6), lim = limitAt(st.x), over = st.v * 3.6 > lim + CFG.TOLERANCE_KMH;
   if (ui.kmh.textContent !== String(kmh)) ui.kmh.textContent = kmh;
   if (ui.limit.textContent !== String(lim)) ui.limit.textContent = lim;
+  if (use3d) {
+    const txt = boardText(), d = LINE.stopAt - st.x;
+    if (ui.board.textContent !== txt) ui.board.textContent = txt;
+    ui.board.classList.toggle('hot', d >= -0.5 && Math.abs(d) <= CFG.STOP_PERFECT_M);
+  }
   ui.hud.classList.toggle('over', over && st.running);
   [...ui.bottles.children].forEach((b, i) => b.classList.toggle('lost', i >= st.bottles));
   ui.mark.style.left = (st.x / LINE.end * 100) + '%';
@@ -715,6 +755,7 @@ function bindHold(btn, key) {
 }
 const KEYS = { ArrowRight: 'go', ArrowUp: 'go', KeyD: 'go', KeyW: 'go', ArrowLeft: 'brake', ArrowDown: 'brake', KeyA: 'brake', KeyS: 'brake', Space: 'brake' };
 function onKey(e) {
+  if (e.code === 'KeyV' && e.type === 'keydown' && !e.repeat) { e.preventDefault(); return nextView(); }
   const k = KEYS[e.code];
   if (!k) {
     if (e.type === 'keydown' && e.code === 'Enter' && !e.repeat && !st.running) {   // Entrée : partir / rejouer (pas en maintien)
@@ -741,18 +782,20 @@ export const TrainDrive = {
     let saved = null;
     try { saved = localStorage.getItem(VIEW_KEY); } catch (e) { /* */ }
     setView(saved || 'cab');
+    enable3d();
     window.addEventListener('keydown', onKey, true);
     window.addEventListener('keyup', onKey, true);
     window.addEventListener('blur', releaseAll);
     ui.intro.querySelector('.tr-go-btn').focus();
   },
-  frame(dt) { update(dt); updateDOM(); },
+  frame(dt) { update(dt); updateDOM(); if (use3d) Train3D.step(st, dt); },
   render,
   unmount() {
     window.removeEventListener('keydown', onKey, true);
     window.removeEventListener('keyup', onKey, true);
     window.removeEventListener('blur', releaseAll);
     held.go = held.brake = false;
+    Train3D.detach(); use3d = false;
     st = null; host = null;
   },
 };

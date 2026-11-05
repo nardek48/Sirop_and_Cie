@@ -2,6 +2,18 @@
 
 Numérotation : `vMAJEUR.MINEUR.CORRECTIF`. Pour préparer une nouvelle version : `node tools/build-sw.mjs patch` (ou `minor`, `major`), puis décrire les changements ici.
 
+## v0.11.0 · 2026-11-05
+
+- **Ligne des Fraises en 3D** 🚂 : le train se conduit maintenant dans un vrai paysage en 3D, au style « illustré » (aplats de couleur, contours encrés, textures dessinées : herbe, gravier, bois, tôle rivetée, tuiles, pavés, eau qui ondule).
+  - Trois points de vue, avec les boutons du haut ou la touche **V** :
+    - **Cabine**, assis dans la loco, avec la vitre avant, le compteur à aiguille (zone rouge au-dessus de la limite), le manomètre, les leviers qui bougent quand on accélère ou freine et le foyer qui rougeoie ;
+    - **Poursuite**, derrière le train ;
+    - **Côté**.
+  - Dans le décor : le pont sur la rivière, la Gare des Fraises et son champ de fraises, le dépôt de Sirop & Cie, la fumée de la loco. Les bouteilles perdues tombent vraiment du wagon.
+  - Les règles, les étoiles et les récompenses ne changent pas. L'écran de bord (« STOP dans 12.4 m ») s'affiche dans le bandeau du haut.
+  - Si l'appareil ne gère pas la 3D (WebGL), le train garde son affichage 2D, sans rien perdre.
+- Code : `js/minigames/train3d.js` dessine en 3D l'état du mini-jeu (`train.js` garde la simulation, l'interface et la vue 2D de secours). Three.js r128 (licence MIT) est livré dans `js/vendor/three.min.js` (600 Ko). Il est mis en cache pour le hors ligne et chargé seulement à la première ouverture du train.
+
 ## v0.10.2 · 2026-10-24
 
 Corrections de bugs, après une relecture complète du jeu.

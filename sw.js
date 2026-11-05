@@ -20,8 +20,8 @@
  */
 
 // <build>
-const VERSION = 'v0.10.2';
-const BUILD = '1610d42162';
+const VERSION = 'v0.11.0';
+const BUILD = '846a8d392d';
 const PRECACHE = [
   './index.html',
   './manifest.webmanifest',
@@ -41,6 +41,7 @@ const PRECACHE = [
   './js/minigames/host.js',
   './js/minigames/index.js',
   './js/minigames/train.js',
+  './js/minigames/train3d.js',
   './js/pwa.js',
   './js/sim/clock.js',
   './js/sim/contracts.js',
@@ -78,6 +79,7 @@ const PRECACHE = [
   './js/ui/panels/usine.js',
   './js/ui/savefile.js',
   './js/ui/ui.js',
+  './js/vendor/three.min.js',
   './js/version.js',
   './js/world/art.js',
   './js/world/characters.js',

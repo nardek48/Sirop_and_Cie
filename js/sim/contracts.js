@@ -19,7 +19,7 @@ export const Contracts = {
 
   generate(s) {
     const c = pick(C.clients.filter(x => Eco.clientOpen(s, x)));
-    const flavor = pick(s.unlocked);
+    const flavor = pick(s.unlocked.filter(f => !Flavors.isCity(s, f)));   // la Fraise ne se commande qu'en ville
     const qty = Math.max(5, Math.round((c.qty * (1 + s.rep / C.repScale) + Eco.lineProdRate(s) * c.prodSec) * rand(0.7, 1.3)));
     s.offers.push({
       id: s.nextId++, place: c.place, client: c.name, icon: c.icon, flavor, qty,

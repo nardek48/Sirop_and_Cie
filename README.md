@@ -75,6 +75,8 @@ node tools/simulate.mjs --hours=20 --runs=5       # 5 parties, médiane des éta
 node tools/simulate.mjs --set=houses.costGrowth=1.45 --set=flavors.violette.unlock=2000000
                                                   # tester un réglage sans modifier config.js
 node tools/simulate.mjs --human=2                 # joueur plus lent
+node tools/simulate.mjs --apres                   # partie d'après prestige (arbre du Labo complet, 3 étoiles)
+node tools/simulate.mjs --sans-ville              # sans le Billet de train (pour comparer avec la Gare des Fraises)
 node tools/simulate.mjs --csv                     # courbe dans tools/sim-courbe.csv (à ouvrir dans un tableur)
 ```
 
@@ -115,6 +117,7 @@ js/
     openings.js         bâtiments fermés au début (garage, agence, labo)
     events.js           pluie, canicule, fête
     clock.js            jour / nuit
+    cities.js           autres villes (Gare des Fraises) : ouverture par le Billet de train, wagon automatique
     sim.js              ordre des systèmes, prestige, hors-ligne
   editor/editor.js      Mode architecte : décorer le village en jeu, export Tiled
   editor/quest-editor.js  éditeur de quêtes du maire, export quests.json

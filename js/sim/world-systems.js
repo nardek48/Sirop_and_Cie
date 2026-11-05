@@ -27,7 +27,7 @@ export const Fields = {
       if (who === 'player') Bus.toast(`Pas encore mûr… encore ${Math.ceil(arr[i])} s`);
       return false;
     }
-    const mat = F.mat === 'auto' ? Flavors.mainFruit(s, s.flavor) : F.mat;
+    const mat = F.mat === 'auto' ? Flavors.localFruit(s, s.flavor) : F.mat;
     const n = Math.round(F.yield * Research.yieldK(s));       // « Engrais » : +50 %
     s.mat[mat] = (s.mat[mat] || 0) + n;
     arr[i] = F.regrow;
@@ -149,7 +149,7 @@ export const RealEstate = {
     const r = Eco.rent(s);
     if (r > 0) Wallet.earn(s, r * dt);
     const o = Eco.orchard(s);
-    if (o > 0) { const m = Flavors.mainFruit(s, s.flavor); s.mat[m] = (s.mat[m] || 0) + o * dt; }
+    if (o > 0) { const m = Flavors.localFruit(s, s.flavor); s.mat[m] = (s.mat[m] || 0) + o * dt; }
   },
 };
 

@@ -59,6 +59,7 @@ export const Store = {
       rested: 0,            // secondes de « Bien reposé » restantes (dormir dans sa maison)
       research: { done: [], cur: null, left: 0 },   // arbre du Labo (gardé au prestige)
       train: { trips: 0, best: 0, readyAt: 0 },      // voyages en train (mini-jeu) : nombre, record d'étoiles, prochain voyage payé
+      cities: {},           // autres villes : wagon automatique { next, trips, sent, fruit, last } (remis à zéro au prestige)
       home: {               // décoration de ta maison (voir world/home.js)
         wall: 'creme', floor: 'bois',
         deco: { mur: 'tableau', coin: 'plante', salon: 'canape', tapis: 'rouge', couette: 'bleu' },
@@ -161,6 +162,13 @@ export const Store = {
     out.tuto.step = int(out.tuto.step, 0, 1e3);
     out.quest.i = int(out.quest.i, 0, 1e6); out.quest.ready = out.quest.ready === true;
     out.train.readyAt = num(out.train.readyAt);
+    // Villes : seulement celles du jeu, nombres valides
+    const cities = data.cities && typeof data.cities === 'object' ? data.cities : {};
+    out.cities = {};
+    for (const id of Object.keys(CONFIG.cities)) {
+      const c = cities[id]; if (!c || typeof c !== 'object') continue;
+      out.cities[id] = { next: Math.max(0, num(c.next, CONFIG.cities[id].wagon.every)), trips: num(c.trips), sent: num(c.sent), fruit: num(c.fruit), last: null };
+    }
     out.quests = Array.isArray(data.quests) ? cleanList(data.quests) : null;
     out.npcs = out.npcs.filter(n => n && typeof n === 'object');
     while (out.npcs.length < out.couriers) out.npcs.push({ state: 'idle', cid: null, dest: null, t: 0, dur: 0 });

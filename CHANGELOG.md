@@ -2,6 +2,17 @@
 
 Numérotation : `vMAJEUR.MINEUR.CORRECTIF`. Pour préparer une nouvelle version : `node tools/build-sw.mjs patch` (ou `minor`, `major`), puis décrire les changements ici.
 
+## v0.12.0 · 2026-11-05
+
+- **🚂 Billet de train et Gare des Fraises** : le dernier fruit de la branche Livraison de l'arbre du Labo s'achète enfin (600 K $, 30 min à mûrir). Il ouvre la **Gare des Fraises**, la première autre ville. Toute la production reste au village : la ville est un débouché pour ton surplus et la source d'un fruit introuvable ici.
+  - **Le wagon automatique** part toutes les 5 minutes, même jeu fermé, mais seulement quand l'entrepôt est plein à 80 %. Il emporte ce qui dépasse la moitié de l'entrepôt (au plus une minute de production) et le vend en ville à 0,9 × le prix de base. En prime, il rapporte **1,5 kg de fraises 🍓 par bouteille**. Un message annonce son retour. Ça soulage aussi l'entrepôt plein qui bloquait les changements de parfum.
+  - **Le Sirop de Fraise** (50 $ la bouteille, 3 kg de fraises) se débloque à l'usine pour 1 M $ une fois la ville ouverte. Les fraises ne s'achètent pas et ne poussent pas au village (le verger donne un fruit du village quand l'usine cuit de la Fraise) : seul le wagon en rapporte.
+  - Les clients du village ne commandent jamais de Fraise (ni de recette qui en contient), la Fête du village non plus.
+  - **Bonus du train** : finir la Ligne des Fraises avec au moins une étoile fait partir le wagon tout de suite (si l'entrepôt est assez plein). L'écran de départ du mini-jeu indique le prochain départ du wagon.
+  - **Au prestige**, la ville reste ouverte (le Billet est un fruit de l'arbre), mais le wagon, les fraises et le Sirop de Fraise repartent à zéro.
+- Réglé au simulateur : +18 % de gains sur une première partie de 10 h (prestige toujours vers 5 h 45, moins de commandes ratées) et +7 % en moyenne après un prestige. La ville optimise le village sans le remplacer.
+- Code : `js/sim/cities.js` (ouverture, wagon), réglages dans `CONFIG.cities`, parfum `fraise` (marqué `city`). Le simulateur apprend la ville, avec deux nouvelles options : `--apres` (partie d'après prestige) et `--sans-ville` (pour comparer).
+
 ## v0.11.0 · 2026-11-05
 
 - **Ligne des Fraises en 3D** 🚂 : le train se conduit maintenant dans un vrai paysage en 3D, au style « illustré » (aplats de couleur, contours encrés, textures dessinées : herbe, gravier, bois, tôle rivetée, tuiles, pavés, eau qui ondule).

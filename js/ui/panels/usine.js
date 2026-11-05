@@ -42,7 +42,7 @@ export function lineMat(s, i) {
     <div class="mat-line">
       <span title="${M[m].name}">${M[m].icon} ${M[m].name}</span>
       <b data-t="mat:${m}"></b>
-      ${buyBtn(m, 100)}${buyBtn(m, 1000)}
+      ${M[m].city ? `<small class="sub">🚂 par le wagon de la ${CONFIG.cities[M[m].city].name}</small>` : buyBtn(m, 100) + buyBtn(m, 1000)}
     </div>`).join('')}
     <div class="sub">${Fmt.num(need.find(([m]) => m === 'sugar')[1])} kg 🧂 + ${need.filter(([m]) => m !== 'sugar').map(([m, q]) => `${Fmt.num(q)} kg ${M[m].icon}`).join(' + ')} par bouteille</div>
   </div>`;
@@ -63,7 +63,7 @@ export function flavorButtons(s, line = 0, compact = false) {
          </button>`
       : `<button class="flavor locked" data-act="unlock" data-arg="${k}" data-d="cantUnlock:${k}">
            <span>${dot(f.color)}<b>${f.name}</b></span>
-           <small>🔒 Débloquer · ${Fmt.money(f.unlock)}</small>
+           <small>${Factory.canUnlock(s, k) ? `🔒 Débloquer · ${Fmt.money(f.unlock)}` : `🔒 ${CONFIG.cities[f.city].icon} ${CONFIG.cities[f.city].name} (Billet de train)`}</small>
          </button>`).join('');
     const secret = s.recipes.map(r => `
       <button class="flavor secret ${cur === r.id ? 'is-active' : ''}" data-act="select" data-arg="${r.id}|${line}">
@@ -101,7 +101,7 @@ function linesBlock(s) {
 
 export const usine = {
   title: '🏭 Usine',
-  key: s => [Eco.lines(s).map(L => L.flavor + L.bulkFlavor).join(), UsineSel.line, s.unlocked.join(), s.auto.restock].join('|'),
+  key: s => [Eco.lines(s).map(L => L.flavor + L.bulkFlavor).join(), UsineSel.line, s.unlocked.join(), s.auto.restock, s.research.done.length].join('|'),
   html(s) {
 
 

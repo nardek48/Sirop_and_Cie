@@ -9,6 +9,7 @@ import { CONFIG } from '../config.js';
 import { Bus } from '../core/bus.js';
 import { Eco } from './eco.js';
 import { Wallet } from './wallet.js';
+import { Cities } from './cities.js';
 
 const T = () => CONFIG.train;
 
@@ -33,6 +34,7 @@ export const Trips = {
    */
   finish(s, r) {
     const stars = Math.max(0, Math.min(3, r.stars | 0));
+    if (stars) Cities.hurry(s);            // bonus : conduire soi-même fait partir le wagon tout de suite
     const best = stars > s.train.best;
     s.train.trips++;
     s.train.best = Math.max(s.train.best, stars);

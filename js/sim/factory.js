@@ -7,17 +7,30 @@ import { Bus } from '../core/bus.js';
 import { Flavors } from './flavors.js';
 import { Eco } from './eco.js';
 import { Wallet } from './wallet.js';
+import { Research } from './research.js';
 
 export const Factory = {
-  buyMaterial(s, mat, qty) { if (Wallet.spend(s, qty * CONFIG.materials[mat].price)) s.mat[mat] += qty; },
+  buyMaterial(s, mat, qty) {
+    if (CONFIG.materials[mat].city) return;                    // fruit de ville : seul le wagon en rapporte
+    if (Wallet.spend(s, qty * CONFIG.materials[mat].price)) s.mat[mat] += qty;
+  },
   upgrade(s, k) { if (Wallet.spend(s, Eco.lvCost(s, k))) s.lv[k]++; },
 
+  /** Un parfum de ville ne se débloque qu'une fois sa ville ouverte (fruit de l'arbre du Labo) */
+  canUnlock(s, fl) {
+    const city = CONFIG.flavors[fl].city;
+    return !city || Research.has(s, CONFIG.cities[city].research);
+  },
   unlock(s, fl) {
-    if (s.unlocked.includes(fl) || !Wallet.spend(s, CONFIG.flavors[fl].unlock)) return;
+    if (s.unlocked.includes(fl)) return;
+    const city = CONFIG.flavors[fl].city;
+    if (!this.canUnlock(s, fl)) return Bus.toast(`Ouvre d’abord la ${CONFIG.cities[city].name} : 🚂 Billet de train, dans l’arbre du Labo`, 'bad');
+    if (!Wallet.spend(s, CONFIG.flavors[fl].unlock)) return;
     s.unlocked.push(fl);
     s.flavor = fl;
     const M = CONFIG.materials[fl];
-    Bus.toast(`Nouveau parfum : ${CONFIG.flavors[fl].name} ! Son fruit : ${M.icon} ${M.name.toLowerCase()} (à l’usine, ou à planter dans un champ)`, 'ok');
+    Bus.toast(`Nouveau parfum : ${CONFIG.flavors[fl].name} ! Son fruit : ${M.icon} ${M.name.toLowerCase()} `
+      + (city ? `(rapportées par le wagon de la ${CONFIG.cities[city].name})` : '(à l’usine, ou à planter dans un champ)'), 'ok');
     Bus.sfx('unlock');
   },
   /** Choisir le parfum d'une ligne (0 = ligne 1) */
@@ -33,7 +46,7 @@ export const Factory = {
     const cost = this.nextLineCost(s);
     if (cost == null || !Wallet.spend(s, cost)) return false;
     const used = Eco.lines(s).map(L => L.flavor);
-    const fl = [...s.unlocked].reverse().find(f => !used.includes(f)) || s.flavor;
+    const fl = [...s.unlocked].reverse().find(f => !used.includes(f) && !Flavors.isCity(s, f)) || s.flavor;
     s.lines.push({ flavor: fl, bulk: 0, bulkFlavor: fl });
     Bus.toast(`🏭 Ligne ${Eco.lineCount(s)} ouverte : elle cuit du ${Flavors.get(s, fl).name} ! Change son parfum au tableau noir.`, 'ok');
     Bus.sfx('unlock');
@@ -50,7 +63,7 @@ export const Factory = {
   autoRestock(s) {
     const R = CONFIG.restock;
     for (const [m, perSec] of Object.entries(Eco.matDemand(s))) {
-      if (!perSec) continue;
+      if (!perSec || CONFIG.materials[m].city) continue;          // pas de rachat des fruits de ville
       const target = Math.max(R.minBatch, perSec * R.secondsOfStock);
       if (s.mat[m] >= target * R.trigger) continue;
       const qty = Math.ceil(target - s.mat[m]), cost = qty * CONFIG.materials[m].price;

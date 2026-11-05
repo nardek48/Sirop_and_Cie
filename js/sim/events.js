@@ -29,7 +29,7 @@ export const Events = {
 
   /** Commande géante à livrer à la mairie (≈ 90 s de production) */
   addFeteOrder(s, e) {
-    const fl = pick(s.unlocked), f = Flavors.get(s, fl);
+    const fl = pick(s.unlocked.filter(f => !Flavors.isCity(s, f))), f = Flavors.get(s, fl);
     const qty = Math.max(25, Math.round(Eco.bottleRate(s) * 90));
     s.offers.push({
       id: s.nextId++, place: 'mairie', client: 'Fête du village', icon: '🎉', flavor: fl, qty,

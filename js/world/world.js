@@ -346,7 +346,7 @@ export const World = {
         id: g + i, x: pos.x, y: pos.y + 30,
         hit: { x: pos.x - 40, y: pos.y - 75, w: 80, h: 110 },
         label: s.fields[g][i] > 0 ? `Repousse… ${Math.ceil(s.fields[g][i])} s`
-          : `Récolter · ${F.icon} ${F.name} (${CONFIG.materials[F.mat === 'auto' ? Flavors.mainFruit(s, s.flavor) : F.mat].icon})`,
+          : `Récolter · ${F.icon} ${F.name} (${CONFIG.materials[F.mat === 'auto' ? Flavors.localFruit(s, s.flavor) : F.mat].icon})`,
         run: () => Fields.pick(s, g, i, { x: pos.x, y: pos.y - 30 }),
       }));
     }
@@ -573,7 +573,7 @@ export const World = {
     const add = (y, f) => items.push({ y, f });
     for (const b of MAP.buildings) add(b.y + b.h, () => Render.building(c, b, s, t, dark));
     add(HOUSE.y + HOUSE.h, () => HomeOutside.draw(c, s, t, dark));
-    const vergerColor = CONFIG.flavors[Flavors.mainFruit(s, s.flavor)].color;
+    const vergerColor = CONFIG.flavors[Flavors.localFruit(s, s.flavor)].color;
     MAP.fields.verger.forEach((pos, i) => add(pos.y, () => Render.tree(c, pos, s.fields.verger[i], 'verger', vergerColor)));
     MAP.fields.sureau.forEach((pos, i) => add(pos.y, () => Render.tree(c, pos, s.fields.sureau[i], 'sureau')));
     MAP.farm.forEach((pos, i) => add(pos.y, () => Render.farmField(c, pos, i, s, t)));

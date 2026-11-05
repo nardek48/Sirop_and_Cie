@@ -28,6 +28,8 @@ export const CONFIG = {
     citron:    { name: 'Citrons',            icon: '🍋', price: 0.3 },
     sureau:    { name: 'Baies de sureau',    icon: '🫐', price: 0.3 },
     violette:  { name: 'Violettes',          icon: '💜', price: 0.3 },
+    // city : ne s'achète pas, ne pousse pas au village ; seul le wagon de cette ville en rapporte
+    fraise:    { name: 'Fraises',            icon: '🍓', price: 0.3, city: 'fraises' },
   },
 
   // Parfums de base. Les recettes secrètes (labo) s'y ajoutent dans l'état.
@@ -37,6 +39,8 @@ export const CONFIG = {
     citron:    { name: 'Citron',    price: 13, sugar: 1.2, fruit: 2,   time: 1.6, unlock: 6000,    color: '#e8c22e' },
     sureau:    { name: 'Sureau',    price: 32, sugar: 1.5, fruit: 3,   time: 2,   unlock: 100000,  color: '#c9b8e0' },
     violette:  { name: 'Violette',  price: 85, sugar: 2,   fruit: 4,   time: 2.6, unlock: 5000000, color: '#7b4fb0' },
+    // Parfum d'une ville (v0.12.0) : se débloque une fois la ville ouverte, jamais commandé au village
+    fraise:    { name: 'Fraise',    price: 50, sugar: 1.5, fruit: 3,   time: 2.2, unlock: 1000000, color: '#e0303f', city: 'fraises' },
   },
 
   // Niveaux de l'usine. Deux modèles :
@@ -94,6 +98,17 @@ export const CONFIG = {
 
   districts: {
     colline: { name: 'La Colline', icon: '⛰️', cost: 300000, rep: 25, desc: 'La gare du Train Express, 4 terrains et un bois de sureau.' },
+  },
+
+  // Autres villes (v0.12.0), ouvertes par un fruit de l'arbre du Labo. Le wagon automatique part
+  // toutes les `every` s si l'entrepôt est plein à `fullAt`, emporte ce qui dépasse `keepRatio` (au plus
+  // capSec s de production), le vend `pay` × prix de base et rapporte `fruitPerBottle` kg de fruit par bouteille.
+  // Réglés au simulateur (prototype) : +21 % de gains en 1re partie, +12 % après prestige, prestige inchangé.
+  cities: {
+    fraises: {
+      name: 'Gare des Fraises', icon: '🍓', research: 'l3', fruit: 'fraise',
+      wagon: { every: 300, capSec: 60, minCap: 20, fullAt: 0.8, keepRatio: 0.5, pay: 0.9, fruitPerBottle: 1.5 },
+    },
   },
 
   // Mini-jeu « Ligne des Fraises » (gare de la Colline) : un voyage payé toutes les cooldownSec secondes.
@@ -197,7 +212,7 @@ export const CONFIG = {
       { id: 'n3', b: 'nature',    tier: 3, icon: '🐝', name: 'La Ruche',              what: 'Des abeilles qui font du miel pour tes sirops.',   soon: true },
       { id: 'l1', b: 'livraison', tier: 1, icon: '👟', name: 'Bottes de sept lieues', what: 'Tu marches et roules 30 % plus vite.',              cost: 3000,   sec: 120 },
       { id: 'l2', b: 'livraison', tier: 2, icon: '📦', name: 'Caisses empilables',    what: 'Tu portes 50 % de bouteilles en plus.',            cost: 120000, sec: 900 },
-      { id: 'l3', b: 'livraison', tier: 3, icon: '🚂', name: 'Billet de train',       what: 'Le Train Express t’emmène dans d’autres villes.',  soon: true },
+      { id: 'l3', b: 'livraison', tier: 3, icon: '🚂', name: 'Billet de train',       what: 'Ouvre la Gare des Fraises : un wagon y vend ton surplus et rapporte des fraises.', cost: 600000, sec: 1800 },
       { id: 'r1', b: 'recettes',  tier: 1, icon: '💰', name: 'Sirop de luxe',         what: 'Les recettes secrètes se vendent 25 % plus cher.', cost: 40000,  sec: 300 },
       { id: 'r2', b: 'recettes',  tier: 2, icon: '📖', name: 'Grand carnet',          what: 'Une 5e recette secrète à inventer.',               cost: 600000, sec: 1800 },
       { id: 'r3', b: 'recettes',  tier: 3, icon: '🌈', name: 'Trois parfums',         what: 'Mélanger trois parfums dans une seule recette.',   soon: true },

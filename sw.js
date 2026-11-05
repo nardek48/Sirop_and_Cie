@@ -20,8 +20,8 @@
  */
 
 // <build>
-const VERSION = 'v0.11.0';
-const BUILD = '846a8d392d';
+const VERSION = 'v0.12.0';
+const BUILD = '4b29f42fef';
 const PRECACHE = [
   './index.html',
   './manifest.webmanifest',
@@ -43,6 +43,7 @@ const PRECACHE = [
   './js/minigames/train.js',
   './js/minigames/train3d.js',
   './js/pwa.js',
+  './js/sim/cities.js',
   './js/sim/clock.js',
   './js/sim/contracts.js',
   './js/sim/couriers.js',

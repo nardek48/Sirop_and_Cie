@@ -17,6 +17,8 @@
  *   node tools/simulate.mjs --csv                    écrit la courbe dans tools/sim-courbe.csv
  *   node tools/simulate.mjs --strategie=usine        tout miser sur l'usine (comptoir juste sous l'embouteillage)
  *   node tools/simulate.mjs --sans-arbre             sans acheter de fruits dans l'arbre du Labo
+ *   node tools/simulate.mjs --apres                  partie d'après prestige : arbre complet, --etoiles=3 étoiles
+ *   node tools/simulate.mjs --sans-ville             sans le Billet de train (ni Gare des Fraises, ni wagon)
  */
 import { writeFileSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -55,6 +57,8 @@ try {
 } catch (e) { /* pas de fichier : quêtes par défaut */ }
 const { Sim, Prestige } = await import('../js/sim/sim.js');
 const { Research } = await import('../js/sim/research.js');
+const { Cities } = await import('../js/sim/cities.js');
+if (args['sans-ville']) CONFIG.research.fruits.find(f => f.id === 'l3').soon = true;
 
 // Réglages temporaires : --set=chemin.vers.valeur=nombre
 for (const s of sets) {
@@ -109,10 +113,11 @@ function makeBot(s) {
       // Parfums des lignes : d'abord ceux des contrats en attente, puis les plus chers.
       // Une ligne qui fait déjà un parfum voulu le garde (comme un joueur : on évite de vider les cuves).
       const wants = [...new Set(s.active.filter(c => !c.loaded && (s.stock[c.flavor] || 0) < c.qty).map(c => c.flavor))];
-      const byPrice = [...s.unlocked].sort((a, b) => Flavors.get(s, b).price - Flavors.get(s, a).price);
+      const fed = fl => !Flavors.isCity(s, fl) || Flavors.fruits(s, fl).every(m => (s.mat[m] || 0) >= Flavors.needs(s, fl)[m] * Eco.cookRateOf(s, fl) * 120);
+      const byPrice = [...s.unlocked].filter(fed).sort((a, b) => Flavors.get(s, b).price - Flavors.get(s, a).price);
       const lines = Eco.lines(s), wanted = [...new Set([...wants, ...byPrice])].slice(0, lines.length);
       const free = wanted.filter(fl => !lines.some(L => L.flavor === fl));
-      lines.forEach((L, i) => { if (!wanted.includes(L.flavor) && free.length) Factory.select(s, free.shift(), i); });
+      lines.forEach((L, i) => { if ((!wanted.includes(L.flavor) || !fed(L.flavor)) && free.length) Factory.select(s, free.shift(), i); });
     },
 
     /** Charge au quai et part livrer (les clients visités dans l'ordre de la route) */
@@ -136,7 +141,7 @@ function makeBot(s) {
         if (!Fields.open(s, g)) continue;
         const ripe = arr.map((v, i) => (v <= 0 ? i : -1)).filter(i => i >= 0);
         if (ripe.length < Math.ceil(arr.length / 2)) continue;
-        const mat = CONFIG.fields[g].mat === 'auto' ? Flavors.mainFruit(s, s.flavor) : CONFIG.fields[g].mat;
+        const mat = CONFIG.fields[g].mat === 'auto' ? Flavors.localFruit(s, s.flavor) : CONFIG.fields[g].mat;
         const gain = ripe.length * CONFIG.fields[g].yield * CONFIG.materials[mat].price;
         const time = (FIELD_TRIP[g] / Eco.speed(s)) * HUMAN + ripe.length * 1.5;
         if (!best || gain / time > best.rate) best = { g, ripe, time, rate: gain / time };
@@ -162,7 +167,7 @@ function makeBot(s) {
       // Matières à la main tant que le réapprovisionnement automatique n'est pas acheté
       if (!s.auto.restock) {
         for (const [mat, q] of Object.entries(Flavors.needs(s, s.flavor)))
-          if (q && s.mat[mat] < q * 25 && s.money >= 100 * CONFIG.materials[mat].price) { Factory.buyMaterial(s, mat, 100); return true; }
+          if (q && !CONFIG.materials[mat].city && s.mat[mat] < q * 25 && s.money >= 100 * CONFIG.materials[mat].price) { Factory.buyMaterial(s, mat, 100); return true; }
       }
       // Réserve : de quoi racheter une minute de matières au rythme actuel
       const matPerSec = Object.entries(Flavors.needs(s, s.flavor)).reduce((a, [mt, q]) => a + q * CONFIG.materials[mt].price, 0) * Eco.cookRate(s);
@@ -185,12 +190,12 @@ function makeBot(s) {
         const i = s.farm.owned - 1, need = Flavors.needs(s, s.flavor);
         const cost = Object.entries(need).reduce((a, [mt, q]) => a + q * CONFIG.materials[mt].price, 0);
         const fruitShare = 1 - need.sugar * CONFIG.materials.sugar.price / cost;
-        const fruitCrop = Object.entries(CONFIG.farm.crops).find(([k, c]) => c.mat === Flavors.mainFruit(s, s.flavor) && Farm.cropOpen(s, k));
+        const fruitCrop = Object.entries(CONFIG.farm.crops).find(([k, c]) => c.mat === Flavors.localFruit(s, s.flavor) && Farm.cropOpen(s, k));
         const fruits = s.farm.crop.slice(0, i).filter(c => c !== 'canne').length;
         Farm.plant(s, i, fruitCrop && fruits / i < fruitShare ? fruitCrop[0] : 'canne');
         return true;
       }
-      const nextFl = Object.entries(CONFIG.flavors).find(([k]) => !s.unlocked.includes(k));
+      const nextFl = Object.entries(CONFIG.flavors).find(([k]) => !s.unlocked.includes(k) && Factory.canUnlock(s, k));
       if (nextFl && can(nextFl[1].unlock)) { Factory.unlock(s, nextFl[0]); return true; }
       const lineCost = Factory.nextLineCost(s);
       if (lineCost != null && can(lineCost)) { Factory.buyLine(s); return true; }
@@ -279,6 +284,8 @@ const STEPS = [
   ['Toutes les quêtes', s => s.quest.i >= Quests.count(s)],
   ['Arbre : 4 fruits', s => s.research.done.length >= 4],
   ['Arbre : 8 fruits', s => s.research.done.length >= 8],
+  ['Gare des Fraises', s => Research.has(s, 'l3')],
+  ['Fraise', s => s.unlocked.includes('fraise')],
   ['Ligne 2', s => Eco.lineCount(s) >= 2],
   ['Ligne 3', s => Eco.lineCount(s) >= 3],
   ['Prestige possible', s => Prestige.can(s)],
@@ -306,6 +313,7 @@ track(Contracts, 'complete', (s, c) => c.special ? 'Fête du village' : 'Contrat
 track(Quests, 'claim', 'Quêtes du maire');
 track(Market, 'step', 'Comptoir');
 track(RealEstate, 'step', 'Loyers');
+track(Cities, 'ship', 'Wagon de la ville');
 const fails = {};
 const origFail = Contracts.fail.bind(Contracts);
 Contracts.fail = (s, c) => { fails[c.client] = (fails[c.client] || 0) + 1; return origFail(s, c); };
@@ -314,6 +322,7 @@ Contracts.fail = (s, c) => { fails[c.client] = (fails[c.client] || 0) + 1; retur
 function runOnce(seed) {
   rngState = seed;
   const s = Store.fresh();
+  if (args.apres) { s.research.done = CONFIG.research.fruits.filter(f => !f.soon).map(f => f.id); s.stars = Number(args.etoiles || 3); }
   Game.s = s;
   Sim.seed(s);
   const bot = makeBot(s);

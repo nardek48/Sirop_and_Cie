@@ -19,6 +19,7 @@ import { Fields, Farm, RealEstate } from './world-systems.js';
 import { Quests } from './quests.js';
 import { Openings } from './openings.js';
 import { Research } from './research.js';
+import { Cities } from './cities.js';
 
 export const Sim = {
   step(s, dt) {
@@ -40,6 +41,7 @@ export const Sim = {
       Market.step(s, dt);
       Contracts.step(s, dt);
       Couriers.step(s, dt);
+      Cities.step(s, dt);
     } else rt.flow.sell = 0;
     Quests.step(s);
     Openings.step(s);

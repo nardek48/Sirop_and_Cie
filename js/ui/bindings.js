@@ -118,7 +118,7 @@ export const B = {
   },
   offerOk: (s, id) => { const o = s.offers.find(x => x.id === Number(id)); return !!o && (o.tuto || (s.stock[o.flavor] || 0) - Eco.reserved(s, o.flavor) >= o.qty); },
   resFl: (s, f) => { const r = Eco.reserved(s, f); return r ? Fmt.int(r) : '—'; },
-  cantUnlock: (s, f) => s.money < CONFIG.flavors[f].unlock,
+  cantUnlock: (s, f) => s.money < CONFIG.flavors[f].unlock || !Factory.canUnlock(s, f),
   cantRestock: s => s.money < CONFIG.restock.cost,
 
   /* --- Contrats --- */

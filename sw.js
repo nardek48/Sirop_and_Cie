@@ -20,8 +20,8 @@
  */
 
 // <build>
-const VERSION = 'v0.12.0';
-const BUILD = '4b29f42fef';
+const VERSION = 'v0.13.0';
+const BUILD = '76ce232903';
 const PRECACHE = [
   './index.html',
   './manifest.webmanifest',
@@ -38,6 +38,8 @@ const PRECACHE = [
   './js/editor/editor.js',
   './js/editor/quest-editor.js',
   './js/main.js',
+  './js/minigames/boat.js',
+  './js/minigames/boat3d.js',
   './js/minigames/host.js',
   './js/minigames/index.js',
   './js/minigames/train.js',

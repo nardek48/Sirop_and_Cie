@@ -316,6 +316,15 @@ export const World = {
           });
           continue;
         }
+        // Le port : livrer Export Riviera si on porte sa commande, sinon prendre le bateau (mini-jeu)
+        if (b.id === 'port') {
+          L.push({
+            id: b.id, ...at, hit: b,
+            label: open && carried ? `Livrer ${c.name}` : '⛵ Prendre le bateau',
+            run: () => { if (open && carried && Contracts.deliverAt(s, b.id)) return; Minis.boat(); },
+          });
+          continue;
+        }
         L.push({
           id: b.id, ...at, hit: b,
           label: !open ? `🔒 ${c.name} (⭐ ${c.rep})` : carried ? `Livrer ${c.name}` : c.name,

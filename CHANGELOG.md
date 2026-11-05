@@ -2,6 +2,18 @@
 
 Numérotation : `vMAJEUR.MINEUR.CORRECTIF`. Pour préparer une nouvelle version : `node tools/build-sw.mjs patch` (ou `minor`, `major`), puis décrire les changements ici.
 
+## v0.13.0 · 2026-11-05
+
+- **⛵ Le bateau de Sirop & Cie** : le même voyage que le train, mais en mer. Au **Port** (Export Riviera), « Prendre le bateau » lance la **Route des Agrumes**, de Sirop-sur-Mer jusqu'à **Port-Agrumes**, un autre village de sirop, avec ses maisons aux toits orange, ses citronniers et son phare en forme de bouteille de sirop.
+  - 12 caisses de sirop sur le pont. Les **bouées jaunes** donnent la vitesse à respecter (10, 24, 14 puis 8 nœuds) : trop vite, une caisse glisse à l'eau. Dans les **récifs**, on tourne pour éviter les rochers : un choc fait tomber une caisse et ralentit le bateau.
+  - À l'arrivée, on se range le long du quai, à droite, pile au panneau **QUAI** (repères 20, 10 et 5).
+  - Trois étoiles, comme le train : arrêt à 4 m du panneau ou moins, au moins 10 caisses livrées, traversée en 125 s ou moins. Jamais d'échec.
+  - Quatre boutons à maintenir (gauche, ralentir, avancer, droite), ou les flèches du clavier. Trois points de vue avec les boutons du haut ou la touche **V** : poursuite, sur le pont, de côté.
+  - Le capitaine porte la couleur de t-shirt de ton personnage. Au port, si tu portes la commande d'Export Riviera, tu la livres d'abord.
+  - **Récompenses** : les mêmes que le train (de 0,5 à 2,5 minutes de production selon les étoiles, et ⭐ +1 par étoile), avec **sa propre attente de 5 minutes**. Entre deux traversées payées, on peut naviguer pour le plaisir. Le record et l'attente sont gardés au prestige.
+  - Le bateau a besoin de la 3D (WebGL) : sans elle, un message l'explique (le train, lui, garde sa vue 2D).
+- Code : `js/minigames/boat.js` (règles, interface) et `js/minigames/boat3d.js` (scène 3D, avec les images du jeu : port, maisons, citronniers). `Trips` sert maintenant les deux mini-jeux (`'train'` ou `'boat'`), réglages dans `CONFIG.boat`, état sauvegardé dans `s.boat`.
+
 ## v0.12.0 · 2026-11-05
 
 - **🚂 Billet de train et Gare des Fraises** : le dernier fruit de la branche Livraison de l'arbre du Labo s'achète enfin (600 K $, 30 min à mûrir). Il ouvre la **Gare des Fraises**, la première autre ville. Toute la production reste au village : la ville est un débouché pour ton surplus et la source d'un fruit introuvable ici.

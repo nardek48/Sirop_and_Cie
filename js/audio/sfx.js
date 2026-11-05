@@ -23,6 +23,8 @@ const SOUNDS = {
   whistle:[[880, 0, .45, 'sine', .05, 860], [1108, 0, .45, 'sine', .035, 1080], [880, .5, .25, 'sine', .05]],
   clink:  [[1568, 0, .06, 'triangle', .07], [2093, .05, .12, 'triangle', .05, 1400]],
   bump:   [[90, 0, .18, 'square', .08, 50]],
+  // Mini-jeu du bateau : corne de brume
+  horn:   [[147, 0, .7, 'sawtooth', .04, 140], [196, 0, .7, 'triangle', .05, 190]],
 };
 
 export const Sfx = {

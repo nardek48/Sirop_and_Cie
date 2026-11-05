@@ -114,6 +114,8 @@ export const CONFIG = {
   // Mini-jeu « Ligne des Fraises » (gare de la Colline) : un voyage payé toutes les cooldownSec secondes.
   // Gain = minutes de production de l'usine selon les étoiles (0, 1, 2, 3), au moins minPerMin $ la minute.
   train: { cooldownSec: 300, minutesByStars: [0.5, 1, 1.5, 2.5], minPerMin: 60, repPerStar: 1 },
+  // Mini-jeu « Route des Agrumes » (le Port) : mêmes récompenses que le train, avec sa propre attente
+  boat: { cooldownSec: 300, minutesByStars: [0.5, 1, 1.5, 2.5], minPerMin: 60, repPerStar: 1 },
 
   // Récoltes à la main (joueur ou compagnon)
   fields: {

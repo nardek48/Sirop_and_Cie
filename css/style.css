@@ -560,3 +560,10 @@ svg.tree text{font-family:'DM Sans',system-ui,sans-serif}
 .tr-ctrl:focus-visible,.tr-view:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
 @media (max-height:520px){ .tr-ctrl{padding:10px} .tr-ctrl small{display:none} .tr-strip{height:16px;margin-bottom:6px} }
 @media (prefers-reduced-motion:reduce){ .tr-hud.over .tr-limit{animation:none;background:#f2c84b} }
+/* Bateau (Route des Agrumes) : 4 commandes (gauche, ralentir, avancer, droite), caisses, chargement */
+.bt-ctrls{grid-template-columns:1fr 1.4fr 1.4fr 1fr;gap:8px}
+.bt-turn{background:#3a6ea5;box-shadow:0 4px 0 #264b73}
+.bt-crates i{width:9px;height:9px;border-radius:2px;background:#a57a52}
+.bt-crates i.lost{background:#e3d3b5}
+.bt-loading{position:absolute;left:0;right:0;bottom:12px;margin:0;text-align:center;font-weight:700;color:#3b2a1a;pointer-events:none}
+.tr-go-btn:disabled{opacity:.55;cursor:wait}

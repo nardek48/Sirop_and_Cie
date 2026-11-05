@@ -9,6 +9,7 @@ import { Trips } from '../sim/trips.js';
 import { Cities } from '../sim/cities.js';
 import { MiniGames } from './host.js';
 import { TrainDrive } from './train.js';
+import { BoatDrive } from './boat.js';
 
 /** Le wagon automatique des villes ouvertes : prochain départ, et le bonus du mini-jeu */
 function wagonInfo(s) {
@@ -35,6 +36,24 @@ export const Minis = {
         const g = Trips.finish(Game.s, r);
         const best = g.best ? '<br>🏆 Nouveau record d’étoiles !' : '';
         if (!g.money) return `Voyage pour le plaisir 🙂 Prochain voyage payé dans <b>${Fmt.time(g.wait)}</b>.${best}`;
+        return `💰 <b>+${Fmt.money(g.money)}</b>${g.rep ? ` · ⭐ +${g.rep}` : ''}${best}`;
+      },
+    });
+  },
+
+  /** ⛵ Piloter le bateau du Port de Sirop-sur-Mer jusqu'à Port-Agrumes (sa propre attente, mêmes gains que le train) */
+  boat() {
+    MiniGames.run(BoatDrive, {
+      shirt: Game.s.look.shirt,
+      intro: () => {
+        const s = Game.s;
+        return !Trips.ready(s, 'boat') ? `🕑 Prochaine traversée payée dans <b>${Fmt.time(Trips.wait(s, 'boat'))}</b>. Tu peux naviguer pour le plaisir !`
+          : `💰 Jusqu’à <b>${Fmt.money(Trips.gain(s, 3, 'boat'))}</b> et ⭐ +${3 * CONFIG.boat.repPerStar} avec 3 étoiles.`;
+      },
+      onFinish: r => {
+        const g = Trips.finish(Game.s, r, 'boat');
+        const best = g.best ? '<br>🏆 Nouveau record d’étoiles !' : '';
+        if (!g.money) return `Traversée pour le plaisir 🙂 Prochaine traversée payée dans <b>${Fmt.time(g.wait)}</b>.${best}`;
         return `💰 <b>+${Fmt.money(g.money)}</b>${g.rep ? ` · ⭐ +${g.rep}` : ''}${best}`;
       },
     });

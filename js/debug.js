@@ -36,6 +36,8 @@ const TOOLS = {
   tips:      ['Revoir conseils', s => { s.seen = {}; }],
   train:     ['🚂 Conduire le train', () => Minis.train()],
   trainWait: ['Train : voyage payé', s => { s.train.readyAt = 0; }],
+  boat:      ['⛵ Piloter le bateau', () => Minis.boat()],
+  boatWait:  ['Bateau : traversée payée', s => { s.boat.readyAt = 0; }],
   line:      ['+1 ligne',        s => { if (s.lines.length < CONFIG.lines.max - 1) s.lines.push({ flavor: s.flavor, bulk: 0, bulkFlavor: s.flavor }); }],
 };
 

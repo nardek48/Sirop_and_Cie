@@ -59,6 +59,7 @@ export const Store = {
       rested: 0,            // secondes de « Bien reposé » restantes (dormir dans sa maison)
       research: { done: [], cur: null, left: 0 },   // arbre du Labo (gardé au prestige)
       train: { trips: 0, best: 0, readyAt: 0 },      // voyages en train (mini-jeu) : nombre, record d'étoiles, prochain voyage payé
+      boat: { trips: 0, best: 0, readyAt: 0 },       // traversées en bateau (mini-jeu du Port), même forme que train
       cities: {},           // autres villes : wagon automatique { next, trips, sent, fruit, last } (remis à zéro au prestige)
       home: {               // décoration de ta maison (voir world/home.js)
         wall: 'creme', floor: 'bois',
@@ -89,7 +90,7 @@ export const Store = {
   migrate(data) {
     const base = this.fresh();
     const out = { ...base, ...data };
-    for (const k of ['mat', 'stock', 'lv', 'auto', 'stats', 'run', 'player', 'look', 'districts', 'quest', 'event', 'tuto', 'opened', 'seen', 'train'])
+    for (const k of ['mat', 'stock', 'lv', 'auto', 'stats', 'run', 'player', 'look', 'districts', 'quest', 'event', 'tuto', 'opened', 'seen', 'train', 'boat'])
       out[k] = { ...base[k], ...(data[k] && typeof data[k] === 'object' ? data[k] : {}) };
     // Listes et nombres vérifiés : une sauvegarde abîmée ou retouchée ne doit pas faire planter la simulation
     for (const k of ['unlocked', 'recipes', 'offers', 'active', 'npcs', 'houses']) if (!Array.isArray(out[k])) out[k] = [...base[k]];
@@ -161,7 +162,7 @@ export const Store = {
     out.tuto.stash = Array.isArray(out.tuto.stash) ? orders(out.tuto.stash, false) : null;
     out.tuto.step = int(out.tuto.step, 0, 1e3);
     out.quest.i = int(out.quest.i, 0, 1e6); out.quest.ready = out.quest.ready === true;
-    out.train.readyAt = num(out.train.readyAt);
+    for (const k of ['train', 'boat']) for (const f of ['trips', 'best', 'readyAt']) out[k][f] = num(out[k][f]);
     // Villes : seulement celles du jeu, nombres valides
     const cities = data.cities && typeof data.cities === 'object' ? data.cities : {};
     out.cities = {};

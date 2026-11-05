@@ -119,6 +119,10 @@ js/
     clock.js            jour / nuit
     cities.js           autres villes (Gare des Fraises) : ouverture par le Billet de train, wagon automatique
     sim.js              ordre des systèmes, prestige, hors-ligne
+    trips.js            récompenses et attente des mini-jeux (train, bateau)
+  minigames/            mini-jeux plein écran (host.js : fenêtre et boucle ; index.js : lancement et récompenses)
+    train.js, train3d.js  🚂 Ligne des Fraises, depuis la gare de la Colline (3D, vue 2D de secours)
+    boat.js, boat3d.js    ⛵ Route des Agrumes, depuis le Port (3D seulement)
   editor/editor.js      Mode architecte : décorer le village en jeu, export Tiled
   editor/quest-editor.js  éditeur de quêtes du maire, export quests.json
   tutorial/             ⭐ le tutoriel de Mémé Grenadine

@@ -50,12 +50,19 @@ export const Minis = {
       species: CONFIG.fishing.species,
       intro: () => {
         const p = Fishing.progress(Game.s);
-        return `📖 Carnet : <b>${p.got}/${p.total}</b> espèces. ${p.got < p.total ? 'Lance plus loin pour trouver les plus rares !' : 'Tu les as toutes, bravo !'}`;
+        if (p.got >= p.total) return `${CONFIG.fishing.master} : tu as les ${p.total} espèces, bravo !`;
+        return `📖 Carnet : <b>${p.got}/${p.total}</b> espèces. Chaque nouvelle espèce : ⭐ +${CONFIG.fishing.repPerSpecies}. Le carnet complet donne le trophée ${CONFIG.fishing.master}.`;
       },
       pick: d => Fishing.pick(d),
       weight: f => Fishing.weight(f),
-      onCatch: (f, kg) => ({ ...Fishing.record(Game.s, f.id, kg), html: '' }),
+      onCatch: (f, kg) => {
+        const r = Fishing.record(Game.s, f.id, kg);
+        const html = r.master ? `⭐ <b>+${r.rep}</b> · 🎉 Carnet complet : tu gagnes le trophée <b>${CONFIG.fishing.master}</b> !`
+          : r.rep ? `⭐ <b>+${r.rep}</b> de réputation pour cette nouvelle espèce` : '';
+        return { ...r, html };
+      },
       carnet: () => Game.s.fishing.carnet,
+      trophy: () => (Fishing.master(Game.s) ? CONFIG.fishing.master : ''),
     });
   },
 

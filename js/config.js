@@ -119,7 +119,9 @@ export const CONFIG = {
 
   // Pêche au ponton du Port (mini-jeu). zone : portée du lancer en m (5 à 22) où l'espèce mord ;
   // w : chance relative dans sa zone ; kg : poids mini et maxi ; pull : force (tire sur le fil) ; rar : rareté 1 à 3
+  // Chaque nouvelle espèce du carnet rapporte repPerSpecies ⭐ (une fois) ; le carnet complet donne le trophée `master`.
   fishing: {
+    repPerSpecies: 3, master: '🏆 Maître pêcheur',
     species: [
       { id: 'sardine',   name: 'Sardine',                art: 'Une', rar: 1, zone: [0, 12],  w: 5,   kg: [0.05, 0.15], pull: 0.45 },
       { id: 'rouget',    name: 'Rouget',                 art: 'Un',  rar: 1, zone: [0, 14],  w: 4,   kg: [0.1, 0.4],   pull: 0.55 },

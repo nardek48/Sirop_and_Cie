@@ -2,6 +2,13 @@
 
 Numérotation : `vMAJEUR.MINEUR.CORRECTIF`. Pour préparer une nouvelle version : `node tools/build-sw.mjs patch` (ou `minor`, `major`), puis décrire les changements ici.
 
+## v0.14.1 · 2026-11-06
+
+- **🎣 Les poissons rapportent** : chaque nouvelle espèce prise donne **⭐ +3 de réputation** (une seule fois par espèce, soit 24 ⭐ pour le carnet entier). Quand les 8 espèces sont dans le carnet, tu gagnes le trophée **🏆 Maître pêcheur**, affiché en haut du carnet et sur l'écran de départ de la pêche.
+  - Le carnet étant gardé au prestige, les espèces déjà prises ne rapportent plus rien après un prestige : on ne peut pas répéter la pêche pour gagner sans fin.
+- Carnet : les noms longs passent à la ligne au lieu d'être coupés.
+- Code : `Fishing.record` crédite la réputation et annonce le trophée, `Fishing.master` ; réglages `CONFIG.fishing.repPerSpecies` et `CONFIG.fishing.master`.
+
 ## v0.14.0 · 2026-11-06
 
 - **🎣 La pêche au ponton** : on peut maintenant marcher sur le ponton en bois, derrière le Port. Au bout, « 🎣 Pêcher » lance la pêche en 3D, face à la mer (on voit au loin le phare-bouteille de Port-Agrumes).

@@ -14,6 +14,7 @@
  *   weight(f)           poids d'une prise
  *   onCatch(f, kg)      enregistre la prise → { isNew, record, n, html }
  *   carnet()            { [id]: { n, best } }
+ *   trophy()            nom du trophée si le carnet est complet, sinon ''
  */
 
 import { Fishing3D } from './fishing3d.js';
@@ -136,6 +137,7 @@ function updateCount() {
   ui.count.textContent = `${host.opts.species.filter(f => c[f.id]).length}/${host.opts.species.length}`;
 }
 function openCarnet() {
+  updateCount();
   const c = host.opts.carnet();
   ui.list.innerHTML = host.opts.species.map(f => {
     const k = c[f.id], stars = '★'.repeat(f.rar);
@@ -143,6 +145,9 @@ function openCarnet() {
     const where = f.zone[0] >= 13 ? 'lance loin' : f.zone[1] <= 14 ? 'près du ponton' : 'à mi-distance';
     return `<li class="no"><b>???</b><span>${stars} · ${where}</span></li>`;
   }).join('');
+  const t = host.opts.trophy ? host.opts.trophy() : '';
+  ui.trophy.textContent = t ? `${t} : carnet complet !` : '';
+  ui.trophy.hidden = !t;
   ui.carnet.hidden = false; ui.carnet.querySelector('.fi-close').focus();
 }
 
@@ -228,6 +233,7 @@ function buildUI() {
     </div>
     <div class="tr-panel fi-carnet" hidden>
       <h2>Carnet du pêcheur</h2>
+      <p class="fi-trophy" hidden></p>
       <ul class="fi-list"></ul>
       <div class="tr-btns"><button type="button" class="btn fi-close">Retour à la pêche</button></div>
     </div>
@@ -245,7 +251,7 @@ function buildUI() {
     gauge: q('.fi-gauge'), gaugeI: q('.fi-gauge i'), power: q('.fi-power'), powerI: q('.fi-power i'),
     intro: q('.tr-intro'), reward: q('.tr-reward'), go: q('.tr-go-btn'), result: q('.tr-result'), resEyebrow: q('.fi-eyebrow'),
     resTitle: q('.tr-res-title'), dl: q('.fi-catch dl'), portrait: q('.fi-portrait'), gain: q('.tr-gain'), again: q('.tr-again'),
-    carnet: q('.fi-carnet'), list: q('.fi-list'), no3d: q('.bt-no3d'), loading: q('.bt-loading'), act: q('.fi-act'),
+    carnet: q('.fi-carnet'), list: q('.fi-list'), trophy: q('.fi-trophy'), no3d: q('.bt-no3d'), loading: q('.bt-loading'), act: q('.fi-act'),
   };
   ui.reward.innerHTML = host.opts.intro ? host.opts.intro() : '';
   ui.reward.hidden = !ui.reward.innerHTML;

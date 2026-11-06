@@ -20,8 +20,8 @@
  */
 
 // <build>
-const VERSION = 'v0.14.0';
-const BUILD = '05e163168d';
+const VERSION = 'v0.14.1';
+const BUILD = '2b33f644f2';
 const PRECACHE = [
   './index.html',
   './manifest.webmanifest',

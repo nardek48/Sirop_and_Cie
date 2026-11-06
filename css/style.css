@@ -594,7 +594,8 @@ svg.tree text{font-family:'DM Sans',system-ui,sans-serif}
 .fi-rar{color:#d98a1c;letter-spacing:2px}
 .fi-list{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
 .fi-list li{background:var(--surface2);border-radius:12px;padding:8px 10px;display:grid;gap:2px;font-size:13px;min-width:0}
-.fi-list li b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fi-list li b{overflow-wrap:anywhere}
 .fi-list li span{color:var(--muted);font-variant-numeric:tabular-nums}
 .fi-list li.no b{color:var(--muted)}
+.fi-trophy{background:#fff2b0;color:#7a5a12;border-radius:10px;padding:8px 12px;font-weight:800;text-align:center}
 @media (prefers-reduced-motion:reduce){ .fi-act.fi-strike{animation:none} }

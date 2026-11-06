@@ -2,6 +2,14 @@
 
 Numérotation : `vMAJEUR.MINEUR.CORRECTIF`. Pour préparer une nouvelle version : `node tools/build-sw.mjs patch` (ou `minor`, `major`), puis décrire les changements ici.
 
+## v0.17.0 · 2026-11-06
+
+- **⏩ Aller dans les villes sans conduire** : dans la carte (onglet Le monde), chaque ville a maintenant un 2e bouton, **« Y aller sans conduire »**, à côté de « Y aller en train » ou « en bateau ».
+  - Le train ou le bateau arrive tout seul au quai de la ville, en quelques secondes, puis s'arrête pile au panneau. Les commandes sont cachées.
+  - À l'arrivée, la fiche « Arrivée à la Gare des Fraises » ou « Arrivée à Port-Agrumes » donne le gain, et **« Regarder la ville 👀 »** la ferme pour profiter de la vue (les boutons de point de vue marchent ; « Quitter » ramène au village).
+  - Le voyage express compte comme un voyage **à 0 étoile** : s'il est payé, il rapporte 0,5 minute de production, sans réputation, et relance l'attente de 5 minutes. Il ne fait pas partir le wagon ou le bateau automatique. Conduire soi-même reste plus rentable (jusqu'à 2,5 minutes de production et ⭐ +3).
+- Code : option `express` des mini-jeux du train et du bateau (pilote automatique sur les derniers mètres, résultat forcé à 0 étoile) ; action de carte `mapTrip` avec `train-express` / `boat-express`.
+
 ## v0.16.0 · 2026-11-06
 
 - **🍊 Port-Agrumes devient une vraie ville** : un nouveau fruit au bout de la branche Livraison de l'arbre du Labo, **⛵ Billet de bateau** (2,5 M $, 45 min à mûrir, juste après le Billet de train), ouvre Port-Agrumes. Il est gardé au prestige, comme tout l'arbre.

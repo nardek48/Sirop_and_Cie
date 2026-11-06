@@ -115,6 +115,8 @@ body.tuto-on .mapbtn{display:none}
 .map-town b{font-family:Fraunces,Georgia,serif;font-size:17px}
 .map-town p{margin:0;font-size:13px;color:var(--muted)}
 .map-town .btn{justify-self:start;margin-top:6px}
+.map-go{display:flex;flex-wrap:wrap;gap:8px}
+.tr-crit .tr-express{display:block;font-size:14px;color:var(--muted)}
 .map-pills{display:flex;gap:6px;flex-wrap:wrap}
 .map-town .pill,.map-pills .pill{border-radius:999px;padding:2px 9px;font-size:12px;font-weight:700;background:var(--surface);color:var(--ink);font-variant-numeric:tabular-nums;justify-self:start}
 .map-town .pill.ok{background:var(--ok);color:var(--surface)}

@@ -23,9 +23,10 @@ function wagonInfo(s, trip = 'train') {
 }
 
 export const Minis = {
-  /** 🚂 Conduire le train de la gare de la Colline jusqu'à la Gare des Fraises */
-  train() {
+  /** 🚂 Conduire le train de la gare de la Colline jusqu'à la Gare des Fraises (express : il arrive tout seul, 0 étoile) */
+  train(express = false) {
     MiniGames.run(TrainDrive, {
+      express,
       // Avant le départ : ce que le voyage peut rapporter
       intro: () => {
         const s = Game.s;
@@ -38,6 +39,7 @@ export const Minis = {
         const g = Trips.finish(Game.s, r);
         const best = g.best ? '<br>🏆 Nouveau record d’étoiles !' : '';
         if (!g.money) return `Voyage pour le plaisir 🙂 Prochain voyage payé dans <b>${Fmt.time(g.wait)}</b>.${best}`;
+        if (r.express) return `💰 <b>+${Fmt.money(g.money)}</b> (comme un voyage à 0 étoile). Prochain voyage payé dans ${Fmt.time(CONFIG.train.cooldownSec)}.`;
         return `💰 <b>+${Fmt.money(g.money)}</b>${g.rep ? ` · ⭐ +${g.rep}` : ''}${best}`;
       },
     });
@@ -67,8 +69,9 @@ export const Minis = {
   },
 
   /** ⛵ Piloter le bateau du Port de Sirop-sur-Mer jusqu'à Port-Agrumes (sa propre attente, mêmes gains que le train) */
-  boat() {
+  boat(express = false) {
     MiniGames.run(BoatDrive, {
+      express,
       shirt: Game.s.look.shirt,
       intro: () => {
         const s = Game.s;
@@ -79,6 +82,7 @@ export const Minis = {
         const g = Trips.finish(Game.s, r, 'boat');
         const best = g.best ? '<br>🏆 Nouveau record d’étoiles !' : '';
         if (!g.money) return `Traversée pour le plaisir 🙂 Prochaine traversée payée dans <b>${Fmt.time(g.wait)}</b>.${best}`;
+        if (r.express) return `💰 <b>+${Fmt.money(g.money)}</b> (comme une traversée à 0 étoile). Prochaine traversée payée dans ${Fmt.time(CONFIG.boat.cooldownSec)}.`;
         return `💰 <b>+${Fmt.money(g.money)}</b>${g.rep ? ` · ⭐ +${g.rep}` : ''}${best}`;
       },
     });

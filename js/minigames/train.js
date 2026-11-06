@@ -8,6 +8,7 @@
  * Options reçues de l'hôte (voir js/minigames/index.js) :
  *   intro()      → texte HTML de la récompense, affiché avant le départ
  *   onFinish(r)  → texte HTML de la récompense obtenue (r = résultat ci-dessous)
+ *   express      → voyage express (carte) : le train arrive tout seul au quai, compté 0 étoile
  *
  * Résultat : { stars, criteria:{stop,cargo,time}, stopErrorM, bottles, timeS, overSpeedS }
  */
@@ -70,6 +71,7 @@ let ctx = null, W = 0, H = 0;
 let view = 'cab';            // 'cab' (cabine), 'chase' (poursuite, 3D seulement) ou 'side' (côté)
 let use3d = false;           // la scène 3D est chargée et affichée
 let shake = 0, leverPos = 0;
+let express = false;         // voyage express : pilote automatique sur les derniers mètres
 const particles = [];        // fumée + bouteilles qui tombent (coordonnées monde)
 const held = { go: false, brake: false };
 const ui = {};               // éléments du DOM
@@ -107,6 +109,8 @@ function update(dt) {
   }
   shake = Math.max(0, shake - dt * 3);
   if (!st.running) return;
+  // Express : rouler à 29 km/h (limite 30) et freiner pile pour le STOP
+  if (express) st.throttle = st.v * st.v / (2 * CFG.BRAKE) >= LINE.stopAt - st.x - 0.1 ? -1 : st.v < 8 ? 1 : 0;
 
   // Physique simple
   let a = st.throttle > 0 ? CFG.ACCEL : st.throttle < 0 ? -CFG.BRAKE : 0;
@@ -147,6 +151,7 @@ function finish() {
     stars: Object.values(criteria).filter(Boolean).length, criteria,
     stopErrorM: +err.toFixed(1), bottles: st.bottles, timeS: +st.t.toFixed(1), overSpeedS: +st.overTotal.toFixed(1),
   };
+  if (express) Object.assign(r, { stars: 0, express: true });     // pas conduit : compté comme 0 étoile
   host.sfx('whistle');
   showResult(r, host.opts.onFinish ? host.opts.onFinish(r) : '');
 }
@@ -631,6 +636,7 @@ function buildUI() {
       <div class="tr-btns">
         <button type="button" class="btn ghost tr-quit">Retour au village</button>
         <button type="button" class="btn tr-again">Rejouer</button>
+        <button type="button" class="btn tr-look" hidden>Regarder la ville 👀</button>
       </div>
     </div>`;
   host.bottom.innerHTML = `
@@ -664,6 +670,7 @@ function buildUI() {
   q('.tr-go-btn').addEventListener('click', start);
   q('.tr-again').addEventListener('click', () => { reset(); ui.result.hidden = true; ui.intro.hidden = false; ui.reward.innerHTML = host.opts.intro ? host.opts.intro() : ''; });
   q('.tr-quit').addEventListener('click', () => host.close());
+  q('.tr-look').addEventListener('click', () => { ui.result.hidden = true; });
   bindHold(ui.gas, 'go');
   bindHold(ui.brake, 'brake');
 }
@@ -708,9 +715,18 @@ function start() {
   host.sfx('whistle');
 }
 
+/** Voyage express (carte) : départ à l'entrée de la gare, commandes cachées, le train s'arrête tout seul */
+function startExpress() {
+  reset();
+  Object.assign(st, { x: LINE.stopAt - 60, v: 8, running: true });
+  ui.intro.hidden = true; ui.result.hidden = true;
+  host.bottom.querySelector('.tr-ctrls').hidden = true;
+  host.sfx('whistle');
+}
+
 function showResult(r, gainHtml) {
   const titles = ['Livraison faite !', 'Pas mal du tout !', 'Super conducteur !', 'Conduite parfaite !'];
-  ui.resTitle.textContent = titles[r.stars];
+  ui.resTitle.textContent = r.express ? 'Arrivée à la Gare des Fraises 🍓' : titles[r.stars];
   [...ui.stars.children].forEach((s, i) => s.classList.toggle('on', i < r.stars));
   const where = Math.abs(r.stopErrorM) < 0.5 ? 'pile dessus' : `${Math.abs(r.stopErrorM).toFixed(1)} m ${r.stopErrorM > 0 ? 'après' : 'avant'}`;
   const rows = [
@@ -718,11 +734,15 @@ function showResult(r, gainHtml) {
     [r.criteria.cargo, 'Bouteilles livrées',   `${r.bottles}/${CFG.BOTTLES}`],
     [r.criteria.time,  'À l’heure',            `${r.timeS.toFixed(1)} s / ${CFG.TARGET_TIME} s`],
   ];
-  ui.crit.innerHTML = rows.map(([ok, label, val]) =>
+  ui.crit.innerHTML = r.express ? '<li class="tr-express">⏩ Voyage express : le train est arrivé tout seul. Conduis-le toi-même pour gagner plus !</li>'
+    : rows.map(([ok, label, val]) =>
     `<li><span class="tr-dot ${ok ? 'ok' : ''}">${ok ? '✓' : ''}</span><span>${label}</span><b>${val}</b></li>`).join('');
   ui.gain.innerHTML = gainHtml || '';
+  ui.result.querySelector('.tr-again').hidden = r.express;
+  ui.result.querySelector('.tr-look').hidden = !r.express;   // express : fermer la fiche pour regarder la ville (le bouton Quitter reste en haut)
+  ui.stars.hidden = !!r.express;
   ui.result.hidden = false;
-  ui.result.querySelector('.tr-again').focus();
+  ui.result.querySelector(r.express ? '.tr-quit' : '.tr-again').focus();
 }
 
 /** HUD de la vue extérieure + frise (écrits seulement si la valeur change) */
@@ -783,6 +803,8 @@ export const TrainDrive = {
     try { saved = localStorage.getItem(VIEW_KEY); } catch (e) { /* */ }
     setView(saved || 'cab');
     enable3d();
+    express = !!h.opts.express;
+    if (express) startExpress();
     window.addEventListener('keydown', onKey, true);
     window.addEventListener('keyup', onKey, true);
     window.addEventListener('blur', releaseAll);
@@ -794,7 +816,7 @@ export const TrainDrive = {
     window.removeEventListener('keydown', onKey, true);
     window.removeEventListener('keyup', onKey, true);
     window.removeEventListener('blur', releaseAll);
-    held.go = held.brake = false;
+    held.go = held.brake = false; express = false;
     Train3D.detach(); use3d = false;
     st = null; host = null;
   },

@@ -9,6 +9,7 @@
  * Options reçues de l'hôte (voir js/minigames/index.js) :
  *   intro()      → texte HTML de la récompense, affiché avant le départ
  *   shirt        → couleur du t-shirt du joueur (le capitaine)
+ *   express      → traversée express (carte) : le bateau arrive tout seul au quai, compté 0 étoile
  *   onFinish(r)  → texte HTML de la récompense obtenue
  *
  * Résultat : { stars, criteria:{stop,cargo,time}, stopErrorM, crates, timeS }
@@ -60,6 +61,7 @@ let host = null;             // { top, layer, bottom, opts, close, sfx }
 let view = 'chase';
 let use3d = false;
 let flashT = 0;              // message d'incident affiché sur l'écran de bord
+let express = false;         // traversée express : pilote automatique le long du quai
 const held = { go: false, brake: false, left: false, right: false };
 const ui = {};
 
@@ -89,6 +91,8 @@ function flash(msg) {
 function update(dt) {
   flashT -= dt;
   if (!st.running) return;
+  // Express : 5 m/s (moins de 10 nœuds, la limite tolérée) le long du quai, freinage pile au panneau
+  if (express) { st.steer = 0; st.throttle = st.v * st.v / (2 * CFG.BRAKE) >= ROUTE.stopAt - st.x - 0.1 ? -1 : st.v < 5 ? 1 : 0; }
   let a = st.throttle > 0 ? CFG.ACCEL : st.throttle < 0 ? -CFG.BRAKE : 0;
   if (st.v > 0) a -= CFG.DRAG;
   st.v = clamp(st.v + a * dt, 0, CFG.VMAX);
@@ -122,6 +126,7 @@ function finish() {
   const err = st.x - ROUTE.stopAt;            // > 0 : dépassé, < 0 : trop tôt
   const criteria = { stop: Math.abs(err) <= CFG.STOP_PERFECT, cargo: st.crates >= CFG.CRATES - 2, time: st.t <= CFG.TARGET_TIME };
   const r = { stars: Object.values(criteria).filter(Boolean).length, criteria, stopErrorM: +err.toFixed(1), crates: st.crates, timeS: +st.t.toFixed(1) };
+  if (express) Object.assign(r, { stars: 0, express: true });     // pas piloté : compté comme 0 étoile
   host.sfx('horn');
   showResult(r, host.opts.onFinish ? host.opts.onFinish(r) : '');
 }
@@ -170,6 +175,7 @@ function buildUI() {
       <div class="tr-btns">
         <button type="button" class="btn ghost tr-quit">Retour au village</button>
         <button type="button" class="btn tr-again">Rejouer</button>
+        <button type="button" class="btn tr-look" hidden>Regarder la ville 👀</button>
       </div>
     </div>
     <div class="tr-panel bt-no3d" hidden>
@@ -212,6 +218,7 @@ function buildUI() {
   ui.goBtn.addEventListener('click', start);
   q('.tr-again').addEventListener('click', again);
   host.layer.querySelectorAll('.tr-quit').forEach(b => b.addEventListener('click', () => host.close()));
+  q('.tr-look').addEventListener('click', () => { ui.result.hidden = true; });
   for (const k of ['go', 'brake', 'left', 'right']) bindHold(ui[k], k);
 }
 
@@ -233,6 +240,7 @@ function enable3d() {
     use3d = true;
     Boat3D.reset(st, host.opts.shirt);
     ui.loading.hidden = true; ui.goBtn.disabled = false; ui.goBtn.focus();
+    if (express) startExpress();
   }).catch(() => {
     if (!host) return;
     ui.loading.hidden = true; ui.intro.hidden = true; ui.hud.hidden = true; ui.no3d.hidden = false;
@@ -246,6 +254,15 @@ function start() {
   st.running = true;
   host.sfx('horn');
 }
+/** Traversée express (carte) : départ le long du quai, commandes cachées, le bateau s'arrête tout seul */
+function startExpress() {
+  reset();
+  Object.assign(st, { x: ROUTE.stopAt - 40, z: ROUTE.quayZ - 2.3, v: 5, running: true });
+  Boat3D.reset(st, host.opts.shirt);
+  ui.intro.hidden = true; ui.result.hidden = true;
+  host.bottom.querySelector('.bt-ctrls').hidden = true;
+  host.sfx('horn');
+}
 function again() {
   reset(); Boat3D.reset(st, host.opts.shirt);
   ui.result.hidden = true; ui.intro.hidden = false;
@@ -255,7 +272,7 @@ function again() {
 
 function showResult(r, gainHtml) {
   const titles = ['Bienvenue à Port-Agrumes !', 'Bonne traversée !', 'Super capitaine !', 'Traversée parfaite !'];
-  ui.resTitle.textContent = titles[r.stars];
+  ui.resTitle.textContent = r.express ? 'Arrivée à Port-Agrumes 🍊' : titles[r.stars];
   [...ui.stars.children].forEach((s, i) => s.classList.toggle('on', i < r.stars));
   const where = Math.abs(r.stopErrorM) < 0.5 ? 'pile au panneau' : `${Math.abs(r.stopErrorM).toFixed(1)} m ${r.stopErrorM > 0 ? 'après' : 'avant'}`;
   const rows = [
@@ -263,11 +280,15 @@ function showResult(r, gainHtml) {
     [r.criteria.cargo, 'Caisses livrées', `${r.crates}/${CFG.CRATES}`],
     [r.criteria.time,  'À l’heure',       `${r.timeS.toFixed(1)} s / ${CFG.TARGET_TIME} s`],
   ];
-  ui.crit.innerHTML = rows.map(([ok, label, val]) =>
+  ui.crit.innerHTML = r.express ? '<li class="tr-express">⏩ Traversée express : le bateau est arrivé tout seul. Pilote-le toi-même pour gagner plus !</li>'
+    : rows.map(([ok, label, val]) =>
     `<li><span class="tr-dot ${ok ? 'ok' : ''}">${ok ? '✓' : ''}</span><span>${label}</span><b>${val}</b></li>`).join('');
   ui.gain.innerHTML = gainHtml || '';
+  ui.result.querySelector('.tr-again').hidden = r.express;
+  ui.result.querySelector('.tr-look').hidden = !r.express;   // express : fermer la fiche pour regarder la ville (le bouton Quitter reste en haut)
+  ui.stars.hidden = !!r.express;
   // Un court temps pour voir le bateau à quai et les habitants qui font coucou
-  setTimeout(() => { if (st && st.done) { ui.result.hidden = false; ui.result.querySelector('.tr-again').focus(); } }, 700);
+  setTimeout(() => { if (st && st.done) { ui.result.hidden = false; ui.result.querySelector(r.express ? '.tr-quit' : '.tr-again').focus(); } }, 700);
 }
 
 /** HUD (écrit seulement si la valeur change) */
@@ -323,7 +344,7 @@ export const BoatDrive = {
   route: { CFG, ROUTE, ROCKS, KN, limitAt, nextSegment },
 
   mount(h) {
-    host = h;
+    host = h; express = !!h.opts.express;
     reset();
     buildUI();
     let saved = null;
@@ -340,7 +361,7 @@ export const BoatDrive = {
     window.removeEventListener('keydown', onKey, true);
     window.removeEventListener('keyup', onKey, true);
     window.removeEventListener('blur', releaseAll);
-    for (const k in held) held[k] = false;
+    for (const k in held) held[k] = false; express = false;
     Boat3D.detach(); use3d = false;
     st = null; host = null;
   },

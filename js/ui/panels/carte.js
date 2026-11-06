@@ -147,7 +147,8 @@ function cityCards(s) {
       <span class="map-ico" aria-hidden="true">${c.icon}</span><b>${c.name}</b>
       ${c.lines.map(l => `<p class="${l.startsWith('<span') ? 'map-pills' : ''}">${l}</p>`).join('')}
       ${c.here ? '<span class="pill">📍 Tu es ici</span>'
-        : c.go ? `<button type="button" class="btn" data-act="mapTrip" data-arg="${c.go[0]}">${c.go[1]}</button>`
+        : c.go ? `<div class="map-go"><button type="button" class="btn" data-act="mapTrip" data-arg="${c.go[0]}">${c.go[1]}</button>
+            <button type="button" class="btn ghost" data-act="mapTrip" data-arg="${c.go[0]}-express">Y aller sans conduire ⏩</button></div>`
         : '<button type="button" class="btn" disabled>🔒 Pas encore</button>'}
     </div>`).join('');
 }
@@ -163,7 +164,7 @@ export const carte = {
     </div>`;
     if (MapSel.tab === 'monde') {
       return `${tabs}<div class="map-paper">${worldSvg(s)}</div>${cityCards(s)}
-        <p class="hint">Le voyage, c’est le mini-jeu : « Y aller » lance le train ou le bateau.</p>`;
+        <p class="hint">« Y aller » lance le train ou le bateau : conduis-le pour gagner jusqu’à 3 étoiles. « Sans conduire » t’amène directement au quai de la ville, et compte comme un voyage à 0 étoile.</p>`;
     }
     const groups = [...new Set(SPOTS.map(sp => sp.g))].map(g => `<h3 class="map-h">${g}</h3><div class="map-spots">${
       SPOTS.filter(sp => sp.g === g).map(sp => {

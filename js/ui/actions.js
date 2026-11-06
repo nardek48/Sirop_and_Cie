@@ -157,9 +157,10 @@ const map = {
     Bus.toast(`Te voilà : ${sp.icon} ${sp.name}`);
   },
   mapTrip: (s, a) => {
-    if (a === 'train' && !s.districts.colline) return;
+    const [k, mode] = String(a).split('-'), express = mode === 'express';   // ex. 'boat-express' : sans piloter
+    if (k === 'train' && !s.districts.colline) return;
     UI.close(); MapSel.sel = null;
-    if (a === 'train') Minis.train(); else Minis.boat();
+    if (k === 'train') Minis.train(express); else Minis.boat(express);
   },
 };
 

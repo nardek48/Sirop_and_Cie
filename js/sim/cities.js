@@ -26,8 +26,8 @@ export const Cities = {
   /** Le wagon peut-il partir (entrepôt assez plein) ? */
   ready(s, id) { return Eco.totalStock(s) >= Eco.wareCap(s) * CONFIG.cities[id].wagon.fullAt; },
 
-  /** Bonus du mini-jeu du train : le wagon part tout de suite (au prochain pas de simulation) */
-  hurry(s) { for (const id of Object.keys(CONFIG.cities)) if (this.open(s, id)) this.state(s, id).next = 0; },
+  /** Bonus d'un mini-jeu ('train' ou 'boat') : le convoi de SA ville part tout de suite (au prochain pas) */
+  hurry(s, trip = 'train') { for (const [id, C] of Object.entries(CONFIG.cities)) if (C.trip === trip && this.open(s, id)) this.state(s, id).next = 0; },
 
   /**
    * Un départ : le parfum (hors parfums de ville) qui a le plus de bouteilles libres,
@@ -53,7 +53,7 @@ export const Cities = {
     s.mat[mat] = (s.mat[mat] || 0) + fruit;
     Object.assign(st, { trips: st.trips + 1, sent: st.sent + n, fruit: st.fruit + fruit, last: { fl: best.fl, n, money, fruit } });
     const C = CONFIG.cities[id], M = CONFIG.materials[mat];
-    Bus.toast(`🚂 Le wagon revient de la ${C.name} : ${Fmt.int(n)} ${Flavors.get(s, best.fl).name} vendues, +${Fmt.money(money)} et +${Fmt.int(fruit)} kg ${M.icon}`, 'ok');
+    Bus.toast(`${C.ride} revient ${C.from} : ${Fmt.int(n)} ${Flavors.get(s, best.fl).name} vendues, +${Fmt.money(money)} et +${Fmt.int(fruit)} kg ${M.icon}`, 'ok');
     Bus.sfx('coin');
     return st.last;
   },
@@ -65,7 +65,13 @@ export const Cities = {
       st.next -= dt;
       if (st.next > 0) continue;
       st.next = CONFIG.cities[id].wagon.every;
-      this.ship(s, id);
+      if (this.ship(s, id)) this.spread(s, id);
     }
+  },
+
+  /** Après un départ, les autres convois attendent au moins `gap` s : sinon ils trouvent le surplus déjà emporté */
+  spread(s, from) {
+    for (const [id, C] of Object.entries(CONFIG.cities))
+      if (id !== from && C.wagon.gap && this.open(s, id)) { const o = this.state(s, id); o.next = Math.max(o.next, C.wagon.gap); }
   },
 };

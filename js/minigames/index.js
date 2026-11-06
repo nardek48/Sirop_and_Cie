@@ -14,11 +14,11 @@ import { FishingGame } from './fishing.js';
 import { Fishing } from '../sim/fishing.js';
 
 /** Le wagon automatique des villes ouvertes : prochain départ, et le bonus du mini-jeu */
-function wagonInfo(s) {
-  return Object.entries(CONFIG.cities).filter(([id]) => Cities.open(s, id)).map(([id, C]) => {
+function wagonInfo(s, trip = 'train') {
+  return Object.entries(CONFIG.cities).filter(([id, C]) => C.trip === trip && Cities.open(s, id)).map(([id, C]) => {
     const when = Cities.ready(s, id) ? `part dans <b>${Fmt.time(Cities.wait(s, id))}</b>`
       : `attend que l’entrepôt soit plein à ${Math.round(C.wagon.fullAt * 100)} %`;
-    return `<br>${C.icon} Wagon pour la ${C.name} : ${when}. Avec au moins une étoile, il part dès ton arrivée.`;
+    return `<br>${C.icon} ${C.ride} vers ${C.to} : ${when}. Avec au moins une étoile, il part dès ton arrivée.`;
   }).join('');
 }
 
@@ -72,8 +72,8 @@ export const Minis = {
       shirt: Game.s.look.shirt,
       intro: () => {
         const s = Game.s;
-        return !Trips.ready(s, 'boat') ? `🕑 Prochaine traversée payée dans <b>${Fmt.time(Trips.wait(s, 'boat'))}</b>. Tu peux naviguer pour le plaisir !`
-          : `💰 Jusqu’à <b>${Fmt.money(Trips.gain(s, 3, 'boat'))}</b> et ⭐ +${3 * CONFIG.boat.repPerStar} avec 3 étoiles.`;
+        return (!Trips.ready(s, 'boat') ? `🕑 Prochaine traversée payée dans <b>${Fmt.time(Trips.wait(s, 'boat'))}</b>. Tu peux naviguer pour le plaisir !`
+          : `💰 Jusqu’à <b>${Fmt.money(Trips.gain(s, 3, 'boat'))}</b> et ⭐ +${3 * CONFIG.boat.repPerStar} avec 3 étoiles.`) + wagonInfo(s, 'boat');
       },
       onFinish: r => {
         const g = Trips.finish(Game.s, r, 'boat');

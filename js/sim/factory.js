@@ -7,7 +7,7 @@ import { Bus } from '../core/bus.js';
 import { Flavors } from './flavors.js';
 import { Eco } from './eco.js';
 import { Wallet } from './wallet.js';
-import { Research } from './research.js';
+import { Research, fruitById } from './research.js';
 
 export const Factory = {
   buyMaterial(s, mat, qty) {
@@ -24,13 +24,13 @@ export const Factory = {
   unlock(s, fl) {
     if (s.unlocked.includes(fl)) return;
     const city = CONFIG.flavors[fl].city;
-    if (!this.canUnlock(s, fl)) return Bus.toast(`Ouvre d’abord la ${CONFIG.cities[city].name} : 🚂 Billet de train, dans l’arbre du Labo`, 'bad');
+    if (!this.canUnlock(s, fl)) { const C = CONFIG.cities[city], R = fruitById(C.research); return Bus.toast(`Ouvre d’abord ${C.name} : ${R.icon} ${R.name}, dans l’arbre du Labo`, 'bad'); }
     if (!Wallet.spend(s, CONFIG.flavors[fl].unlock)) return;
     s.unlocked.push(fl);
     s.flavor = fl;
     const M = CONFIG.materials[fl];
     Bus.toast(`Nouveau parfum : ${CONFIG.flavors[fl].name} ! Son fruit : ${M.icon} ${M.name.toLowerCase()} `
-      + (city ? `(rapportées par le wagon de la ${CONFIG.cities[city].name})` : '(à l’usine, ou à planter dans un champ)'), 'ok');
+      + (city ? `(rapportées par ${CONFIG.cities[city].ride.split(' ').slice(1).join(' ').toLowerCase()} ${CONFIG.cities[city].from})` : '(à l’usine, ou à planter dans un champ)'), 'ok');
     Bus.sfx('unlock');
   },
   /** Choisir le parfum d'une ligne (0 = ligne 1) */

@@ -32,8 +32,8 @@ export const B = {
   mapTrip: (s, k) => (Trips.ready(s, k) ? `${k === 'boat' ? 'Traversée' : 'Voyage'} payé${k === 'boat' ? 'e' : ''} prêt${k === 'boat' ? 'e' : ''}`
     : `${k === 'boat' ? 'Traversée payée' : 'Voyage payé'} dans ${Fmt.time(Trips.wait(s, k))}`),
   mapTripReady: (s, k) => Trips.ready(s, k),
-  mapWagon: s => (Cities.ready(s, 'fraises') ? `🍓 Wagon : part dans ${Fmt.time(Cities.wait(s, 'fraises'))}`
-    : `🍓 Wagon : attend l’entrepôt plein à ${Math.round(CONFIG.cities.fraises.wagon.fullAt * 100)} %`),
+  mapWagon: (s, id = 'fraises') => { const C = CONFIG.cities[id];
+    return Cities.ready(s, id) ? `${C.ride} : part dans ${Fmt.time(Cities.wait(s, id))}` : `${C.ride} : attend l’entrepôt plein à ${Math.round(C.wagon.fullAt * 100)} %`; },
   /* --- Barre du haut & HUD --- */
   money: s => Fmt.money(s.money),
   rps: () => Fmt.money(rt.rps) + '/s',

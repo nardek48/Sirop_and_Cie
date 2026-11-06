@@ -6,6 +6,7 @@ import { CONFIG } from '../config.js';
 import { Bus } from '../core/bus.js';
 import { Fmt, rand, pick } from '../core/format.js';
 import { Flavors } from './flavors.js';
+import { Cities } from './cities.js';
 import { Eco } from './eco.js';
 import { Wallet } from './wallet.js';
 import { Clock } from './clock.js';
@@ -19,8 +20,12 @@ export const Contracts = {
 
   generate(s) {
     const c = pick(C.clients.filter(x => Eco.clientOpen(s, x)));
-    const flavor = pick(s.unlocked.filter(f => !Flavors.isCity(s, f)));   // la Fraise ne se commande qu'en ville
     const qty = Math.max(5, Math.round((c.qty * (1 + s.rep / C.repScale) + Eco.lineProdRate(s) * c.prodSec) * rand(0.7, 1.3)));
+    // Les parfums de ville ne se commandent pas au village, sauf chez le client qui commerce avec cette ville,
+    // et seulement si le fruit de la ville en stock suffit pour la commande (sinon il commande comme avant)
+    const fruitOk = fl => (s.mat[CONFIG.cities[c.buys].fruit] || 0) >= qty * Flavors.get(s, fl).fruit;
+    const own = c.buys && Cities.open(s, c.buys) ? s.unlocked.filter(f => Cities.ofFlavor(f) === c.buys && fruitOk(f)) : [];
+    const flavor = own.length && Math.random() < (c.buyShare || 0) ? pick(own) : pick(s.unlocked.filter(f => !Flavors.isCity(s, f)));
     s.offers.push({
       id: s.nextId++, place: c.place, client: c.name, icon: c.icon, flavor, qty,
       reward: Math.round(qty * Eco.basePrice(s, flavor) * c.mult * Eco.mult(s) * Events.rewardFactor(s)),

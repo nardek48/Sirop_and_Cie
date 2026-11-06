@@ -76,7 +76,8 @@ node tools/simulate.mjs --set=houses.costGrowth=1.45 --set=flavors.violette.unlo
                                                   # tester un réglage sans modifier config.js
 node tools/simulate.mjs --human=2                 # joueur plus lent
 node tools/simulate.mjs --apres                   # partie d'après prestige (arbre du Labo complet, 3 étoiles)
-node tools/simulate.mjs --sans-ville              # sans le Billet de train (pour comparer avec la Gare des Fraises)
+node tools/simulate.mjs --sans-ville              # sans aucune ville (pour comparer)
+node tools/simulate.mjs --sans-agrumes            # Gare des Fraises seule, sans Port-Agrumes
 node tools/simulate.mjs --csv                     # courbe dans tools/sim-courbe.csv (à ouvrir dans un tableur)
 ```
 
@@ -117,7 +118,7 @@ js/
     openings.js         bâtiments fermés au début (garage, agence, labo)
     events.js           pluie, canicule, fête
     clock.js            jour / nuit
-    cities.js           autres villes (Gare des Fraises) : ouverture par le Billet de train, wagon automatique
+    cities.js           autres villes (Gare des Fraises, Port-Agrumes) : ouverture par un billet du Labo, convoi automatique (wagon, bateau)
     sim.js              ordre des systèmes, prestige, hors-ligne
     trips.js            récompenses et attente des mini-jeux (train, bateau)
     fishing.js          pêche : espèce qui mord, poids, carnet du pêcheur

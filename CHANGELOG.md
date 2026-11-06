@@ -2,6 +2,18 @@
 
 Numérotation : `vMAJEUR.MINEUR.CORRECTIF`. Pour préparer une nouvelle version : `node tools/build-sw.mjs patch` (ou `minor`, `major`), puis décrire les changements ici.
 
+## v0.16.0 · 2026-11-06
+
+- **🍊 Port-Agrumes devient une vraie ville** : un nouveau fruit au bout de la branche Livraison de l'arbre du Labo, **⛵ Billet de bateau** (2,5 M $, 45 min à mûrir, juste après le Billet de train), ouvre Port-Agrumes. Il est gardé au prestige, comme tout l'arbre.
+  - **Le bateau automatique** marche comme le wagon des fraises : toutes les 5 minutes, même jeu fermé, s'il y a assez de stock, il emporte ton surplus, le vend à Port-Agrumes et rapporte des **oranges 🍊** (1,75 kg par bouteille).
+  - Le wagon et le bateau ne partent jamais en même temps : après un départ, l'autre convoi attend au moins 2 min 30. Sans ça, le premier emportait tout le surplus et le second restait à quai.
+  - **Le Sirop d'Orange** (65 $ la bouteille, 3,5 kg d'oranges) se débloque à l'usine pour 2,5 M $ une fois la ville ouverte. Les oranges ne s'achètent pas et ne poussent pas au village.
+  - **Export Riviera commande du Sirop d'Orange** : une fois l'Orange débloquée, toutes ses commandes sont en Orange, à condition que tes oranges en stock suffisent pour la commande. Sinon, il commande comme avant. Les autres clients et la Fête du village ne commandent jamais de parfum de ville.
+  - Finir la Route des Agrumes avec au moins une étoile fait partir le bateau tout de suite (comme le train pour le wagon). L'écran de départ du bateau et la carte (onglet Le monde) indiquent le prochain départ.
+  - Les messages et les fiches disent maintenant « le wagon de la Gare des Fraises » ou « le bateau de Port-Agrumes » selon la ville.
+- Mesuré au simulateur avec le vrai code : **+5 % de gains** sur une première partie de 10 h (146 M $ contre 139 M $ avec la Gare des Fraises seule, 5 parties) et **+6 % après un prestige** (511 M $ contre 481 M $, 12 parties). Le prestige arrive vers la même heure (5 h 29 au lieu de 5 h 46 en 1re partie, 2 h 59 après prestige). Sans la condition sur le stock d'oranges, la première partie perdait 17 % : c'est pour ça qu'elle est là.
+- Code : 2e ville dans `CONFIG.cities` (`agrumes`, avec `ride`, `from`, `to`, `trip` et `wagon.gap`), fruit `orange`, parfum `orange`, fruit du Labo `l4`. Côté client : `buys` et `buyShare` (Export Riviera). `Cities.spread` décale les convois, `Cities.hurry(s, trip)` ne fait partir que le convoi de la ville du mini-jeu. Le simulateur gagne l'option `--sans-agrumes` et un relevé par ville.
+
 ## v0.15.0 · 2026-11-06
 
 - **🗺️ La carte** : un bouton rond **Carte**, en haut à droite du village, ouvre la carte. Elle a deux onglets.

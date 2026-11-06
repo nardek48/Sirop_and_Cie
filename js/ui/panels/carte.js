@@ -129,17 +129,18 @@ function worldSvg(s) {
 
 function cityCards(s) {
   const stars = n => '★'.repeat(n) + '☆'.repeat(3 - n);
-  const fr = CONFIG.cities.fraises, fp = Fishing.progress(s);
-  const wagon = Cities.open(s, 'fraises') ? '<span class="pill" data-t="mapWagon"></span>' : `<span class="pill lock">🔒 Wagon : ${fruitName(fr.research)}, au Labo</span>`;
+  const fp = Fishing.progress(s);
+  const convoy = id => { const C = CONFIG.cities[id], R = fruitById(C.research);
+    return Cities.open(s, id) ? `<span class="pill" data-t="mapWagon:${id}"></span>` : `<span class="pill lock">🔒 ${C.ride} : ${R.icon} ${R.name}, au Labo</span>`; };
   const cards = [
     { id: 'sirop', icon: '🏘️', name: 'Sirop-sur-Mer', lines: ['Ton village : l’usine, les clients, ta maison.', `<span class="pill">🎣 Carnet ${fp.got}/${fp.total}</span>`], here: true },
     { id: 'fraises', icon: '🍓', name: 'Gare des Fraises',
       lines: s.districts.colline
-        ? ['🚂 Le train y va depuis la gare de la Colline.', `<span class="pill" data-t="mapTrip:train" data-c="ok|mapTripReady:train"></span><span class="pill">Record ${stars(s.train.best)}</span>`, wagon]
+        ? ['🚂 Le train y va depuis la gare de la Colline.', `<span class="pill" data-t="mapTrip:train" data-c="ok|mapTripReady:train"></span><span class="pill">Record ${stars(s.train.best)}</span>`, convoy('fraises')]
         : ['🚂 Le train part de la gare de la Colline.', `<span class="pill lock">🔒 Achète le quartier de la Colline à la mairie : ${Fmt.money(CONFIG.districts.colline.cost)}, ⭐ ${CONFIG.districts.colline.rep}</span>`],
       go: s.districts.colline ? ['train', 'Y aller en train 🚂'] : null },
     { id: 'agrumes', icon: '🍊', name: 'Port-Agrumes',
-      lines: ['⛵ Le bateau part du Port de Sirop-sur-Mer.', `<span class="pill" data-t="mapTrip:boat" data-c="ok|mapTripReady:boat"></span><span class="pill">Record ${stars(s.boat.best)}</span>`],
+      lines: ['⛵ Le bateau part du Port de Sirop-sur-Mer.', `<span class="pill" data-t="mapTrip:boat" data-c="ok|mapTripReady:boat"></span><span class="pill">Record ${stars(s.boat.best)}</span>`, convoy('agrumes')],
       go: ['boat', 'Y aller en bateau ⛵'] },
   ];
   return '<h3 class="map-h">Les villes</h3>' + cards.map(c => `<div class="map-town${MapSel.sel === c.id ? ' sel' : ''}">
@@ -150,11 +151,10 @@ function cityCards(s) {
         : '<button type="button" class="btn" disabled>🔒 Pas encore</button>'}
     </div>`).join('');
 }
-const fruitName = id => (fruitById(id) || { name: id }).name;
 
 export const carte = {
   title: '🗺️ Carte',
-  key: s => [MapSel.tab, MapSel.sel, s.districts.colline, Cities.open(s, 'fraises'), s.train.best, s.boat.best,
+  key: s => [MapSel.tab, MapSel.sel, s.districts.colline, Cities.open(s, 'fraises'), Cities.open(s, 'agrumes'), s.train.best, s.boat.best,
     Fishing.progress(s).got, SPOTS.map(sp => spotLock(s, sp) ? 1 : 0).join(''), Math.round(s.player.x / 40), Math.round(s.player.y / 40)].join('|'),
   html(s) {
     const tabs = `<div class="map-tabs" role="tablist">

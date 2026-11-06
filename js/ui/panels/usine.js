@@ -6,6 +6,7 @@ import { Fmt } from '../../core/format.js';
 import { Flavors } from '../../sim/flavors.js';
 import { Factory } from '../../sim/factory.js';
 import { Eco } from '../../sim/eco.js';
+import { fruitById } from '../../sim/research.js';
 
 const stage = (k, body, bneckKey = k) => {
   const c = CONFIG.levels[k];
@@ -42,7 +43,7 @@ export function lineMat(s, i) {
     <div class="mat-line">
       <span title="${M[m].name}">${M[m].icon} ${M[m].name}</span>
       <b data-t="mat:${m}"></b>
-      ${M[m].city ? `<small class="sub">🚂 par le wagon de la ${CONFIG.cities[M[m].city].name}</small>` : buyBtn(m, 100) + buyBtn(m, 1000)}
+      ${M[m].city ? `<small class="sub">${CONFIG.cities[M[m].city].ride} ${CONFIG.cities[M[m].city].from}</small>` : buyBtn(m, 100) + buyBtn(m, 1000)}
     </div>`).join('')}
     <div class="sub">${Fmt.num(need.find(([m]) => m === 'sugar')[1])} kg 🧂 + ${need.filter(([m]) => m !== 'sugar').map(([m, q]) => `${Fmt.num(q)} kg ${M[m].icon}`).join(' + ')} par bouteille</div>
   </div>`;
@@ -63,7 +64,7 @@ export function flavorButtons(s, line = 0, compact = false) {
          </button>`
       : `<button class="flavor locked" data-act="unlock" data-arg="${k}" data-d="cantUnlock:${k}">
            <span>${dot(f.color)}<b>${f.name}</b></span>
-           <small>${Factory.canUnlock(s, k) ? `🔒 Débloquer · ${Fmt.money(f.unlock)}` : `🔒 ${CONFIG.cities[f.city].icon} ${CONFIG.cities[f.city].name} (Billet de train)`}</small>
+           <small>${Factory.canUnlock(s, k) ? `🔒 Débloquer · ${Fmt.money(f.unlock)}` : `🔒 ${CONFIG.cities[f.city].icon} ${CONFIG.cities[f.city].name} (${fruitById(CONFIG.cities[f.city].research).name})`}</small>
          </button>`).join('');
     const secret = s.recipes.map(r => `
       <button class="flavor secret ${cur === r.id ? 'is-active' : ''}" data-act="select" data-arg="${r.id}|${line}">

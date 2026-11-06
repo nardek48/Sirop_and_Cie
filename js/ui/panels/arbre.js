@@ -12,7 +12,7 @@ const R = CONFIG.research;
 const POS = {
   u1: [150, 196], u2: [104, 136], u3: [72, 70],
   n1: [132, 282], n2: [80, 246],  n3: [36, 196],
-  l1: [250, 196], l2: [296, 136], l3: [328, 70],
+  l1: [250, 196], l2: [296, 136], l3: [328, 70], l4: [364, 124],   // l4 : la branche se recourbe à droite (atelier, choix B)
   r1: [268, 282], r2: [320, 246], r3: [364, 196],
 };
 const STATE_TXT = { done: 'mûr', growing: 'en train de mûrir', open: 'à lancer', locked: 'pas encore', soon: 'bientôt' };

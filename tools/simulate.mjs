@@ -18,7 +18,8 @@
  *   node tools/simulate.mjs --strategie=usine        tout miser sur l'usine (comptoir juste sous l'embouteillage)
  *   node tools/simulate.mjs --sans-arbre             sans acheter de fruits dans l'arbre du Labo
  *   node tools/simulate.mjs --apres                  partie d'après prestige : arbre complet, --etoiles=3 étoiles
- *   node tools/simulate.mjs --sans-ville             sans le Billet de train (ni Gare des Fraises, ni wagon)
+ *   node tools/simulate.mjs --sans-ville             sans aucune autre ville (ni Billet de train, ni Billet de bateau)
+ *   node tools/simulate.mjs --sans-agrumes           Gare des Fraises seule (sans le Billet de bateau ni Port-Agrumes)
  */
 import { writeFileSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -58,7 +59,10 @@ try {
 const { Sim, Prestige } = await import('../js/sim/sim.js');
 const { Research } = await import('../js/sim/research.js');
 const { Cities } = await import('../js/sim/cities.js');
-if (args['sans-ville']) CONFIG.research.fruits.find(f => f.id === 'l3').soon = true;
+// Fermer une ville = rendre son fruit de l'arbre « bientôt » (le fruit suivant de la branche reste alors verrouillé)
+const closeCity = id => { CONFIG.research.fruits.find(f => f.id === CONFIG.cities[id].research).soon = true; };
+if (args['sans-ville']) Object.keys(CONFIG.cities).forEach(closeCity);
+if (args['sans-agrumes']) closeCity('agrumes');
 
 // Réglages temporaires : --set=chemin.vers.valeur=nombre
 for (const s of sets) {
@@ -284,12 +288,15 @@ const STEPS = [
   ['Toutes les quêtes', s => s.quest.i >= Quests.count(s)],
   ['Arbre : 4 fruits', s => s.research.done.length >= 4],
   ['Arbre : 8 fruits', s => s.research.done.length >= 8],
-  ['Gare des Fraises', s => Research.has(s, 'l3')],
-  ['Fraise', s => s.unlocked.includes('fraise')],
+  // Une étape par ville : son ouverture (fruit de l'arbre), puis son parfum
+  ...Object.values(CONFIG.cities).flatMap(C => {
+    const fl = Object.keys(CONFIG.flavors).find(k => CONFIG.flavors[k].city && CONFIG.cities[CONFIG.flavors[k].city] === C);
+    return [[C.name, s => Research.has(s, C.research)], [CONFIG.flavors[fl].name, s => s.unlocked.includes(fl)]];
+  }),
   ['Ligne 2', s => Eco.lineCount(s) >= 2],
   ['Ligne 3', s => Eco.lineCount(s) >= 3],
   ['Prestige possible', s => Prestige.can(s)],
-  ['TOUT FINI', s => s.quest.i >= Quests.count(s) && s.houses.some(h => h.type === 'domaine') && s.unlocked.length >= 5 + CONFIG.recipes.max
+  ['TOUT FINI', s => s.quest.i >= Quests.count(s) && s.houses.some(h => h.type === 'domaine') && s.unlocked.filter(fl => !Flavors.isCity(s, fl)).length >= Object.values(CONFIG.flavors).filter(f => !f.city).length + CONFIG.recipes.max
       && s.vehicle >= 3 && s.couriers >= 4 && s.districts.colline && s.farm.owned >= CONFIG.farm.count],
 ];
 
@@ -313,7 +320,25 @@ track(Contracts, 'complete', (s, c) => c.special ? 'Fête du village' : 'Contrat
 track(Quests, 'claim', 'Quêtes du maire');
 track(Market, 'step', 'Comptoir');
 track(RealEstate, 'step', 'Loyers');
-track(Cities, 'ship', 'Wagon de la ville');
+track(Cities, 'ship', (s, id) => `${CONFIG.cities[id].ride.split(' ')[0]} ${CONFIG.cities[id].name}`);
+// Convois : départs réussis et restés à quai (entrepôt pas assez plein, ou surplus déjà pris par l'autre convoi)
+const convoy = {};
+{ const orig = Cities.ship.bind(Cities);
+  Cities.ship = (s, id) => { const r = orig(s, id), c = (convoy[id] ||= { go: 0, quai: 0, n: 0, fruit: 0 });
+    if (r) { c.go++; c.n += r.n; c.fruit += r.fruit; } else c.quai++; return r; }; }
+// Sirops de ville vendus au comptoir (les clients du village ne les commandent jamais), par ville
+const cityFlavorOf = (s, fl) => { const m = Flavors.fruits(s, fl).find(k => CONFIG.materials[k].city); return m && CONFIG.materials[m].city; };
+const citySyrup = {};
+{ const orig = Market.step.bind(Market);
+  Market.step = (s, dt) => {
+    const before = Object.fromEntries(s.unlocked.filter(fl => Flavors.isCity(s, fl)).map(fl => [fl, s.stock[fl] || 0]));
+    const r = orig(s, dt);
+    for (const [fl, q] of Object.entries(before)) {
+      const id = cityFlavorOf(s, fl), sold = q - (s.stock[fl] || 0);
+      if (sold > 0) citySyrup[id] = (citySyrup[id] || 0) + sold * Eco.sellPrice(s, fl, CONFIG.counter.priceFactor);
+    }
+    return r;
+  }; }
 const fails = {};
 const origFail = Contracts.fail.bind(Contracts);
 Contracts.fail = (s, c) => { fails[c.client] = (fails[c.client] || 0) + 1; return origFail(s, c); };
@@ -351,9 +376,18 @@ for (const [name] of STEPS) {
 const last = runs[0].s;
 console.log(`\nFin de la 1re partie : ${fmtM(last.money)} $ en caisse, ${fmtM(last.stats.earned)} $ gagnés, ⭐ ${last.rep}, ${last.houses.length} maisons, ${last.stats.cDone} commandes livrées (${last.stats.cFail} ratées).`);
 
+const earnedAll = runs.map(r => r.s.stats.earned), mean = earnedAll.reduce((a, b) => a + b, 0) / RUNS;
+if (RUNS > 1) console.log(`Gains moyens sur ${RUNS} parties : ${fmtM(mean)} $ (${earnedAll.map(fmtM).join(' · ')})`);
+
 const total = Object.values(src).reduce((a, b) => a + b, 0) || 1;
 console.log(`\nD'où vient l'argent (toutes parties) : ` + Object.entries(src).sort((a, b) => b[1] - a[1])
   .map(([k, v]) => `${k} ${Math.round((v / total) * 100)} %`).join(' · '));
+for (const [id, C] of Object.entries(CONFIG.cities)) {
+  const c = convoy[id], sy = citySyrup[id] || 0, ship = src[`${C.ride.split(' ')[0]} ${C.name}`] || 0;
+  if (!c) continue;
+  console.log(`${C.icon} ${C.name} : ${c.go} départs, ${c.quai} restés à quai, ${fmtM(c.n)} bt emportées, ${fmtM(c.fruit)} kg de fruit · `
+    + `convoi ${fmtM(ship)} $ + sirop au comptoir ${fmtM(sy)} $ = ${((ship + sy) / total * 100).toFixed(1)} % des gains`);
+}
 if (Object.keys(fails).length) console.log('Commandes ratées : ' + Object.entries(fails).map(([k, v]) => `${k} ${v}`).join(' · '));
 
 console.log('\nCourbe (1re partie)');

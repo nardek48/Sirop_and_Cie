@@ -30,6 +30,7 @@ export const CONFIG = {
     violette:  { name: 'Violettes',          icon: '💜', price: 0.3 },
     // city : ne s'achète pas, ne pousse pas au village ; seul le wagon de cette ville en rapporte
     fraise:    { name: 'Fraises',            icon: '🍓', price: 0.3, city: 'fraises' },
+    orange:    { name: 'Oranges',            icon: '🍊', price: 0.3, city: 'agrumes' },
   },
 
   // Parfums de base. Les recettes secrètes (labo) s'y ajoutent dans l'état.
@@ -41,6 +42,8 @@ export const CONFIG = {
     violette:  { name: 'Violette',  price: 85, sugar: 2,   fruit: 4,   time: 2.6, unlock: 5000000, color: '#7b4fb0' },
     // Parfum d'une ville (v0.12.0) : se débloque une fois la ville ouverte, jamais commandé au village
     fraise:    { name: 'Fraise',    price: 50, sugar: 1.5, fruit: 3,   time: 2.2, unlock: 1000000, color: '#e0303f', city: 'fraises' },
+    // 2e ville (v0.16.0) : entre Fraise et Violette ; oranges rapportées par le bateau de Port-Agrumes
+    orange:    { name: 'Orange',    price: 65, sugar: 1.8, fruit: 3.5, time: 2.4, unlock: 2500000, color: '#f28c28', city: 'agrumes' },
   },
 
   // Niveaux de l'usine. Deux modèles :
@@ -79,7 +82,8 @@ export const CONFIG = {
       { place: 'cafe',        name: 'Café des Arts',      icon: '☕', rep: 8,   qty: 30,  mult: 1.35, repGain: 2, time: [140, 260], prodSec: 30 },
       { place: 'supermarche', name: 'Supermarché Frais+', icon: '🛒', rep: 35,  qty: 90,  mult: 1.5, repGain: 4, time: [200, 380], prodSec: 60 },
       { place: 'gare',        name: 'Train Express',      icon: '🚂', rep: 60,  qty: 160, mult: 1.7, repGain: 6, time: [240, 440], district: 'colline', prodSec: 100 },
-      { place: 'port',        name: 'Export Riviera',     icon: '🚢', rep: 100, qty: 260, mult: 1.9, repGain: 8, time: [280, 520], prodSec: 160 },
+      // buys : ville avec qui ce client commerce ; buyShare : part de ses commandes en parfum de cette ville (une fois ouverte)
+      { place: 'port',        name: 'Export Riviera',     icon: '🚢', rep: 100, qty: 260, mult: 1.9, repGain: 8, time: [280, 520], prodSec: 160, buys: 'agrumes', buyShare: 1 },
     ],
   },
 
@@ -103,11 +107,17 @@ export const CONFIG = {
   // Autres villes (v0.12.0), ouvertes par un fruit de l'arbre du Labo. Le wagon automatique part
   // toutes les `every` s si l'entrepôt est plein à `fullAt`, emporte ce qui dépasse `keepRatio` (au plus
   // capSec s de production), le vend `pay` × prix de base et rapporte `fruitPerBottle` kg de fruit par bouteille.
-  // Mesuré au simulateur sur 5 graines : +3 % de gains en 1re partie, +8 % après prestige, prestige inchangé.
+  // Mesuré au simulateur : Gare des Fraises +3 % en 1re partie, +8 % après prestige (5 graines) ; Port-Agrumes, avec
+  // Export Riviera qui commande l'Orange, encore +5 % après prestige (12 graines). Prestige inchangé.
   cities: {
     fraises: {
-      name: 'Gare des Fraises', icon: '🍓', research: 'l3', fruit: 'fraise',
-      wagon: { every: 300, capSec: 60, minCap: 20, fullAt: 0.8, keepRatio: 0.5, pay: 0.9, fruitPerBottle: 1.5 },
+      name: 'Gare des Fraises', icon: '🍓', research: 'l3', fruit: 'fraise', ride: '🚂 Le wagon', from: 'de la Gare des Fraises', to: 'la Gare des Fraises', trip: 'train',
+      wagon: { every: 300, gap: 150, capSec: 60, minCap: 20, fullAt: 0.8, keepRatio: 0.5, pay: 0.9, fruitPerBottle: 1.5 },
+    },
+    // Le bateau marche comme le wagon. gap : un convoi attend au moins gap s après le départ d'un autre (ils se partagent le surplus)
+    agrumes: {
+      name: 'Port-Agrumes', icon: '🍊', research: 'l4', fruit: 'orange', ride: '⛵ Le bateau', from: 'de Port-Agrumes', to: 'Port-Agrumes', trip: 'boat',
+      wagon: { every: 300, gap: 150, capSec: 60, minCap: 20, fullAt: 0.8, keepRatio: 0.5, pay: 0.9, fruitPerBottle: 1.75 },
     },
   },
 
@@ -232,6 +242,7 @@ export const CONFIG = {
       { id: 'l1', b: 'livraison', tier: 1, icon: '👟', name: 'Bottes de sept lieues', what: 'Tu marches et roules 30 % plus vite.',              cost: 3000,   sec: 120 },
       { id: 'l2', b: 'livraison', tier: 2, icon: '📦', name: 'Caisses empilables',    what: 'Tu portes 50 % de bouteilles en plus.',            cost: 120000, sec: 900 },
       { id: 'l3', b: 'livraison', tier: 3, icon: '🚂', name: 'Billet de train',       what: 'Ouvre la Gare des Fraises : un wagon y vend ton surplus et rapporte des fraises.', cost: 600000, sec: 1800 },
+      { id: 'l4', b: 'livraison', tier: 4, icon: '⛵', name: 'Billet de bateau',      what: 'Ouvre Port-Agrumes : un bateau y vend ton surplus et rapporte des oranges. Export Riviera commande alors du Sirop d’Orange.', cost: 2500000, sec: 2700 },
       { id: 'r1', b: 'recettes',  tier: 1, icon: '💰', name: 'Sirop de luxe',         what: 'Les recettes secrètes se vendent 25 % plus cher.', cost: 40000,  sec: 300 },
       { id: 'r2', b: 'recettes',  tier: 2, icon: '📖', name: 'Grand carnet',          what: 'Une 5e recette secrète à inventer.',               cost: 600000, sec: 1800 },
       { id: 'r3', b: 'recettes',  tier: 3, icon: '🌈', name: 'Trois parfums',         what: 'Mélanger trois parfums dans une seule recette.',   soon: true },

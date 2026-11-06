@@ -35,7 +35,7 @@ export const Trips = {
    */
   finish(s, r, k = 'train') {
     const stars = Math.max(0, Math.min(3, r.stars | 0)), V = s[k];
-    if (stars && k === 'train') Cities.hurry(s);   // bonus : conduire soi-même fait partir le wagon tout de suite
+    if (stars) Cities.hurry(s, k);   // bonus : conduire soi-même fait partir le convoi de cette ville tout de suite
     const best = stars > V.best;
     V.trips++;
     V.best = Math.max(V.best, stars);

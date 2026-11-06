@@ -45,6 +45,16 @@ const ROOMS = { usine: Interior, maison: HomeRoom };
 const DIRS = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'KeyW', 'KeyA', 'KeyS', 'KeyD'];
 const inRect = (p, r) => r && p.x >= r.x && p.x <= r.x + r.w && p.y >= r.y && p.y <= r.y + r.h;
 
+/** La mer, moins le ponton : trois rectangles autour, pour qu'on puisse marcher dessus */
+function waterAroundPier() {
+  const W = MAP.water, P = MAP.pier;
+  return [
+    { x: W.x, y: W.y, w: P.x - W.x, h: W.h },
+    { x: P.x + P.w, y: W.y, w: W.x + W.w - P.x - P.w, h: W.h },
+    { x: P.x, y: W.y, w: P.w, h: P.y - W.y },
+  ];
+}
+
 export const World = {
   cv: null, ctx: null, dpr: 1, vw: 0, vh: 0, zoom: 1,
   cam: { x: 0, y: 0 },
@@ -332,6 +342,9 @@ export const World = {
         });
       }
     }
+    // Le ponton de pêche, derrière le Port
+    const pier = MAP.pier;
+    L.push({ id: 'peche', x: pier.x + pier.w / 2, y: pier.y + 22, hit: pier, label: '🎣 Pêcher', run: () => Minis.fish() });
     // Ta maison et son garage
     L.push({
       id: 'maison', x: P.maison.x, y: P.maison.y + 14, hit: { x: HOUSE.x, y: HOUSE.y, w: HOUSE.w, h: HOUSE.h },
@@ -424,7 +437,7 @@ export const World = {
     const list = [
       ...HomeOutside.solids(),
       ...MAP.buildings.map(b => ({ x: b.x, y: b.y + 20, w: b.w, h: b.h - 20 })),
-      MAP.water,
+      ...waterAroundPier(),
       { x: MAP.fountain.x - 50, y: MAP.fountain.y - 30, w: 100, h: 56 },
       { x: MAP.windmill.x - 34, y: MAP.windmill.y - 40, w: 68, h: 40 },
     ];

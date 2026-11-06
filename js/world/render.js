@@ -67,9 +67,10 @@ export const Render = {
         c.beginPath(); c.moveTo(W.x + x0 + off * sg, y + dy); c.quadraticCurveTo(W.x + x0 + 30 + off * sg, y + dy - 8, W.x + x0 + 60 + off * sg, y + dy); c.stroke();
       }
     }
-    c.fillStyle = '#a07048'; c.fillRect(2420, 190, 60, 110);
+    const Pi = MAP.pier;
+    c.fillStyle = '#a07048'; c.fillRect(Pi.x, Pi.y, Pi.w, Pi.h);
     c.strokeStyle = '#7a5230'; c.lineWidth = 2;
-    for (let y = 198; y < 300; y += 14) { c.beginPath(); c.moveTo(2420, y); c.lineTo(2480, y); c.stroke(); }
+    for (let y = Pi.y + 8; y < Pi.y + Pi.h; y += 14) { c.beginPath(); c.moveTo(Pi.x, y); c.lineTo(Pi.x + Pi.w, y); c.stroke(); }
 
     // Rails de la Colline (derrière la gare) + tunnel
     const r = MAP.rails;

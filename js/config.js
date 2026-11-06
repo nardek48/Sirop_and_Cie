@@ -103,7 +103,7 @@ export const CONFIG = {
   // Autres villes (v0.12.0), ouvertes par un fruit de l'arbre du Labo. Le wagon automatique part
   // toutes les `every` s si l'entrepôt est plein à `fullAt`, emporte ce qui dépasse `keepRatio` (au plus
   // capSec s de production), le vend `pay` × prix de base et rapporte `fruitPerBottle` kg de fruit par bouteille.
-  // Réglés au simulateur (prototype) : +21 % de gains en 1re partie, +12 % après prestige, prestige inchangé.
+  // Mesuré au simulateur sur 5 graines : +3 % de gains en 1re partie, +8 % après prestige, prestige inchangé.
   cities: {
     fraises: {
       name: 'Gare des Fraises', icon: '🍓', research: 'l3', fruit: 'fraise',
@@ -116,6 +116,21 @@ export const CONFIG = {
   train: { cooldownSec: 300, minutesByStars: [0.5, 1, 1.5, 2.5], minPerMin: 60, repPerStar: 1 },
   // Mini-jeu « Route des Agrumes » (le Port) : mêmes récompenses que le train, avec sa propre attente
   boat: { cooldownSec: 300, minutesByStars: [0.5, 1, 1.5, 2.5], minPerMin: 60, repPerStar: 1 },
+
+  // Pêche au ponton du Port (mini-jeu). zone : portée du lancer en m (5 à 22) où l'espèce mord ;
+  // w : chance relative dans sa zone ; kg : poids mini et maxi ; pull : force (tire sur le fil) ; rar : rareté 1 à 3
+  fishing: {
+    species: [
+      { id: 'sardine',   name: 'Sardine',                art: 'Une', rar: 1, zone: [0, 12],  w: 5,   kg: [0.05, 0.15], pull: 0.45 },
+      { id: 'rouget',    name: 'Rouget',                 art: 'Un',  rar: 1, zone: [0, 14],  w: 4,   kg: [0.1, 0.4],   pull: 0.55 },
+      { id: 'botte',     name: 'Vieille botte',          art: 'Une', rar: 1, zone: [0, 10],  w: 1.2, kg: [0.8, 1.2],   pull: 0.25 },
+      { id: 'maquereau', name: 'Maquereau',              art: 'Un',  rar: 1, zone: [7, 22],  w: 4,   kg: [0.3, 0.9],   pull: 0.8 },
+      { id: 'caisse',    name: 'Caisse de sirop perdue', art: 'Une', rar: 2, zone: [8, 22],  w: 1,   kg: [6, 6],       pull: 0.35 },
+      { id: 'dorade',    name: 'Dorade royale',          art: 'Une', rar: 2, zone: [9, 22],  w: 2.5, kg: [0.6, 2.2],   pull: 1.0 },
+      { id: 'bar',       name: 'Bar',                    art: 'Un',  rar: 2, zone: [13, 22], w: 2,   kg: [1.5, 5],     pull: 1.3 },
+      { id: 'lune',      name: 'Poisson-lune doré',      art: 'Un',  rar: 3, zone: [16, 22], w: 0.5, kg: [8, 20],      pull: 1.6 },
+    ],
+  },
 
   // Récoltes à la main (joueur ou compagnon)
   fields: {

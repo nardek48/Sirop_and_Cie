@@ -58,7 +58,7 @@ export const Sim = {
 
 export const Prestige = {
   can: s => s.run.earned >= CONFIG.prestige.minRunEarned && Eco.prestigeGain(s) > 0,
-  /** Repart de zéro ; garde les étoiles, le personnage, les stats, les quêtes, les bâtiments ouverts, l'arbre du Labo et les voyages en train et en bateau */
+  /** Repart de zéro ; garde les étoiles, le personnage, les stats, les quêtes, les bâtiments ouverts, l'arbre du Labo, les voyages en train et en bateau, et le carnet de pêche */
   reset(s) {
     const n = Store.fresh();
     n.stars = s.stars + Eco.prestigeGain(s);
@@ -67,6 +67,7 @@ export const Prestige = {
     n.research = s.research;            // l'arbre du Labo reste pour toujours
     n.train = s.train;                  // voyages en train : record et attente conservés
     n.boat = s.boat;                    // traversées en bateau : idem
+    n.fishing = s.fishing;              // carnet de pêche : une collection, gardée pour toujours
     Game.s = n;
     Sim.seed(n);
   },

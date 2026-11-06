@@ -7,6 +7,7 @@ export const MAP = {
   w: 3400, h: 1560,
   road: { y: 520, h: 90 },
   water: { x: 2290, y: 0, w: 370, h: 290 },
+  pier: { x: 2420, y: 190, w: 60, h: 110 },     // ponton de pêche, derrière le Port (on y marche)
   fountain: { x: 1980, y: 880, r: 46 },
   windmill: { x: 2350, y: 1330 },
   rails: { y: 215, x0: 2672 },

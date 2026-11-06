@@ -567,3 +567,34 @@ svg.tree text{font-family:'DM Sans',system-ui,sans-serif}
 .bt-crates i.lost{background:#e3d3b5}
 .bt-loading{position:absolute;left:0;right:0;bottom:12px;margin:0;text-align:center;font-weight:700;color:#3b2a1a;pointer-events:none}
 .tr-go-btn:disabled{opacity:.55;cursor:wait}
+/* Pêche au ponton : un bouton unique, la tension du fil, la puissance du lancer, la fiche de la prise */
+.fi-hud{align-items:center}
+.fi-chip{background:rgba(255,250,240,.92);color:#3b2a1a;border-radius:999px;padding:4px 12px;font:inherit;font-weight:700;font-variant-numeric:tabular-nums;border:0}
+.fi-carnet-btn{pointer-events:auto;cursor:pointer;margin-left:auto}
+.fi-hud>.tr-board{flex-basis:100%;text-align:center;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fi-act{width:100%;background:#d98a1c;box-shadow:0 4px 0 #a5660f}
+.fi-act.fi-wait{background:#8a7a66;box-shadow:0 4px 0 #5f5446}
+.fi-act.fi-reel{background:#3a6ea5;box-shadow:0 4px 0 #264b73}
+.fi-act.fi-strike{background:#d63a4f;box-shadow:0 4px 0 #9a2434;animation:fi-strike .25s ease-in-out infinite alternate}
+@keyframes fi-strike{to{transform:scale(1.03)}}
+.fi-gauge{position:absolute;right:10px;top:110px;bottom:20px;width:24px;border-radius:12px;background:rgba(255,250,240,.92);padding:4px;display:flex;flex-direction:column-reverse;pointer-events:none}
+.fi-gauge i{display:block;border-radius:8px;background:var(--ok);height:0}
+.fi-gauge.warn i{background:#d98a1c}
+.fi-gauge.danger i{background:#d63a4f}
+.fi-gauge b{position:absolute;left:50%;top:-18px;transform:translateX(-50%);font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:#3b2a1a}
+.fi-power{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);width:min(320px,calc(100% - 32px));height:16px;border-radius:8px;background:rgba(255,250,240,.92);overflow:hidden;pointer-events:none}
+.fi-power i{display:block;height:100%;width:0;background:linear-gradient(90deg,#6fb3d9,#3a6ea5 60%,#7b4fb0)}
+.fi-power em{position:absolute;inset:0;display:flex;justify-content:space-between;padding:0 8px;font-size:10px;line-height:16px;font-weight:700;font-style:normal;color:#3b2a1a}
+.fi-eyebrow{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#b36b0c}
+.fi-catch{display:grid;grid-template-columns:96px 1fr;gap:14px;align-items:center}
+.fi-catch .fi-portrait{position:static;inset:auto;display:block;width:96px;height:96px;border-radius:14px;background:radial-gradient(circle at 50% 40%,#e6f4f8,#bfe0ea)}
+.fi-catch dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:4px 10px;font-size:14px}
+.fi-catch dt{color:var(--muted)}
+.fi-catch dd{margin:0;font-weight:700;font-variant-numeric:tabular-nums}
+.fi-rar{color:#d98a1c;letter-spacing:2px}
+.fi-list{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.fi-list li{background:var(--surface2);border-radius:12px;padding:8px 10px;display:grid;gap:2px;font-size:13px;min-width:0}
+.fi-list li b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fi-list li span{color:var(--muted);font-variant-numeric:tabular-nums}
+.fi-list li.no b{color:var(--muted)}
+@media (prefers-reduced-motion:reduce){ .fi-act.fi-strike{animation:none} }

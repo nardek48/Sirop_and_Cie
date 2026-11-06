@@ -10,6 +10,8 @@ import { Cities } from '../sim/cities.js';
 import { MiniGames } from './host.js';
 import { TrainDrive } from './train.js';
 import { BoatDrive } from './boat.js';
+import { FishingGame } from './fishing.js';
+import { Fishing } from '../sim/fishing.js';
 
 /** Le wagon automatique des villes ouvertes : prochain départ, et le bonus du mini-jeu */
 function wagonInfo(s) {
@@ -38,6 +40,22 @@ export const Minis = {
         if (!g.money) return `Voyage pour le plaisir 🙂 Prochain voyage payé dans <b>${Fmt.time(g.wait)}</b>.${best}`;
         return `💰 <b>+${Fmt.money(g.money)}</b>${g.rep ? ` · ⭐ +${g.rep}` : ''}${best}`;
       },
+    });
+  },
+
+  /** 🎣 Pêcher au bout du ponton du Port (le carnet garde les espèces prises) */
+  fish() {
+    MiniGames.run(FishingGame, {
+      shirt: Game.s.look.shirt,
+      species: CONFIG.fishing.species,
+      intro: () => {
+        const p = Fishing.progress(Game.s);
+        return `📖 Carnet : <b>${p.got}/${p.total}</b> espèces. ${p.got < p.total ? 'Lance plus loin pour trouver les plus rares !' : 'Tu les as toutes, bravo !'}`;
+      },
+      pick: d => Fishing.pick(d),
+      weight: f => Fishing.weight(f),
+      onCatch: (f, kg) => ({ ...Fishing.record(Game.s, f.id, kg), html: '' }),
+      carnet: () => Game.s.fishing.carnet,
     });
   },
 

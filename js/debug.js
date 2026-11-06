@@ -38,6 +38,7 @@ const TOOLS = {
   trainWait: ['Train : voyage payé', s => { s.train.readyAt = 0; }],
   boat:      ['⛵ Piloter le bateau', () => Minis.boat()],
   boatWait:  ['Bateau : traversée payée', s => { s.boat.readyAt = 0; }],
+  fish:      ['🎣 Pêcher au ponton', () => Minis.fish()],
   line:      ['+1 ligne',        s => { if (s.lines.length < CONFIG.lines.max - 1) s.lines.push({ flavor: s.flavor, bulk: 0, bulkFlavor: s.flavor }); }],
 };
 

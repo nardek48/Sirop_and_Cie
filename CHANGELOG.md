@@ -2,6 +2,20 @@
 
 Numérotation : `vMAJEUR.MINEUR.CORRECTIF`. Pour préparer une nouvelle version : `node tools/build-sw.mjs patch` (ou `minor`, `major`), puis décrire les changements ici.
 
+## v0.14.0 · 2026-11-06
+
+- **🎣 La pêche au ponton** : on peut maintenant marcher sur le ponton en bois, derrière le Port. Au bout, « 🎣 Pêcher » lance la pêche en 3D, face à la mer (on voit au loin le phare-bouteille de Port-Agrumes).
+  - Un seul bouton, ou la barre Espace :
+    - **Lancer** : maintenir pour charger la puissance, puis lâcher. Plus on lance loin, plus les poissons sont gros et rares.
+    - **Ferrer** : appuyer quand le bouchon plonge. S'il bouge juste un peu, le poisson goûte seulement : ferrer à ce moment le fait fuir. Trop tard, il s'échappe.
+    - **Mouliner** : maintenir pour ramener le poisson. Quand il tire, le fil se tend : il faut lâcher avant qu'il devienne rouge, sinon il casse.
+  - 8 prises à découvrir : sardine, rouget, maquereau, dorade royale, bar, poisson-lune doré (le plus rare, seulement en lançant loin), une vieille botte et une caisse de sirop tombée d'un bateau.
+  - Le **carnet du pêcheur** garde chaque espèce prise, combien de fois et le record de poids. Les espèces pas encore prises disent où les chercher (près du ponton, à mi-distance, loin). Il est sauvegardé et gardé au prestige.
+  - Le pêcheur porte la couleur de t-shirt de ton personnage. Sans 3D (WebGL), un message l'explique.
+  - Pour l'instant, les poissons vont seulement au carnet : à quoi ils serviront reste à décider.
+- **Correction des chiffres de la v0.12.0** : le « +18 % » de la Gare des Fraises ne venait que d'une seule graine du simulateur. Sur 5 graines, c'est **+3 %** de gains en première partie. Le « +7 % » après prestige est confirmé (+8 %). Le commentaire de `CONFIG.cities` est corrigé.
+- Code : `js/minigames/fishing.js` (règles, interface), `js/minigames/fishing3d.js` (scène 3D, poissons, portrait de la prise), `js/sim/fishing.js` (espèce qui mord, poids, carnet). Espèces dans `CONFIG.fishing`, état dans `s.fishing`. Le ponton est dans `MAP.pier` : la mer bloque toujours, sauf le ponton.
+
 ## v0.13.0 · 2026-11-05
 
 - **⛵ Le bateau de Sirop & Cie** : le même voyage que le train, mais en mer. Au **Port** (Export Riviera), « Prendre le bateau » lance la **Route des Agrumes**, de Sirop-sur-Mer jusqu'à **Port-Agrumes**, un autre village de sirop, avec ses maisons aux toits orange, ses citronniers et son phare en forme de bouteille de sirop.

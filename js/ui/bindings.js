@@ -19,6 +19,8 @@ import { Quests } from '../sim/quests.js';
 import { Prestige } from '../sim/sim.js';
 import { Form } from './form.js';
 import { Research, fruitById } from '../sim/research.js';
+import { Trips } from '../sim/trips.js';
+import { Cities } from '../sim/cities.js';
 
 const BNECK = {
   mat: 'Matières épuisées', cook: 'Goulot : cuisson', bottle: 'Goulot : embouteillage',
@@ -26,6 +28,12 @@ const BNECK = {
 };
 
 export const B = {
+  /* --- Carte : voyages payés et wagon (textes qui changent chaque seconde) --- */
+  mapTrip: (s, k) => (Trips.ready(s, k) ? `${k === 'boat' ? 'Traversée' : 'Voyage'} payé${k === 'boat' ? 'e' : ''} prêt${k === 'boat' ? 'e' : ''}`
+    : `${k === 'boat' ? 'Traversée payée' : 'Voyage payé'} dans ${Fmt.time(Trips.wait(s, k))}`),
+  mapTripReady: (s, k) => Trips.ready(s, k),
+  mapWagon: s => (Cities.ready(s, 'fraises') ? `🍓 Wagon : part dans ${Fmt.time(Cities.wait(s, 'fraises'))}`
+    : `🍓 Wagon : attend l’entrepôt plein à ${Math.round(CONFIG.cities.fraises.wagon.fullAt * 100)} %`),
   /* --- Barre du haut & HUD --- */
   money: s => Fmt.money(s.money),
   rps: () => Fmt.money(rt.rps) + '/s',

@@ -137,6 +137,7 @@ js/
     panels/deco.js      fiche « Décorer ma maison »
     panels/champ.js     fiche d’un champ (planter, acheter)
     panels/machine.js   fiche d’une machine (dans l’usine visitable)
+    panels/carte.js     🗺️ la carte : raccourcis vers les lieux du village, voyages vers les autres villes
   world/                le village en canvas
     map.js              ⭐ positions des bâtiments, arbres, terrains, décor
     interior.js         ⭐ l’intérieur de l’usine : salle, machines animées, sorties

@@ -2,6 +2,15 @@
 
 Numérotation : `vMAJEUR.MINEUR.CORRECTIF`. Pour préparer une nouvelle version : `node tools/build-sw.mjs patch` (ou `minor`, `major`), puis décrire les changements ici.
 
+## v0.15.0 · 2026-11-06
+
+- **🗺️ La carte** : un bouton rond **Carte**, en haut à droite du village, ouvre la carte. Elle a deux onglets.
+  - **Le village** : un plan de Sirop-sur-Mer avec « Tu es ici », et la liste des lieux rangés par usage : *Travailler* (usine, quai de chargement, contrats, labo), *Livrer* (épicerie, café, supermarché, Port, gare de la Colline) et *Se promener* (maison, mairie, ponton de pêche, verger, champs, parc, agence, garage). On touche un lieu (sur le plan ou dans la liste), la barre du bas dit à combien de secondes il est à pied, et **« On y va ! »** t'y emmène tout de suite. Ça marche aussi depuis l'usine ou ta maison : on ressort directement au lieu choisi. Ton compagnon te rejoint d'un bond.
+  - Un lieu encore fermé garde son cadenas et dit comment l'ouvrir (par exemple « Quartier de la Colline (300 K $) »).
+  - **Le monde** : une carte dessinée avec Sirop-sur-Mer, la voie ferrée qui passe par la Colline jusqu'à la **Gare des Fraises**, et la route du bateau jusqu'à **Port-Agrumes**. Chaque ville a sa fiche : voyage ou traversée payé prêt (ou dans combien de temps), record d'étoiles, départ du wagon des fraises. **« Y aller en train »** ou **« en bateau »** lance directement le mini-jeu : le voyage, c'est le trajet. Tant que le quartier de la Colline n'est pas acheté, le train reste fermé et la fiche dit où l'acheter.
+  - Pendant le tutoriel de Mémé, la carte est cachée, pour ne pas sauter ses étapes.
+- Code : `js/ui/panels/carte.js` (panneau, plan dessiné d'après `map.js`, lieux du raccourci `SPOTS`). Les panneaux peuvent avoir un `mounted(el, s, act)`, appelé après leur affichage (ici pour dessiner le plan). Le saut utilise `World.teleport`, comme « Je suis perdu ».
+
 ## v0.14.1 · 2026-11-06
 
 - **🎣 Les poissons rapportent** : chaque nouvelle espèce prise donne **⭐ +3 de réputation** (une seule fois par espèce, soit 24 ⭐ pour le carnet entier). Quand les 8 espèces sont dans le carnet, tu gagnes le trophée **🏆 Maître pêcheur**, affiché en haut du carnet et sur l'écran de départ de la pêche.

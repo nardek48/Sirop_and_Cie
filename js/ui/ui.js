@@ -107,6 +107,7 @@ export const UI = {
       this.el.panel.innerHTML = p.html(s);
       this.nodes = this.collect(this.el.panel);
       this.key = k;
+      p.mounted?.(this.el.panel, s, (n, a) => this.onAction(n, a));   // ex. la carte dessine son plan
       if (focus) document.getElementById(focus)?.focus();
     }
     this.apply(this.nodes, s);

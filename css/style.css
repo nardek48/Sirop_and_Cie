@@ -83,6 +83,46 @@ img{-webkit-user-drag:none;user-drag:none}
 @keyframes pulse{50%{transform:translateY(-2px)}}
 @media (prefers-reduced-motion:reduce){.quest.ready{animation:none}}
 
+/* --- Carte (bouton du HUD et panneau) --- */
+.mapbtn{position:absolute;top:12px;right:max(12px,env(safe-area-inset-right,0px));width:54px;height:54px;border-radius:50%;cursor:pointer;
+  background:color-mix(in srgb,var(--surface) 94%,transparent);border:1px solid var(--line);box-shadow:var(--shadow);color:var(--ink);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;font:inherit;font-size:22px;line-height:1}
+.mapbtn small{font-size:10px;font-weight:700;letter-spacing:.04em;color:var(--muted);margin-top:2px}
+body.tuto-on .mapbtn{display:none}
+.sheet[data-panel="carte"] .sheet-card{max-width:560px}
+.map-tabs{display:grid;grid-template-columns:1fr 1fr;gap:4px;background:var(--surface2);border-radius:12px;padding:4px;margin-bottom:12px}
+.map-tabs button{border:0;background:transparent;border-radius:9px;padding:9px 6px;font:inherit;font-weight:700;cursor:pointer;color:var(--muted)}
+.map-tabs button[aria-selected="true"]{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
+.map-paper{position:relative;border-radius:16px;overflow:hidden;background:#f7ecd4;box-shadow:inset 0 0 0 1px rgba(90,65,40,.25);margin-bottom:6px}
+.map-paper svg{display:block;width:100%;height:auto}
+.map-plan{display:block;width:100%;cursor:pointer;touch-action:manipulation}
+.map-legend{position:absolute;left:10px;bottom:6px;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#5a4128;opacity:.75;pointer-events:none}
+.map-city{cursor:pointer}
+.map-h{font-family:inherit;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:12px 0 6px}
+.map-spots{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px}
+.map-spot{display:grid;grid-template-columns:30px 1fr;gap:2px 8px;align-items:center;text-align:left;border:2px solid transparent;border-radius:14px;
+  padding:8px 9px;background:var(--surface2);cursor:pointer;min-width:0;font:inherit;color:var(--ink)}
+.map-spot .map-ico{grid-row:span 2;font-size:20px;width:30px;height:30px;border-radius:9px}
+.map-spot b{font-size:14px;line-height:1.2;overflow-wrap:break-word}
+.map-spot span:last-child{font-size:12px;color:var(--muted);line-height:1.25}
+.map-spot.sel{border-color:var(--amber);background:var(--amber-l)}
+.map-spot.lock{opacity:.6}
+.map-ico{background:var(--surface);display:grid;place-items:center}
+.map-town{display:grid;grid-template-columns:44px 1fr;gap:4px 12px;align-items:start;background:var(--surface2);border-radius:14px;padding:12px;border:2px solid transparent;margin-bottom:8px}
+.map-town.sel{border-color:var(--amber)}
+.map-town>:not(.map-ico){grid-column:2;min-width:0}
+.map-town .map-ico{grid-row:1 / span 2;grid-column:1;width:44px;height:44px;border-radius:12px;font-size:24px}
+.map-town b{font-family:Fraunces,Georgia,serif;font-size:17px}
+.map-town p{margin:0;font-size:13px;color:var(--muted)}
+.map-town .btn{justify-self:start;margin-top:6px}
+.map-pills{display:flex;gap:6px;flex-wrap:wrap}
+.map-town .pill,.map-pills .pill{border-radius:999px;padding:2px 9px;font-size:12px;font-weight:700;background:var(--surface);color:var(--ink);font-variant-numeric:tabular-nums;justify-self:start}
+.map-town .pill.ok{background:var(--ok);color:var(--surface)}
+.map-town .pill.lock{background:var(--line)}
+.map-bar{position:sticky;bottom:-16px;display:flex;align-items:center;gap:10px;background:var(--bg);border-top:1px solid var(--line);margin:12px -16px -16px;padding:10px 16px 14px}
+.map-bar p{margin:0 auto 0 0;font-size:14px;min-width:0}
+.map-bar small{display:block;color:var(--muted);font-size:12px}
+
 /* --- Intérieur d'un bâtiment --- */
 .sheet{position:absolute;inset:0;background:rgba(20,12,4,.45);display:flex;justify-content:center;align-items:flex-start;
   padding:16px max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));overflow:auto;z-index:10}

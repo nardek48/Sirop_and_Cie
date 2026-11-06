@@ -28,6 +28,9 @@ import { SaveFile } from './savefile.js';
 import { MachineSel } from './panels/machine.js';
 import { UsineSel } from './panels/usine.js';
 import { HOME_DECO } from '../world/home.js';
+import { MapSel, SPOTS, spotLock } from './panels/carte.js';
+import { Minis } from '../minigames/index.js';
+import { Bus } from '../core/bus.js';
 
 const map = {
   // usine
@@ -135,6 +138,29 @@ const map = {
   checkUpdate: () => PWA.check(),
   hideHelp: () => { UI.el.help.hidden = true; try { localStorage.setItem('siropcie_help', '0'); } catch (e) { /* */ } },
   questToggle: () => { const q = UI.el.quest, open = q.classList.toggle('open'); q.setAttribute('aria-expanded', open); },
+  // carte : raccourcis du village et voyages vers les villes
+  map: s => {
+    if (s.tuto.active) return Bus.toast('Finis d’abord le tutoriel avec Mémé 👵');
+    MapSel.sel = null; UI.open('carte');
+  },
+  mapTab: (s, a) => { MapSel.tab = a === 'monde' ? 'monde' : 'village'; MapSel.sel = null; },
+  mapPick: (s, a) => { MapSel.sel = MapSel.sel === a ? null : a; },
+  mapGo: (s, a) => {
+    const sp = SPOTS.find(x => x.id === a);
+    if (!sp || s.tuto.active) return;
+    const lock = spotLock(s, sp);
+    if (lock) return Bus.toast(`🔒 ${sp.name} : ${lock}`, 'bad');
+    const at = sp.at();
+    UI.close(); MapSel.sel = null;
+    World.teleport(at.x, at.y);                     // sort aussi de l'usine ou de la maison
+    Bus.sfx('door');
+    Bus.toast(`Te voilà : ${sp.icon} ${sp.name}`);
+  },
+  mapTrip: (s, a) => {
+    if (a === 'train' && !s.districts.colline) return;
+    UI.close(); MapSel.sel = null;
+    if (a === 'train') Minis.train(); else Minis.boat();
+  },
 };
 
 export const Actions = {

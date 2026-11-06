@@ -3,6 +3,7 @@
  *  title  : titre de la feuille
  *  key(s) : signature de structure ; le HTML n'est reconstruit que si elle change
  *  html(s): gabarit, les valeurs vivantes passent par les liaisons (bindings.js)
+ *  mounted(el, s, act) : facultatif, appelé après chaque reconstruction (dessin d'un canvas…)
  */
 import { usine } from './usine.js';
 import { contrats } from './contrats.js';
@@ -15,5 +16,6 @@ import { machine } from './machine.js';
 import { parfum } from './parfum.js';
 import { deco } from './deco.js';
 import { champ } from './champ.js';
+import { carte } from './carte.js';
 
-export const Panels = { usine, contrats, agence, mairie, labo, garage, quetes, machine, parfum, deco, champ };
+export const Panels = { usine, contrats, agence, mairie, labo, garage, quetes, machine, parfum, deco, champ, carte };

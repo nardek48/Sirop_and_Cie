@@ -20,6 +20,7 @@ export const Flavors = {
     const sugar = Research.honey(s) ? {} : { sugar: f ? f.sugar : 1 };
     if (!f) return sugar;
     if (!f.recipe) return { ...sugar, [id]: f.fruit };
+    if (f.c) { const n = { ...sugar }; for (const k of [f.a, f.b, f.c]) n[k] = (n[k] || 0) + f.fruit / 3; return n; }
     return { ...sugar, [f.a]: f.fruit / 2, [f.b]: (f.fruit / 2) + (f.a === f.b ? f.fruit / 2 : 0) };
   },
   /** Fruits demandés par un parfum (sans le sucre) */

@@ -100,7 +100,7 @@ export const Store = {
     const known = fl => !!CONFIG.flavors[fl];
     out.recipes = out.recipes.filter(r => r && typeof r === 'object' && typeof r.id === 'string' && known(r.a) && known(r.b)
       && ['price', 'sugar', 'fruit', 'time'].every(k => Number.isFinite(r[k]) && r[k] > 0))
-      .map(r => ({ ...r, name: plain(r.name, 18) || 'Recette' }));
+      .map(r => { const o = { ...r, name: plain(r.name, 18) || 'Recette' }; if (o.c != null && !known(o.c)) delete o.c; return o; });   // c : 3e parfum (Trois parfums)
     // Partie commencée avant le tutoriel (v0.1.0) : tout est déjà ouvert, pas de tutoriel imposé
     if (!data.tuto) {
       out.tuto.done = true;

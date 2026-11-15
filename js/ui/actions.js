@@ -81,6 +81,10 @@ const map = {
   laboA: (s, a) => { Form.labo.a = a; },
   laboB: (s, a) => { Form.labo.b = a; },
   laboCreate: s => { if (Recipes.create(s, Form.labo)) Form.labo.name = ''; },
+  // Trois parfums : ouvrir une recette, choisir le 3e parfum, confirmer
+  thirdOpen: (s, a) => { Form.third.id = Form.third.id === a ? null : a; Form.third.c = null; },
+  thirdPick: (s, a) => { Form.third.c = a; },
+  thirdAdd: s => { if (Recipes.addThird(s, Form.third.id, Form.third.c)) { Form.third.id = null; Form.third.c = null; } },
   // mairie
   shirt: (s, a) => { s.look.shirt = a; },
   pet: (s, a) => { s.look.pet = a; },

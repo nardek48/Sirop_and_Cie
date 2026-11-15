@@ -98,7 +98,7 @@ export const CONFIG = {
   couriers: { max: 4, cost: 6000, costGrowth: 4, rep: 20, speed: 150 },
 
   // Prix d'une recette = (prix A + prix B) × priceBonus, soit 1,5 × le prix moyen des deux parfums
-  recipes: { max: 4, cost: 8000, costGrowth: 4, priceBonus: 0.75 },
+  recipes: { max: 4, cost: 8000, costGrowth: 4, priceBonus: 0.75, third: { bonus: 0.5, cost: 1000000 } },   // third : Trois parfums (r3), prix (A+B+C) × bonus ; simulateur +18 % en 1re partie
 
   districts: {
     colline: { name: 'La Colline', icon: '⛰️', cost: 300000, rep: 25, desc: 'La gare du Train Express, 4 terrains et un bois de sureau.' },
@@ -249,7 +249,7 @@ export const CONFIG = {
       { id: 'l4', b: 'livraison', tier: 4, icon: '⛵', name: 'Billet de bateau',      what: 'Ouvre Port-Agrumes : un bateau y vend ton surplus et rapporte des oranges. Export Riviera commande alors du Sirop d’Orange.', cost: 2500000, sec: 2700 },
       { id: 'r1', b: 'recettes',  tier: 1, icon: '💰', name: 'Sirop de luxe',         what: 'Les recettes secrètes se vendent 25 % plus cher.', cost: 40000,  sec: 300 },
       { id: 'r2', b: 'recettes',  tier: 2, icon: '📖', name: 'Grand carnet',          what: 'Une 5e recette secrète à inventer.',               cost: 600000, sec: 1800 },
-      { id: 'r3', b: 'recettes',  tier: 3, icon: '🌈', name: 'Trois parfums',         what: 'Mélanger trois parfums dans une seule recette.',   soon: true },
+      { id: 'r3', b: 'recettes',  tier: 3, icon: '🌈', name: 'Trois parfums',         what: 'Ajoute un 3e parfum à tes recettes secrètes : elles se vendent plus cher.', cost: 3000000, sec: 3600 },
     ],
   },
   prestige: { minRunEarned: 2e7, base: 3, perDecade: 4, bonusPerStar: 0.1 },

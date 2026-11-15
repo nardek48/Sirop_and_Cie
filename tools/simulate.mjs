@@ -210,6 +210,11 @@ function makeBot(s) {
         const f = CONFIG.research.fruits.filter(f => !Research.why(s, f)).sort((a, b) => a.cost - b.cost)[0];
         if (f && can(f.cost)) { Research.start(s, f.id); return true; }
       }
+      if (Research.has(s, 'r3') && can(CONFIG.recipes.third.cost)) {
+        const r = s.recipes.find(x => Recipes.thirdOptions(s, x).length);
+        const c = r && Recipes.thirdOptions(s, r).sort((a, b) => Recipes.thirdPreview(r, b).price - Recipes.thirdPreview(r, a).price)[0];
+        if (c && Recipes.addThird(s, r.id, c)) return true;
+      }
       if (s.recipes.length < CONFIG.recipes.max && can(Eco.recipeCost(s))) {
         const base = Object.keys(CONFIG.flavors).filter(k => s.unlocked.includes(k)).sort((a, b) => CONFIG.flavors[b].price - CONFIG.flavors[a].price);
         for (let i = 0; i < base.length; i++) for (let j = i + 1; j < base.length; j++) {

@@ -9,4 +9,5 @@ export const Form = {
   laboTab: 'recettes',                                     // onglet du Labo : 'recettes' | 'arbre'
   resSel: 'u1',                                            // fruit choisi dans l'arbre
   labo: { a: 'menthe', b: 'grenadine', name: '', color: RECIPE_COLORS[0] },
+  third: { id: null, c: null },   // Trois parfums : recette ouverte et 3e parfum choisi
 };

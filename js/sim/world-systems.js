@@ -219,6 +219,29 @@ export const Recipes = {
     return '';
   },
 
+  /** Trois parfums (r3) : la recette avec un 3e parfum c, prix (A+B+C) × third.bonus (1,5 × le prix moyen, comme à 2) */
+  thirdPreview(r, c) {
+    const A = CONFIG.flavors[r.a], B = CONFIG.flavors[r.b], C = CONFIG.flavors[c], T = CONFIG.recipes.third;
+    return { price: Math.round((A.price + B.price + C.price) * T.bonus * 10) / 10,
+      sugar: Math.round(((A.sugar + B.sugar + C.sugar) / 3 + 0.3) * 10) / 10, fruit: Math.round(((A.fruit + B.fruit + C.fruit) / 3 + 0.4) * 10) / 10,
+      time: Math.round(Math.max(A.time, B.time, C.time) * 1.15 * 10) / 10 };
+  },
+  /** 3es parfums possibles : débloqués, hors parfums de ville, et seulement ceux qui font monter le prix (choix 1 de Seb) */
+  thirdOptions(s, r) {
+    if (!r || r.c || !Research.has(s, 'r3')) return [];
+    return Object.keys(CONFIG.flavors).filter(k => s.unlocked.includes(k) && !CONFIG.flavors[k].city && k !== r.a && k !== r.b
+      && this.thirdPreview(r, k).price > r.price);
+  },
+  /** Ajoute le 3e parfum (coût third.cost) */
+  addThird(s, id, c) {
+    const r = s.recipes.find(x => x.id === id);
+    if (!this.thirdOptions(s, r).includes(c) || !Wallet.spend(s, CONFIG.recipes.third.cost)) return false;
+    Object.assign(r, { c }, this.thirdPreview(r, c));
+    Bus.toast(`🌈 ${r.name} a maintenant trois parfums : ${Fmt.money(r.price)} la bouteille !`, 'ok');
+    Bus.sfx('unlock');
+    return true;
+  },
+
   create(s, form) {
     // Le nom s'affiche dans les panneaux : sans balise ni guillemet
     form = { ...form, name: String(form.name || '').replace(/[<>&"']/g, '') };

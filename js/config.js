@@ -98,7 +98,7 @@ export const CONFIG = {
   couriers: { max: 4, cost: 6000, costGrowth: 4, rep: 20, speed: 150 },
 
   // Prix d'une recette = (prix A + prix B) × priceBonus, soit 1,5 × le prix moyen des deux parfums
-  recipes: { max: 4, cost: 8000, costGrowth: 4, priceBonus: 0.75, third: { bonus: 0.5, cost: 1000000 } },   // third : Trois parfums (r3), prix (A+B+C) × bonus ; simulateur +18 % en 1re partie
+  recipes: { max: 4, cost: 8000, costGrowth: 4, priceBonus: 0.75, third: { bonus: 0.4, cost: 1000000 } },   // third : Trois parfums (r3), prix (A+B+C) × bonus ; simulateur +12 % en 1re partie, +22 % après prestige
 
   districts: {
     colline: { name: 'La Colline', icon: '⛰️', cost: 300000, rep: 25, desc: 'La gare du Train Express, 4 terrains et un bois de sureau.' },

@@ -2,6 +2,16 @@
 
 Numérotation : `vMAJEUR.MINEUR.CORRECTIF`. Pour préparer une nouvelle version : `node tools/build-sw.mjs patch` (ou `minor`, `major`), puis décrire les changements ici.
 
+## v0.21.0 · 2026-11-15
+
+- **🌈 Trois parfums** : le dernier fruit « bientôt » de l'arbre du Labo (branche Recettes) pousse enfin. Il coûte 3 M $ et mûrit en 1 h.
+  - Dans le Labo (onglet Recettes), chaque recette secrète a un bouton **« ＋ Parfum »** : on choisit un 3e parfum, on voit le nouveau prix, puis « Ajouter » pour **1 M $**. La recette prend le badge « 3 parfums » et sa bouteille affiche 🌈.
+  - Une recette à 3 parfums se vend **1,2 fois le prix moyen de ses trois parfums**. Seuls les parfums qui font monter le prix sont proposés : si aucun ne convient (une recette déjà très chère), le bouton n'apparaît pas. Une recette n'a qu'un seul 3e parfum. Les parfums de ville (Fraise, Orange) ne sont pas proposés.
+  - Les recettes ne se suppriment pas : on améliore celles qu'on a déjà, sans avoir besoin d'une place libre.
+- Mesuré au simulateur (8 parties) : **+12 % de gains sur une première partie** de 10 h, **+22 % après un prestige**. Le prestige devient possible à la même heure.
+  - Une première mesure annonçait 0 % après prestige avec un coefficient de 1,5 : elle était faussée (le joueur simulé ajoutait parfois un parfum qui faisait baisser le prix). Avec la vraie règle, ce coefficient donnait +42 %, d'où le choix de 1,2.
+- Code : `Recipes.thirdOptions`, `thirdPreview` et `addThird` (`js/sim/world-systems.js`), réglage `CONFIG.recipes.third`, 3e parfum `c` dans la recette (sauvegardé), part du fruit divisée en trois dans `Flavors.needs`.
+
 ## v0.20.0 · 2026-11-15
 
 - **🏺 La Verrerie** : le 3e fruit de la branche Usine de l'arbre du Labo n'est plus « bientôt ». Il coûte 5 M $ et mûrit en 1 h.

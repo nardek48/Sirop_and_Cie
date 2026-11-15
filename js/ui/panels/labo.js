@@ -96,7 +96,7 @@ export const labo = {
       </section>
       <section class="card"><h3>Recettes découvertes (${s.recipes.length} / ${Research.recipeMax(s)})</h3>
         <div class="recipes">${list}</div>
-        <p class="hint">Une recette se vend ${Fmt.num(CONFIG.recipes.priceBonus * 2)} fois le prix moyen de ses parfums, et les clients peuvent la commander.${s.research.done.includes('r3') ? ` Avec 🌈 Trois parfums, « ＋ Parfum » lui ajoute un 3e parfum pour ${Fmt.money(cost)}.` : ''}</p>
+        <p class="hint">Une recette se vend ${Fmt.num(CONFIG.recipes.priceBonus * 2)} fois le prix moyen de ses parfums, et les clients peuvent la commander.${s.research.done.includes('r3') ? ` Avec 🌈 Trois parfums, « ＋ Parfum » lui ajoute un 3e parfum pour ${Fmt.money(cost)} : elle se vend alors ${Fmt.num(CONFIG.recipes.third.bonus * 3)} fois le prix moyen de ses trois parfums (seuls ceux qui font monter le prix sont proposés).` : ''}</p>
       </section>
     </div>`;
   },

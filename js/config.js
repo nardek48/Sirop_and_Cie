@@ -238,7 +238,8 @@ export const CONFIG = {
       { id: 'u3', b: 'usine',     tier: 3, icon: '🏺', name: 'La Verrerie',           what: 'Fabriquer tes propres bouteilles.',                 soon: true },
       { id: 'n1', b: 'nature',    tier: 1, icon: '🌱', name: 'Engrais',               what: 'Chaque récolte donne 50 % de fruits en plus.',     cost: 5000,   sec: 120 },
       { id: 'n2', b: 'nature',    tier: 2, icon: '🌧️', name: 'Pousse rapide',         what: 'Les champs et les arbres repoussent 2 fois plus vite.', cost: 150000, sec: 900 },
-      { id: 'n3', b: 'nature',    tier: 3, icon: '🐝', name: 'La Ruche',              what: 'Des abeilles qui font du miel pour tes sirops.',   soon: true },
+      // honey : bonus de prix de tous les sirops (le miel remplace aussi le sucre). Simulateur : +7 % en 1re partie, +18 % après prestige
+      { id: 'n3', b: 'nature',    tier: 3, icon: '🐝', name: 'La Ruche',              what: 'Le miel remplace le sucre : plus de sucre à acheter, et tous tes sirops se vendent 10 % plus cher.', cost: 2000000, sec: 2700, honey: 0.1 },
       { id: 'l1', b: 'livraison', tier: 1, icon: '👟', name: 'Bottes de sept lieues', what: 'Tu marches et roules 30 % plus vite.',              cost: 3000,   sec: 120 },
       { id: 'l2', b: 'livraison', tier: 2, icon: '📦', name: 'Caisses empilables',    what: 'Tu portes 50 % de bouteilles en plus.',            cost: 120000, sec: 900 },
       { id: 'l3', b: 'livraison', tier: 3, icon: '🚂', name: 'Billet de train',       what: 'Ouvre la Gare des Fraises : un wagon y vend ton surplus et rapporte des fraises.', cost: 600000, sec: 1800 },

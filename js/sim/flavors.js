@@ -2,6 +2,7 @@
  * flavors.js — accès unifié aux parfums de base (CONFIG) et aux recettes secrètes (état).
  */
 import { CONFIG } from '../config.js';
+import { Research } from './research.js';
 
 export const Flavors = {
   /** @returns {{name,price,sugar,fruit,time,color,recipe?}} */
@@ -15,9 +16,11 @@ export const Flavors = {
    */
   needs(s, id) {
     const f = this.get(s, id);
-    if (!f) return { sugar: 1 };
-    if (!f.recipe) return { sugar: f.sugar, [id]: f.fruit };
-    return { sugar: f.sugar, [f.a]: f.fruit / 2, [f.b]: (f.fruit / 2) + (f.a === f.b ? f.fruit / 2 : 0) };
+    // La Ruche : le miel remplace le sucre (plus de sucre dans la recette)
+    const sugar = Research.honey(s) ? {} : { sugar: f ? f.sugar : 1 };
+    if (!f) return sugar;
+    if (!f.recipe) return { ...sugar, [id]: f.fruit };
+    return { ...sugar, [f.a]: f.fruit / 2, [f.b]: (f.fruit / 2) + (f.a === f.b ? f.fruit / 2 : 0) };
   },
   /** Fruits demandés par un parfum (sans le sucre) */
   fruits(s, id) { return Object.keys(this.needs(s, id)).filter(m => m !== 'sugar'); },

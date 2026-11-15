@@ -70,5 +70,8 @@ export const Research = {
   speedK: s => (Research.has(s, 'l1') ? 1.3 : 1),
   carryK: s => (Research.has(s, 'l2') ? 1.5 : 1),
   recipeK: s => (Research.has(s, 'r1') ? 1.25 : 1),
+  /** La Ruche : le miel remplace le sucre, et tous les sirops se vendent plus cher */
+  honey: s => Research.has(s, 'n3'),
+  honeyK: s => (Research.has(s, 'n3') ? 1 + fruitById('n3').honey : 1),
   recipeMax: s => CONFIG.recipes.max + (Research.has(s, 'r2') ? 1 : 0),
 };

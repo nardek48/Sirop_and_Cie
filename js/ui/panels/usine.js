@@ -45,7 +45,7 @@ export function lineMat(s, i) {
       <b data-t="mat:${m}"></b>
       ${M[m].city ? `<small class="sub">${CONFIG.cities[M[m].city].ride} ${CONFIG.cities[M[m].city].from}</small>` : buyBtn(m, 100) + buyBtn(m, 1000)}
     </div>`).join('')}
-    <div class="sub">${Fmt.num(need.find(([m]) => m === 'sugar')[1])} kg 🧂 + ${need.filter(([m]) => m !== 'sugar').map(([m, q]) => `${Fmt.num(q)} kg ${M[m].icon}`).join(' + ')} par bouteille</div>
+    <div class="sub">${need.some(([m]) => m === 'sugar') ? `${Fmt.num(need.find(([m]) => m === 'sugar')[1])} kg 🧂` : '🍯 miel de la Ruche'} + ${need.filter(([m]) => m !== 'sugar').map(([m, q]) => `${Fmt.num(q)} kg ${M[m].icon}`).join(' + ')} par bouteille</div>
   </div>`;
 }
 

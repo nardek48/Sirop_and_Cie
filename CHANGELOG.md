@@ -2,6 +2,15 @@
 
 Numérotation : `vMAJEUR.MINEUR.CORRECTIF`. Pour préparer une nouvelle version : `node tools/build-sw.mjs patch` (ou `minor`, `major`), puis décrire les changements ici.
 
+## v0.19.0 · 2026-11-15
+
+- **🐝 La Ruche pousse enfin** : le 3e fruit de la branche Nature de l'arbre du Labo n'est plus « bientôt ». Il coûte 2 M $ et mûrit en 45 min (il arrive vers 4 h de jeu sur une première partie).
+  - Le miel remplace le sucre : plus de sucre dans les recettes ni à acheter. L'usine affiche « 🍯 miel de la Ruche » à la place du sucre.
+  - **Tous les sirops se vendent 10 % plus cher**, recettes secrètes comprises.
+  - Comme tout l'arbre, la Ruche est gardée au prestige.
+- Mesuré au simulateur (8 parties) : +7 % de gains sur une première partie de 10 h, +18 % après un prestige. Le prestige devient possible environ 15 minutes plus tôt après un prestige (2 h 35 au lieu de 2 h 52), à la même heure en première partie.
+- Code : `Research.honey` et `Research.honeyK` (bonus `honey` du fruit `n3`), appliqués dans `Flavors.needs` (plus de sucre) et `Eco.basePrice` (prix).
+
 ## v0.18.0 · 2026-11-15
 
 - **Plus de ligne bloquée par l'entrepôt plein** : en changeant de parfum, une ligne doit d'abord mettre en bouteilles le reste de l'ancien parfum dans sa cuve. Avec un entrepôt plein, cette mise en bouteilles s'arrêtait et la ligne restait coincée jusqu'à ce que le stock baisse. Maintenant, ce reste se met en bouteilles même entrepôt plein (l'entrepôt déborde un peu, d'une cuve au plus), et la ligne repart tout de suite sur le nouveau parfum.

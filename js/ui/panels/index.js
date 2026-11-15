@@ -17,5 +17,6 @@ import { parfum } from './parfum.js';
 import { deco } from './deco.js';
 import { champ } from './champ.js';
 import { carte } from './carte.js';
+import { verrerie } from './verrerie.js';
 
-export const Panels = { usine, contrats, agence, mairie, labo, garage, quetes, machine, parfum, deco, champ, carte };
+export const Panels = { usine, contrats, agence, mairie, labo, garage, quetes, machine, parfum, deco, champ, carte, verrerie };

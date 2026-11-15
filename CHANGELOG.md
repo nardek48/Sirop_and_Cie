@@ -2,6 +2,17 @@
 
 Numérotation : `vMAJEUR.MINEUR.CORRECTIF`. Pour préparer une nouvelle version : `node tools/build-sw.mjs patch` (ou `minor`, `major`), puis décrire les changements ici.
 
+## v0.20.0 · 2026-11-15
+
+- **🏺 La Verrerie** : le 3e fruit de la branche Usine de l'arbre du Labo n'est plus « bientôt ». Il coûte 5 M $ et mûrit en 1 h.
+  - Il ouvre un **nouveau bâtiment au bord de l'eau**, derrière le Supermarché, à côté de la plage. On y va par un chemin qui passe entre le Supermarché et le Port. Avant que le fruit soit mûr, le bâtiment est fermé (« Bientôt ! »).
+  - **Le four décore tes bouteilles** : les sirops se vendent **+5 %** plus cher dès l'ouverture, puis **+10 %** (four niveau 2, 10 M $) et **+15 %** (niveau 3, 40 M $). Le bonus compte partout : comptoir, commandes, wagon et bateau.
+  - Le fruit reste pour toujours ; le four repart au niveau 1 quand tu revends l'entreprise, comme les machines de l'usine.
+  - La Verrerie a sa place dans la carte (onglet Le village, groupe Travailler).
+  - Le bâtiment est dessiné par le jeu. Si une image `assets/batiments/verrerie.png` est ajoutée plus tard, elle le remplacera (il faudra aussi l'ajouter à la liste des images chargées dans `js/main.js`).
+- Mesuré au simulateur (8 parties) : **+15 % de gains après un prestige** (four niveau 2 vers 4 h 50, niveau 3 vers 8 h 40) ; le prestige devient possible un peu plus tôt (2 h 30 au lieu de 2 h 35). En première partie, la Verrerie mûrit vers 8 h 35 et ne change presque rien.
+- Code : `Glass` dans `js/sim/world-systems.js`, réglages `CONFIG.glass`, niveau du four `s.oven`, bonus `Research.glassK`, fiche `js/ui/panels/verrerie.js`. Le simulateur achète les niveaux du four.
+
 ## v0.19.1 · 2026-11-15
 
 - **🐝 Des ruches dans le village** : quand la Ruche du Labo est mûre, 3 ruches apparaissent au bas du verger communal, avec des abeilles qui volent autour (elles dorment la nuit).

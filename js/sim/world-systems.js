@@ -234,3 +234,19 @@ export const Recipes = {
     return true;
   },
 };
+
+/** Verrerie (fruit u3 du Labo) : le four décore les bouteilles ; chaque niveau augmente le prix des sirops */
+export const Glass = {
+  open: s => Research.has(s, 'u3'),
+  /** Bonus de prix actuel (0.05 = +5 %) et coût du niveau suivant (null au maximum) */
+  bonus: s => (Glass.open(s) ? CONFIG.glass.bonus[s.oven - 1] : 0),
+  nextCost: s => (s.oven < CONFIG.glass.bonus.length ? CONFIG.glass.costs[s.oven] : null),
+  upgrade(s) {
+    const cost = Glass.nextCost(s);
+    if (!Glass.open(s) || cost == null || !Wallet.spend(s, cost)) return false;
+    s.oven++;
+    Bus.toast(`🏺 Four de la Verrerie niveau ${s.oven} : tes sirops se vendent ${Math.round(Glass.bonus(s) * 100)} % plus cher !`, 'ok');
+    Bus.sfx('unlock');
+    return true;
+  },
+};

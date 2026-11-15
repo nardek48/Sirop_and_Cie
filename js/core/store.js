@@ -60,7 +60,8 @@ export const Store = {
       research: { done: [], cur: null, left: 0 },   // arbre du Labo (gardé au prestige)
       train: { trips: 0, best: 0, readyAt: 0 },      // voyages en train (mini-jeu) : nombre, record d'étoiles, prochain voyage payé
       boat: { trips: 0, best: 0, readyAt: 0 },       // traversées en bateau (mini-jeu du Port), même forme que train
-      fishing: { caught: 0, carnet: {} },            // pêche au ponton : prises, et par espèce { n, best } (gardé au prestige)
+      fishing: { caught: 0, carnet: {} },
+      oven: 1,              // niveau du four de la Verrerie (1 à 3), remis à 1 au prestige            // pêche au ponton : prises, et par espèce { n, best } (gardé au prestige)
       cities: {},           // autres villes : wagon automatique { next, trips, sent, fruit, last } (remis à zéro au prestige)
       home: {               // décoration de ta maison (voir world/home.js)
         wall: 'creme', floor: 'bois',
@@ -164,6 +165,7 @@ export const Store = {
     out.tuto.step = int(out.tuto.step, 0, 1e3);
     out.quest.i = int(out.quest.i, 0, 1e6); out.quest.ready = out.quest.ready === true;
     for (const k of ['train', 'boat']) for (const f of ['trips', 'best', 'readyAt']) out[k][f] = num(out[k][f]);
+    out.oven = int(out.oven, 1, CONFIG.glass.bonus.length);
     // Carnet de pêche : seulement les espèces du jeu, nombres valides
     const carnet = out.fishing.carnet && typeof out.fishing.carnet === 'object' ? out.fishing.carnet : {};
     out.fishing = { caught: Math.max(0, num(out.fishing.caught)), carnet: {} };

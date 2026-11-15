@@ -221,6 +221,9 @@ export const CONFIG = {
     agence: { name: 'Agence', icon: '🏡', need: 'après 3 commandes livrées',     stat: 'cDone',  goal: 3 },
     labo:   { name: 'Labo', icon: '🧪', need: 'quand tu auras débloqué un 2e parfum (Grenadine)', stat: 'flavors', goal: 2 },
   },
+  // Verrerie (fruit u3) : le four décore les bouteilles. bonus : prix des sirops par niveau ; costs : prix de chaque niveau.
+  // Simulateur (v0.20.0) : +15 % de gains après prestige, niveau 2 vers 4 h 50, niveau 3 vers 8 h 40 ; 1re partie quasi inchangée.
+  glass: { bonus: [0.05, 0.10, 0.15], costs: [0, 10000000, 40000000] },
   offline: { capHours: 8, minSec: 30 },
   // Étoiles = base + perDecade × log10(gains / minRunEarned) : 3 au seuil (20 M $), +4 à chaque ×10
   // Arbre du Labo : 4 branches × 3 fruits. Un seul fruit mûrit à la fois ; ce qui est mûr reste
@@ -235,7 +238,7 @@ export const CONFIG = {
     fruits: [
       { id: 'u1', b: 'usine',     tier: 1, icon: '🔥', name: 'Marmite en cuivre',     what: 'La marmite cuit 50 % plus vite.',                  cost: 8000,   sec: 180 },
       { id: 'u2', b: 'usine',     tier: 2, icon: '🍾', name: 'Tapis rapide',          what: 'Les bouteilles se remplissent 50 % plus vite.',    cost: 250000, sec: 1200 },
-      { id: 'u3', b: 'usine',     tier: 3, icon: '🏺', name: 'La Verrerie',           what: 'Fabriquer tes propres bouteilles.',                 soon: true },
+      { id: 'u3', b: 'usine',     tier: 3, icon: '🏺', name: 'La Verrerie',           what: 'Ouvre la Verrerie au bord de l’eau : son four décore tes bouteilles, et tes sirops se vendent plus cher.', cost: 5000000, sec: 3600 },
       { id: 'n1', b: 'nature',    tier: 1, icon: '🌱', name: 'Engrais',               what: 'Chaque récolte donne 50 % de fruits en plus.',     cost: 5000,   sec: 120 },
       { id: 'n2', b: 'nature',    tier: 2, icon: '🌧️', name: 'Pousse rapide',         what: 'Les champs et les arbres repoussent 2 fois plus vite.', cost: 150000, sec: 900 },
       // honey : bonus de prix de tous les sirops (le miel remplace aussi le sucre). Simulateur : +7 % en 1re partie, +18 % après prestige
@@ -268,6 +271,7 @@ export const CONFIG = {
     cafe:        { x: 1935, y: 512 },
     supermarche: { x: 2175, y: 512 },
     port:        { x: 2445, y: 512 },
+    verrerie:    { x: 2175, y: 282 },   // au bord de l'eau, derrière le Supermarché
     gare:        { x: 2930, y: 512 },
   },
 };

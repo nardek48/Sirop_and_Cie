@@ -49,7 +49,7 @@ export const Eco = {
   orchard: s => Eco.houseTotal(s, 'orchard'),
 
   /** Prix de base d'un parfum (recette secrète : +25 % avec « Sirop de luxe ») */
-  basePrice: (s, fl) => { const f = Flavors.get(s, fl); return f.price * (f.recipe ? Research.recipeK(s) : 1) * Research.honeyK(s); },
+  basePrice: (s, fl) => { const f = Flavors.get(s, fl); return f.price * (f.recipe ? Research.recipeK(s) : 1) * Research.honeyK(s) * Research.glassK(s); },
   sellPrice: (s, fl, factor = 1) => Eco.basePrice(s, fl) * factor * Eco.mult(s),
   totalStock: s => Object.values(s.stock).reduce((a, b) => a + b, 0),
   /** Bouteilles réservées : contrats acceptés pas encore chargés */

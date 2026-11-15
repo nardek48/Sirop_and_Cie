@@ -49,7 +49,7 @@ const { Flavors } = await import('../js/sim/flavors.js');
 const { Factory } = await import('../js/sim/factory.js');
 const { Contracts } = await import('../js/sim/contracts.js');
 const { Couriers } = await import('../js/sim/couriers.js');
-const { Fields, Farm, Districts, RealEstate, Garage, Recipes } = await import('../js/sim/world-systems.js');
+const { Fields, Farm, Districts, RealEstate, Garage, Recipes, Glass } = await import('../js/sim/world-systems.js');
 const { Quests, questsFromFile } = await import('../js/sim/quests.js');
 // Les quêtes publiées (assets/quests.json) si le fichier existe, comme dans le jeu
 try {
@@ -201,6 +201,8 @@ function makeBot(s) {
       }
       const nextFl = Object.entries(CONFIG.flavors).find(([k]) => !s.unlocked.includes(k) && Factory.canUnlock(s, k));
       if (nextFl && can(nextFl[1].unlock)) { Factory.unlock(s, nextFl[0]); return true; }
+      const ovenCost = Glass.nextCost(s);                       // four de la Verrerie
+      if (Glass.open(s) && ovenCost != null && can(ovenCost)) { Glass.upgrade(s); return true; }
       const lineCost = Factory.nextLineCost(s);
       if (lineCost != null && can(lineCost)) { Factory.buyLine(s); return true; }
       // Arbre du Labo : le fruit le moins cher qu'on peut lancer
@@ -288,6 +290,8 @@ const STEPS = [
   ['Toutes les quêtes', s => s.quest.i >= Quests.count(s)],
   ['Arbre : 4 fruits', s => s.research.done.length >= 4],
   ['Arbre : 8 fruits', s => s.research.done.length >= 8],
+  ['Verrerie', s => Glass.open(s)],
+  ['Four niveau 3', s => s.oven >= 3],
   // Une étape par ville : son ouverture (fruit de l'arbre), puis son parfum
   ...Object.values(CONFIG.cities).flatMap(C => {
     const fl = Object.keys(CONFIG.flavors).find(k => CONFIG.flavors[k].city && CONFIG.cities[CONFIG.flavors[k].city] === C);

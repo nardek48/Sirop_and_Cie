@@ -14,7 +14,7 @@ import { Eco } from '../sim/eco.js';
 import { Clock } from '../sim/clock.js';
 import { Events } from '../sim/events.js';
 import { Contracts } from '../sim/contracts.js';
-import { RealEstate, Garage, Recipes, Farm } from '../sim/world-systems.js';
+import { RealEstate, Garage, Recipes, Farm, Glass } from '../sim/world-systems.js';
 import { Quests } from '../sim/quests.js';
 import { Prestige } from '../sim/sim.js';
 import { Form } from './form.js';
@@ -28,6 +28,8 @@ const BNECK = {
 };
 
 export const B = {
+  /* --- Verrerie --- */
+  cantOven: s => { const c = Glass.nextCost(s); return c == null || s.money < c; },
   /* --- Carte : voyages payés et wagon (textes qui changent chaque seconde) --- */
   mapTrip: (s, k) => (Trips.ready(s, k) ? `${k === 'boat' ? 'Traversée' : 'Voyage'} payé${k === 'boat' ? 'e' : ''} prêt${k === 'boat' ? 'e' : ''}`
     : `${k === 'boat' ? 'Traversée payée' : 'Voyage payé'} dans ${Fmt.time(Trips.wait(s, k))}`),

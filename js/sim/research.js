@@ -73,5 +73,7 @@ export const Research = {
   /** La Ruche : le miel remplace le sucre, et tous les sirops se vendent plus cher */
   honey: s => Research.has(s, 'n3'),
   honeyK: s => (Research.has(s, 'n3') ? 1 + fruitById('n3').honey : 1),
+  /** La Verrerie : le four décore les bouteilles, bonus de prix selon son niveau */
+  glassK: s => (Research.has(s, 'u3') ? 1 + CONFIG.glass.bonus[(s.oven || 1) - 1] : 1),
   recipeMax: s => CONFIG.recipes.max + (Research.has(s, 'r2') ? 1 : 0),
 };

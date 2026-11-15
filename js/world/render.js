@@ -88,7 +88,14 @@ export const Render = {
 
     // Allées vers les portes
     c.fillStyle = '#ddd2bf';
-    for (const b of MAP.buildings) { const d = CONFIG.places[b.id]; c.fillRect(d.x - 22, b.y + b.h, 44, R.y - 18 - b.y - b.h + 1); }
+    for (const b of MAP.buildings) {
+      const d = CONFIG.places[b.id];
+      if (b.id === 'verrerie') {   // derrière le Supermarché : chemin le long de la plage puis par le passage vers le Port
+        c.fillRect(d.x - 22, b.y + b.h, 44, 30); c.fillRect(d.x - 22, b.y + b.h + 14, 2305 - d.x + 22 + 22, 26); c.fillRect(2283, b.y + b.h + 14, 44, R.y - 18 - b.y - b.h - 13);
+        continue;
+      }
+      c.fillRect(d.x - 22, b.y + b.h, 44, R.y - 18 - b.y - b.h + 1);
+    }
 
     // Verger communal
     c.fillStyle = '#79ad58'; c.fillRect(80, 660, 430, 410);
@@ -157,6 +164,12 @@ export const Render = {
       c.beginPath(); c.moveTo(x + 14 - 24 * k, yy); c.lineTo(x + w - 14 + 24 * k, yy); c.stroke();
     }
 
+    // Verrerie : cheminée du four, lueur orange quand elle est ouverte
+    if (b.id === 'verrerie') {
+      c.fillStyle = '#8a5a34'; c.fillRect(x + w - 50, y - 30, 22, 50);
+      if (s.research.done.includes(b.research)) { c.fillStyle = `rgba(255,170,60,${0.55 + Math.sin(t * 3) * 0.2})`; c.beginPath(); c.arc(x + w - 39, y - 36, 11, 0, TAU); c.fill(); }
+    }
+
     // Drapeau de la mairie
     if (b.id === 'mairie') {
       c.fillStyle = '#5b4030'; c.fillRect(x + w / 2 - 2, y - 46, 4, 50);
@@ -203,7 +216,7 @@ export const Render = {
     Gfx.sign(c, `${icon} ${name}`, x + w / 2, top - 2, 15);
 
     // Bâtiment pas encore ouvert : planches en croix sur la porte et panneau « Bientôt ! »
-    if (b.panel && s.opened[b.id] === false) {
+    if (b.panel && (s.opened[b.id] === false || (b.research && !s.research.done.includes(b.research)))) {
       c.fillStyle = 'rgba(60,50,40,.28)'; c.fillRect(x, top, w, y + h - top);
       this.planks(c, door.x, y + h);
     }
@@ -332,7 +345,7 @@ export const Render = {
    */
   buildingArt(c, b, s, t, img, name, icon, client) {
     const w = b.w + 20, hh = w * img.height / img.width, x = b.x - 10, bot = b.y + b.h, y = bot - hh;
-    const A = BAT_ART[b.id] || {}, door = CONFIG.places[b.id], locked = b.panel && s.opened[b.id] === false;
+    const A = BAT_ART[b.id] || {}, door = CONFIG.places[b.id], locked = b.panel && (s.opened[b.id] === false || (b.research && !s.research.done.includes(b.research)));
     // Client pas encore ouvert (réputation trop basse) ; sa colline doit être achetée pour qu'on le signale
     const shut = client && !Eco.clientOpen(s, client) && (!client.district || s.districts[client.district]);
     Gfx.shadow(c, x + w / 2 + 6, bot + 2, w / 2 + 4, 8);

@@ -9,7 +9,7 @@ import { Fmt, esc } from '../core/format.js';
 import { Factory } from '../sim/factory.js';
 import { Contracts } from '../sim/contracts.js';
 import { Couriers } from '../sim/couriers.js';
-import { RealEstate, Garage, Recipes, Districts, Farm } from '../sim/world-systems.js';
+import { RealEstate, Garage, Recipes, Districts, Farm, Glass } from '../sim/world-systems.js';
 import { FieldSel } from './panels/champ.js';
 import { Quests } from '../sim/quests.js';
 import { Sim, Prestige } from '../sim/sim.js';
@@ -138,6 +138,8 @@ const map = {
   checkUpdate: () => PWA.check(),
   hideHelp: () => { UI.el.help.hidden = true; try { localStorage.setItem('siropcie_help', '0'); } catch (e) { /* */ } },
   questToggle: () => { const q = UI.el.quest, open = q.classList.toggle('open'); q.setAttribute('aria-expanded', open); },
+  // verrerie
+  ovenUp: s => Glass.upgrade(s),
   // carte : raccourcis du village et voyages vers les villes
   map: s => {
     if (s.tuto.active) return Bus.toast('Finis d’abord le tutoriel avec Mémé 👵');

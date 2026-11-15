@@ -303,6 +303,10 @@ export const World = {
           label: fete ? 'Livrer la Fête 🎉' : s.quest.ready ? 'Récompense du maire 🎁' : 'Entrer · Mairie',
           run: () => { if (Contracts.deliverAt(s, 'mairie')) return; if (Quests.claim(s)) return; UI.open('mairie'); },
         });
+      } else if (b.research && !Research.has(s, b.research)) {
+        // Verrerie : fermée tant que son fruit du Labo n'est pas mûr
+        const f = CONFIG.research.fruits.find(x => x.id === b.research);
+        L.push({ id: b.id, ...at, hit: b, label: `🔒 ${b.name} · Bientôt !`, run: () => Bus.toast(`${b.icon} ${b.name} ouvrira quand le fruit ${f.icon} ${f.name} du Labo sera mûr`) });
       } else if (b.panel && !Openings.isOpen(s, b.id)) {
         const O = CONFIG.openings[b.id];
         L.push({

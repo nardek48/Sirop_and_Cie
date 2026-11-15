@@ -20,8 +20,8 @@
  */
 
 // <build>
-const VERSION = 'v0.19.1';
-const BUILD = 'f302e43cfc';
+const VERSION = 'v0.20.0';
+const BUILD = 'b366bb2b16';
 const PRECACHE = [
   './index.html',
   './manifest.webmanifest',
@@ -84,6 +84,7 @@ const PRECACHE = [
   './js/ui/panels/mairie.js',
   './js/ui/panels/parfum.js',
   './js/ui/panels/usine.js',
+  './js/ui/panels/verrerie.js',
   './js/ui/savefile.js',
   './js/ui/ui.js',
   './js/vendor/three.min.js',

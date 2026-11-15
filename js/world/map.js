@@ -23,6 +23,7 @@ export const MAP = {
     { id: 'cafe',        client: true, x: 1850, y: 350, w: 170, h: 150, wall: '#c9a080', roof: '#5a3a2a' },
     { id: 'supermarche', client: true, x: 2070, y: 310, w: 210, h: 190, wall: '#dfe4ea', roof: '#c2453a' },
     { id: 'port',        client: true, x: 2330, y: 320, w: 230, h: 180, wall: '#8fb4d3', roof: '#34506e' },
+    { id: 'verrerie',    panel: 'verrerie', name: 'Verrerie', icon: '🏺', x: 2060, y: 90, w: 230, h: 190, wall: '#dfe9ee', roof: '#3a6ea5', research: 'u3' },
     { id: 'gare',        client: true, district: 'colline', x: 2780, y: 300, w: 300, h: 200, wall: '#e3c9a8', roof: '#7a2e2e' },
   ],
 

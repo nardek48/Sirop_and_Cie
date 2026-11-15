@@ -139,6 +139,7 @@ js/
     panels/champ.js     fiche d’un champ (planter, acheter)
     panels/machine.js   fiche d’une machine (dans l’usine visitable)
     panels/carte.js     🗺️ la carte : raccourcis vers les lieux du village, voyages vers les autres villes
+    panels/verrerie.js  🏺 la Verrerie : le four à 3 niveaux (verre décoré, sirops plus chers)
   world/                le village en canvas
     map.js              ⭐ positions des bâtiments, arbres, terrains, décor
     interior.js         ⭐ l’intérieur de l’usine : salle, machines animées, sorties

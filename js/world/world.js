@@ -38,6 +38,8 @@ import { FieldSel } from '../ui/panels/champ.js';
 import { ParfumSel } from '../ui/panels/parfum.js';
 import { Factory } from '../sim/factory.js';
 import { Minis } from '../minigames/index.js';
+import { Research } from '../sim/research.js';
+import { HIVES } from './decor.js';
 
 /** Salles où l'on entre à pied : même interface (W, H, p, spawn, solids, build, draw) */
 const ROOMS = { usine: Interior, maison: HomeRoom };
@@ -601,6 +603,7 @@ export const World = {
     MAP.farm.forEach((pos, i) => add(pos.y, () => Render.farmField(c, pos, i, s, t)));
     for (const h of s.houses) { const pl = MAP.plots[h.plot]; add(pl.y + pl.h - 6, () => Render.house(c, pl, h, dark)); }
     for (const d of MAP.decor) add(d.y, () => Render.decor(c, d, dark));
+    if (Research.has(s, 'n3')) for (const d of HIVES) add(d.y, () => Render.decor(c, d, dark));   // ruches du verger
     add(MAP.fountain.y + 20, () => Render.fountain(c, t));
     add(MAP.windmill.y, () => Render.windmill(c, t));
     this.addCouriers(s, add);

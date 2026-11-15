@@ -4,6 +4,7 @@
  *
  * box : taille de la zone cliquable, ancrée au bas-centre de l'objet (x, y = ses pieds).
  * text : l'objet porte un texte modifiable (panneau).
+ * need : fruit du Labo qui débloque l'objet (sinon absent du Mode architecte).
  * Pour ajouter un objet : une ligne ici + son dessin dans Render.decor.
  */
 export const DECOR = {
@@ -17,9 +18,13 @@ export const DECOR = {
   cloture:    { name: 'Clôture',    icon: '🚧', box: { w: 66, h: 28 } },
   tonneau:    { name: 'Tonneau',    icon: '🛢️', box: { w: 32, h: 38 } },
   parasol:    { name: 'Parasol',    icon: '⛱️', box: { w: 64, h: 72 } },
+  ruche:      { name: 'Ruche',      icon: '🐝', box: { w: 40, h: 50 }, need: 'n3' },
 };
 
 export const DECOR_KINDS = Object.keys(DECOR);
+
+/** Ruches posées d'office au bord du verger quand la Ruche (Labo) est mûre */
+export const HIVES = [{ kind: 'ruche', x: 170, y: 1062 }, { kind: 'ruche', x: 240, y: 1066 }, { kind: 'ruche', x: 310, y: 1060 }];
 
 /** Zone cliquable d'un objet posé */
 export const decorBox = d => {

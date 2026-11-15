@@ -527,7 +527,8 @@ export const Render = {
 
   decor(c, d, dark) {
     // Images (assets/village) : largeur de chaque objet, posé sur d.y
-    const DW = { lampadaire: 17, banc: 58, buisson: 46, rocher: 54, panneau: 46 }, im = Art.img['v_' + d.kind];
+    const DW = { lampadaire: 17, banc: 58, buisson: 46, rocher: 54, panneau: 46, ruche: 40 }, im = Art.img['v_' + d.kind];
+    if (d.kind === 'ruche') return this.hive(c, d, im, dark);
     if (im && DW[d.kind]) {
       const h = Art.put(c, im, d.x, d.y + 2, DW[d.kind]);
       if (d.kind === 'lampadaire' && dark > 0.15) {                 // lanterne allumée la nuit
@@ -584,6 +585,30 @@ export const Render = {
         c.beginPath(); c.moveTo(d.x, d.y - 70);
         c.lineTo(d.x - 32 + i * 64 / 6, d.y - 50); c.lineTo(d.x - 32 + (i + 1) * 64 / 6, d.y - 50); c.closePath(); c.fill();
       }
+    }
+  },
+
+  /** Ruche : image assets/village/ruche.png si elle existe, sinon dessinée ; abeilles qui tournent autour (pas la nuit) */
+  hive(c, d, im, dark) {
+    if (im) Art.put(c, im, d.x, d.y + 2, 40);
+    else {
+      c.fillStyle = '#6b4226'; c.fillRect(d.x - 16, d.y - 6, 32, 6);                         // socle
+      const rings = ['#e8b53a', '#f2c84b', '#e8b53a', '#f2c84b'];
+      rings.forEach((col, i) => {                                                            // corps en anneaux de paille
+        const w = 17 - i * 2.5, y = d.y - 12 - i * 9;
+        c.fillStyle = col; c.beginPath(); c.ellipse(d.x, y, w, 6.5, 0, 0, TAU); c.fill();
+        c.strokeStyle = '#b8862a'; c.lineWidth = 1.2; c.stroke();
+      });
+      c.fillStyle = '#e8b53a'; c.beginPath(); c.ellipse(d.x, d.y - 46, 6, 4, 0, 0, TAU); c.fill();
+      c.fillStyle = '#5a3a1c'; c.beginPath(); c.ellipse(d.x, d.y - 11, 4.5, 3.5, 0, 0, TAU); c.fill();   // entrée
+    }
+    if (dark > 0.5) return;                                                                  // la nuit, les abeilles dorment
+    const t = performance.now() / 1000;
+    for (let i = 0; i < 3; i++) {
+      const a = t * (1.6 + i * 0.4) + i * 2.1 + d.x, bx = d.x + Math.cos(a) * (16 + i * 5), by = d.y - 34 + Math.sin(a * 1.7) * 9 - i * 4;
+      c.fillStyle = 'rgba(255,255,255,.75)'; c.beginPath(); c.ellipse(bx - 1, by - 3, 2.6, 1.6, -0.5, 0, TAU); c.fill();
+      c.fillStyle = '#f2c84b'; c.beginPath(); c.ellipse(bx, by, 2.8, 2, 0, 0, TAU); c.fill();
+      c.fillStyle = '#2b1d12'; c.fillRect(bx - 0.6, by - 2, 1.2, 4);
     }
   },
 

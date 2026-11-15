@@ -17,6 +17,7 @@ import { MAP } from '../world/map.js';
 import { World } from '../world/world.js';
 import { Render } from '../world/render.js';
 import { DECOR, decorBox } from '../world/decor.js';
+import { Research } from '../sim/research.js';
 import { toTiled } from '../world/tiled.js';
 import { Files } from '../core/files.js';
 
@@ -46,6 +47,8 @@ export const Editor = {
     UI.close(); UI.closeModal();
     if (!this.el) this.build();
     this.open = true; this.tool = 'move'; this.sel = null; this.undo = [];
+    // Objets débloqués par un fruit du Labo (la ruche) : visibles seulement une fois le fruit mûr
+    this.el.querySelectorAll('.arch-tool').forEach(b => { const D = DECOR[b.dataset.arg]; if (D && D.need) b.hidden = !Research.has(Game.s, D.need); });
     World.mode = 'edit';
     World.keys.clear();
     document.body.classList.add('arch-on');

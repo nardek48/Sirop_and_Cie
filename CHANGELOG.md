@@ -2,6 +2,13 @@
 
 Numérotation : `vMAJEUR.MINEUR.CORRECTIF`. Pour préparer une nouvelle version : `node tools/build-sw.mjs patch` (ou `minor`, `major`), puis décrire les changements ici.
 
+## v0.19.1 · 2026-11-15
+
+- **🐝 Des ruches dans le village** : quand la Ruche du Labo est mûre, 3 ruches apparaissent au bas du verger communal, avec des abeilles qui volent autour (elles dorment la nuit).
+- **La ruche dans le Mode architecte** : une fois la Ruche mûre, elle rejoint le catalogue du Mode architecte (mairie) et on peut en poser où l'on veut, comme un banc ou des fleurs. Avant ça, elle n'apparaît pas dans le catalogue.
+- La ruche est dessinée par le jeu. Si une image `assets/village/ruche.png` est ajoutée plus tard, elle sera utilisée à sa place (il faudra aussi l'ajouter à la liste des images chargées dans `js/main.js`).
+- Code : objet de décor `ruche` (avec `need: 'n3'`), ruches du verger `HIVES` dans `js/world/decor.js`, dessin `Render.hive`.
+
 ## v0.19.0 · 2026-11-15
 
 - **🐝 La Ruche pousse enfin** : le 3e fruit de la branche Nature de l'arbre du Labo n'est plus « bientôt ». Il coûte 2 M $ et mûrit en 45 min (il arrive vers 4 h de jeu sur une première partie).

@@ -108,9 +108,11 @@ export const Factory = {
     for (const [m, q] of Object.entries(need)) s.mat[m] = (s.mat[m] || 0) - cook * q;
     L.bulk += cook;
 
-    // 2. Embouteillage — limité par la vitesse, le vrac et la place en entrepôt (commune)
+    // 2. Embouteillage — limité par la vitesse, le vrac et la place en entrepôt (commune).
+    // Changement de parfum : le reste de l'ancien se met en bouteilles même entrepôt plein (déborde d'une cuve au plus),
+    // sinon la cuve ne se vidait jamais et la ligne restait bloquée.
     const botCap = Eco.bottleRateLine(s) * dt;
-    const byWare = Math.max(0, Eco.wareCap(s) - Eco.totalStock(s));
+    const byWare = L.bulkFlavor !== L.flavor ? Infinity : Math.max(0, Eco.wareCap(s) - Eco.totalStock(s));
     const bot = Math.min(botCap, L.bulk, byWare);
     L.bulk -= bot;
     s.stock[L.bulkFlavor] = (s.stock[L.bulkFlavor] || 0) + bot;

@@ -64,7 +64,7 @@ export const CONFIG = {
 
   // Lignes de production (v0.7.0) : chaque ligne a son parfum et sa cuve ; les machines
   // (niveaux de cuisson, cuve, embouteillage) sont communes. Repart à 1 ligne au prestige.
-  lines: { max: 3, costs: [0, 750000, 15000000] },   // réglés au simulateur : ligne 2 vers 3 h 45, prestige vers 5 h 50
+  lines: { max: 3, costs: [0, 750000, 8000000] },   // simulateur (v0.18.0) : ligne 2 vers 3 h 40, ligne 3 vers 8 h (4 h 30 après prestige)
 
   counter: { priceFactor: 0.7, nightFactor: 0.6 },
   restock: { cost: 800, minBatch: 50, secondsOfStock: 60, trigger: 0.3 },

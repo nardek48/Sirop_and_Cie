@@ -2,6 +2,13 @@
 
 Numérotation : `vMAJEUR.MINEUR.CORRECTIF`. Pour préparer une nouvelle version : `node tools/build-sw.mjs patch` (ou `minor`, `major`), puis décrire les changements ici.
 
+## v0.18.0 · 2026-11-15
+
+- **Plus de ligne bloquée par l'entrepôt plein** : en changeant de parfum, une ligne doit d'abord mettre en bouteilles le reste de l'ancien parfum dans sa cuve. Avec un entrepôt plein, cette mise en bouteilles s'arrêtait et la ligne restait coincée jusqu'à ce que le stock baisse. Maintenant, ce reste se met en bouteilles même entrepôt plein (l'entrepôt déborde un peu, d'une cuve au plus), et la ligne repart tout de suite sur le nouveau parfum.
+  - Au simulateur, le joueur perdait environ 48 minutes de lignes bloquées sur une première partie, et 2 heures après un prestige. Les gains ne changent pas : c'est un confort de jeu.
+- **La 3e ligne coûte 8 M $** au lieu de 15 M $. À 15 M $, on ne l'achetait presque jamais avant le prestige (pas du tout dans 5 premières parties sur 8). Elle arrive maintenant vers 8 h de jeu sur une première partie et vers 4 h 30 après un prestige.
+  - Mesuré au simulateur (8 parties) : +3 % de gains sur une première partie de 10 h, +14 % après un prestige. Le prestige devient possible à la même heure.
+
 ## v0.17.0 · 2026-11-06
 
 - **⏩ Aller dans les villes sans conduire** : dans la carte (onglet Le monde), chaque ville a maintenant un 2e bouton, **« Y aller sans conduire »**, à côté de « Y aller en train » ou « en bateau ».
